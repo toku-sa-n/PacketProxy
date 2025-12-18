@@ -208,11 +208,11 @@ class Simplex extends Thread {
 					ret = in.read(input_data);
 				} catch (SSLException e) {
 
-					// System.err.println(String.format("SSLException: %s", e.getMessage()));
+					// Logging.err(String.format("SSLException: %s", e.getMessage()));
 					ret = -1; // should be finished
 				} catch (SocketException e) {
 
-					// System.err.println(String.format("SocketException: %s", e.getMessage()));
+					// Logging.err(String.format("SocketException: %s", e.getMessage()));
 					ret = -1; // should be finished
 				}
 				return ret;
@@ -279,10 +279,10 @@ class Simplex extends Thread {
 			}
 		} catch (SSLException e) {
 
-			// System.err.println(String.format("SSLException: %s", e.getMessage()));
+			// Logging.err(String.format("SSLException: %s", e.getMessage()));
 		} catch (SocketException e) {
 
-			// System.err.println(String.format("SocketException: %s", e.getMessage()));
+			// Logging.err(String.format("SocketException: %s", e.getMessage()));
 		} catch (Exception e) {
 
 			errWithStackTrace(e);

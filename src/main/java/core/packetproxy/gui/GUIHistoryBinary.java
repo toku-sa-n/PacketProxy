@@ -252,7 +252,7 @@ public class GUIHistoryBinary extends GUIHistoryPanel implements BinaryTextPane.
 		String str = hex_text.getText();
 		if (str.length() > 1000000) {
 
-			// System.err.println("[Warning] coloringSearchBinary: too long string. Skipping
+			// Logging.err("[Warning] coloringSearchBinary: too long string. Skipping
 			// Highlight");
 			return -1;
 		}

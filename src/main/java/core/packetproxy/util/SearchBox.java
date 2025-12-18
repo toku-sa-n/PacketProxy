@@ -140,7 +140,7 @@ public class SearchBox extends JPanel {
 		String search_string = search_text.getText();
 		if (str.length() > 1000000) {
 
-			// System.err.println("[Warning] coloringSearchText: too long string. Skipping
+			// Logging.err("[Warning] coloringSearchText: too long string. Skipping
 			// Highlight");
 			return -1;
 		}
@@ -202,7 +202,7 @@ public class SearchBox extends JPanel {
 		String str = baseText.getText();
 		if (str.length() > 1000000) {
 
-			// System.err.println("[Warning] coloringHTTPText: too long string. Skipping
+			// Logging.err("[Warning] coloringHTTPText: too long string. Skipping
 			// Highlight");
 			return;
 		}
