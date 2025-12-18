@@ -59,7 +59,7 @@ public class FlowControlManager {
 		if (stream != null) {
 
 			this.connectionWindowSize -= stream.payloadSize();
-			// System.out.printf("[%d] sent: %d (remain: %d), WindowSize: %d,
+			// Logging.log("[%d] sent: %d (remain: %d), WindowSize: %d,
 			// ConnectionWindowSize: %d\n", flow.getStreamId(), stream.payloadSize(),
 			// flow.size(), flow.getWindowSize(), this.connectionWindowSize);
 			// System.out.flush();
@@ -97,7 +97,7 @@ public class FlowControlManager {
 		if (streamId == 0) {
 
 			connectionWindowSize += windowSize;
-			// System.err.printf("ConnectionWindowSize: +%d\n", connectionWindowSize);
+			// Logging.err("ConnectionWindowSize: +%d\n", connectionWindowSize);
 			// System.err.flush();
 			for (FlowControl flow : flows.values()) {
 
@@ -107,7 +107,7 @@ public class FlowControlManager {
 
 			FlowControl flow = getFlow(streamId);
 			flow.appendWindowSize(windowSize);
-			// System.err.printf("[%d] WindowSize: +%d\n", streamId, flow.getWindowSize());
+			// Logging.err("[%d] WindowSize: +%d\n", streamId, flow.getWindowSize());
 			// System.err.flush();
 			writeData(flow);
 		}
@@ -117,14 +117,14 @@ public class FlowControlManager {
 		/* TODO: maximum concurrent streams is not implemented yet */
 		if (frame.getType() == Frame.Type.HEADERS) {
 
-			// System.out.printf("[%d] sent HeadersFrame %02x\n", frame.getStreamId(),
+			// Logging.log("[%d] sent HeadersFrame %02x\n", frame.getStreamId(),
 			// frame.getFlags());
 			FlowControl flow = getFlow(frame.getStreamId());
 			flow.pushHeadersFrame(frame);
 			writeData(flow);
 		} else if (frame.getType() == Frame.Type.DATA) {
 
-			// System.out.printf("[%d] sent DataFrame %02x\n", frame.getStreamId(),
+			// Logging.log("[%d] sent DataFrame %02x\n", frame.getStreamId(),
 			// frame.getFlags());
 			FlowControl flow = getFlow(frame.getStreamId());
 			flow.enqueue(frame);

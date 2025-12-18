@@ -175,7 +175,7 @@ public class Utils {
 		for (String s : args) {
 
 			cmd_array.add(s);
-			// System.out.print(s+ " ");
+			// Logging.log(s+ " ");
 		}
 		// Logging.log("");
 		return cmd_array.toArray(new String[0]);
