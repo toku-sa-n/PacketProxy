@@ -85,13 +85,13 @@ public abstract class FramesBase {
 
 	public byte[] clientRequestAvailable() throws Exception {
 		List<Frame> frames = clientFrameManager.readHeadersDataFrames();
-		// frames.stream().forEach(frame -> System.out.println("--> * " + frame));
+		// frames.stream().forEach(frame -> Logging.log("--> * " + frame));
 		return passFramesToDecodeClientRequest(frames);
 	}
 
 	public byte[] serverResponseAvailable() throws Exception {
 		List<Frame> frames = serverFrameManager.readHeadersDataFrames();
-		// frames.stream().forEach(frame -> System.out.println(" * <-- " + frame));
+		// frames.stream().forEach(frame -> Logging.log(" * <-- " + frame));
 		return passFramesToDecodeServerResponse(frames);
 	}
 
@@ -101,7 +101,7 @@ public abstract class FramesBase {
 
 	public byte[] encodeClientRequest(byte[] data) throws Exception {
 		byte[] frames = encodeClientRequestToFrames(data);
-		// FrameUtils.parseFrames(frames).stream().forEach(frame -> System.out.println("
+		// FrameUtils.parseFrames(frames).stream().forEach(frame -> Logging.log("
 		// * --> " + frame));
 		return frames;
 	}
@@ -113,7 +113,7 @@ public abstract class FramesBase {
 	public byte[] encodeServerResponse(byte[] data) throws Exception {
 		byte[] frames = encodeServerResponseToFrames(data);
 		// FrameUtils.parseFrames(frames).stream().forEach(frame ->
-		// System.out.println("<-- * " + frame));
+		// Logging.log("<-- * " + frame));
 		return frames;
 	}
 

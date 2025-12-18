@@ -32,18 +32,18 @@ public class Diff extends DiffBase {
 	// diff.markAsTarget("hello\nworld\nhoge".getBytes());
 	// diff.diff(new DiffEventAdapter() {
 	// @Override public void foundDelDelta(int pos, int length) throws Exception {
-	// System.out.println(String.format("Orig DEL: %d %d", pos, length)); }
+	// Logging.log(String.format("Orig DEL: %d %d", pos, length)); }
 	// @Override public void foundInsDelta(int pos, int length) throws Exception {
-	// System.out.println(String.format("Orig INS: %d %d", pos, length)); }
+	// Logging.log(String.format("Orig INS: %d %d", pos, length)); }
 	// @Override public void foundChgDelta(int pos, int length) throws Exception {
-	// System.out.println(String.format("Orig CHG: %d %d", pos, length)); }
+	// Logging.log(String.format("Orig CHG: %d %d", pos, length)); }
 	// }, new DiffEventAdapter() {
 	// @Override public void foundDelDelta(int pos, int length) throws Exception {
-	// System.out.println(String.format("Targ DEL: %d %d", pos, length)); }
+	// Logging.log(String.format("Targ DEL: %d %d", pos, length)); }
 	// @Override public void foundInsDelta(int pos, int length) throws Exception {
-	// System.out.println(String.format("Targ INS: %d %d", pos, length)); }
+	// Logging.log(String.format("Targ INS: %d %d", pos, length)); }
 	// @Override public void foundChgDelta(int pos, int length) throws Exception {
-	// System.out.println(String.format("Targ CHG: %d %d", pos, length)); }
+	// Logging.log(String.format("Targ CHG: %d %d", pos, length)); }
 	// });
 	// } catch (Exception e) {
 	// errWithStackTrace(e);

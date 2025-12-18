@@ -43,7 +43,7 @@ public class GUIPacket {
 	// String s = "ABgNBHJfb2sAAAJhbANtc2cAB4NoAmEMYQANCg0KeyJlbXB0eSI6N30=";
 	// byte[] data = Base64.getDecoder().decode(s.getBytes());
 	// byte[] result = gui.prettyFormatJSONInRawData(data, "hoge");
-	// System.out.println(new String(result));
+	// Logging.log(new String(result));
 	// } catch (Exception e) {
 	// errWithStackTrace(e);
 	// }

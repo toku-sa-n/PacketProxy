@@ -52,7 +52,7 @@ class QuicMessagesTest {
 	@Test
 	void forEachが動作すること() {
 		this.msgs.forEach(msg -> {
-			System.out.println(msg);
+			Logging.log(msg);
 		});
 	}
 

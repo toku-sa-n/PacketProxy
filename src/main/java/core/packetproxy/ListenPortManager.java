@@ -84,7 +84,7 @@ public class ListenPortManager implements PropertyChangeListener {
 			}
 			if (found == false) {
 
-				// System.out.println("## close:"+p);
+				// Logging.log("## close:"+p);
 				listen_map.get(p).close();
 				port.remove();
 			}

@@ -46,7 +46,7 @@ public class WebSocket {
 			if (frame.getOpcode() != OpCode.Text && frame.getOpcode() != OpCode.Binary) {
 
 				passBytes.write(frame.getBytes());
-				// System.out.println("pass through: " + frame);
+				// Logging.log("pass through: " + frame);
 				return false;
 			}
 			return true;

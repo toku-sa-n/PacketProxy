@@ -177,7 +177,7 @@ public class Utils {
 			cmd_array.add(s);
 			// System.out.print(s+ " ");
 		}
-		// System.out.println("");
+		// Logging.log("");
 		return cmd_array.toArray(new String[0]);
 	}
 

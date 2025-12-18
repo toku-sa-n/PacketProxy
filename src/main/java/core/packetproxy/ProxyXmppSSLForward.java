@@ -93,7 +93,7 @@ public class ProxyXmppSSLForward extends Proxy {
 							return;
 						}
 						String body = new String(ArrayUtils.subarray(buff, 0, len));
-						// System.out.println("-->" + body);
+						// Logging.log("-->" + body);
 						sO.write(buff, 0, len);
 					}
 					sleep(1000); // wait 1s
@@ -121,7 +121,7 @@ public class ProxyXmppSSLForward extends Proxy {
 							return;
 						}
 						String body = new String(ArrayUtils.subarray(buff, 0, len2));
-						// System.out.println("<--" + body);
+						// Logging.log("<--" + body);
 						if (body.contains("proceed")) {
 
 							finishFlag = true;

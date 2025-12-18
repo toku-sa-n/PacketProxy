@@ -26,13 +26,13 @@ public class BinaryBuffer {
 	 * try {
 	 * BinaryBuffer a = new BinaryBuffer("hello, world".getBytes());
 	 * a.remove(1, 1);
-	 * System.out.println(a.toString());
+	 * Logging.log(a.toString());
 	 * BinaryBuffer b = new BinaryBuffer("hello, world".getBytes());
 	 * b.insert(1, "aa".getBytes());
-	 * System.out.println(b.toString());
+	 * Logging.log(b.toString());
 	 * BinaryBuffer c = new BinaryBuffer("hello, world".getBytes());
 	 * c.insert(1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".getBytes());
-	 * System.out.println(c.toString());
+	 * Logging.log(c.toString());
 	 * } catch (Exception e) {
 	 * errWithStackTrace(e);
 	 * }
@@ -90,7 +90,7 @@ public class BinaryBuffer {
 	}
 
 	public void remove(int index, int length) {
-		// System.out.println(String.format("remove! length: %d", length));
+		// Logging.log(String.format("remove! length: %d", length));
 		/*
 		 * データをUTF-8テキストとして扱いたいときは、下記を有効にすること
 		 */
@@ -120,8 +120,8 @@ public class BinaryBuffer {
 	}
 
 	public void insert(int index, byte[] in) throws Exception {
-		// System.out.println("insert!");
-		// System.out.println(new Binary(in).toHexString(64).toString());
+		// Logging.log("insert!");
+		// Logging.log(new Binary(in).toHexString(64).toString());
 		if (in == null)
 			return;
 		if (data_size + in.length > buffer_capacity) {

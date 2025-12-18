@@ -232,7 +232,7 @@ public class HeadersFrame extends Frame {
 
 		if (meta instanceof Request) {
 
-			// System.out.println("# meta.request: " + meta);
+			// Logging.log("# meta.request: " + meta);
 			bRequest = true;
 			Request req = (Request) meta;
 			method = req.getMethod();
@@ -246,7 +246,7 @@ public class HeadersFrame extends Frame {
 
 		} else if (meta instanceof Response) {
 
-			// System.out.println("# meta.response: " + meta);
+			// Logging.log("# meta.response: " + meta);
 			bResponse = true;
 			Response res = (Response) meta;
 			status = res.getStatus();

@@ -88,9 +88,9 @@ public class Http {
 	 * //String test =
 	 * "GET /a/b/c.html?abc=h%20oge HTTP/1.1\r\nHost: www.example.com\r\n\r\nbody";
 	 * String test = "HTTP/1.1 100 Continue\r\n\r\n";
-	 * //System.out.println(test1.length());
+	 * //Logging.log(test1.length());
 	 * //test1 += "POST /aaa/bbb HTTP/1.1";
-	 * //System.out.println(test1.length());
+	 * //Logging.log(test1.length());
 	 * Http http = new Http(test1.getBytes());
 	 * byte[] body = http.getBody();
 	 * util.packetProxyLog(new String(body));
@@ -106,10 +106,10 @@ public class Http {
 	 *
 	 * http.getBodyParamsOrder().stream().forEach(s ->
 	 * util.packetProxyLog((map.get(s).toString())));
-	 * // System.out.println("-----");
-	 * // System.out.println(new String(http.toByteArray()));
-	 * // System.out.println(parseHttpDelimiter(test1.getBytes()));
-	 * // System.out.println(new String(http.toByteArray()));
+	 * // Logging.log("-----");
+	 * // Logging.log(new String(http.toByteArray()));
+	 * // Logging.log(parseHttpDelimiter(test1.getBytes()));
+	 * // Logging.log(new String(http.toByteArray()));
 	 *
 	 * } catch (Exception e) {
 	 * errWithStackTrace(e);

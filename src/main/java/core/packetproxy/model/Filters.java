@@ -139,7 +139,7 @@ public class Filters implements PropertyChangeListener {
 
 	private boolean isLatestVersion() throws Exception {
 		String result = dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='filters'").getFirstResult()[0];
-		// System.out.println(result);
+		// Logging.log(result);
 		return result.equals(
 				"CREATE TABLE `filters` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `name` VARCHAR , `filter` VARCHAR ,  UNIQUE (`name`))");
 	}

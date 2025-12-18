@@ -42,7 +42,7 @@ public class FrameManagerTest {
 		h2.write(settingsFrame);
 		for (Frame frame : FrameUtils.parseFrames(requestFrames)) {
 
-			System.out.println(frame.toString());
+			Logging.log(frame.toString());
 		}
 	}
 
@@ -52,7 +52,7 @@ public class FrameManagerTest {
 		h2.write(settingsFrame);
 		for (Frame frame : FrameUtils.parseFrames(responseFrames)) {
 
-			System.out.println(frame.toString());
+			Logging.log(frame.toString());
 		}
 	}
 

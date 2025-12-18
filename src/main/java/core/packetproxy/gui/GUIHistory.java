@@ -335,7 +335,7 @@ public class GUIHistory implements PropertyChangeListener {
 				if (e.getType() == TableModelEvent.INSERT) {
 
 					// List<Integer> ids = searchFromRequest("google");
-					// System.out.println(ids.toString());
+					// Logging.log(ids.toString());
 				}
 			}
 		});

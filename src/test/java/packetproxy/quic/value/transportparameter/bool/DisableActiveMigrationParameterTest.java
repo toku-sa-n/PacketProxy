@@ -8,6 +8,6 @@ class DisableActiveMigrationParameterTest {
 	@Test
 	public void smoke() {
 		DisableActiveMigrationParameter param = new DisableActiveMigrationParameter();
-		System.out.println(Hex.encodeHexString(param.getBytes()));
+		Logging.log(Hex.encodeHexString(param.getBytes()));
 	}
 }

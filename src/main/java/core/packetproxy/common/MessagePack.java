@@ -428,8 +428,8 @@ public class MessagePack {
 	public static String decode(byte[] input_data) throws Exception {
 		ByteArrayInputStream input = new ByteArrayInputStream(input_data);
 		Map<String, Object> messages = new TreeMap<>();
-		// System.out.println("Decode");
-		// System.out.println(StringUtils.byteToHex(input_data));
+		// Logging.log("Decode");
+		// Logging.log(StringUtils.byteToHex(input_data));
 		decodeData(0, input, messages);
 		// int useLength = input_data.length - input.available();
 		ObjectMapper mapper = new ObjectMapper();
@@ -448,7 +448,7 @@ public class MessagePack {
 			byte firstByte = (byte) (input.read() & 0xff);
 			Key key = new Key(firstByte);
 			Object value = null;
-			// System.out.println(key + " rest: " + input.available());
+			// Logging.log(key + " rest: " + input.available());
 			switch (key.type) {
 				case Integer : {
 					if (key.fix) {
@@ -584,8 +584,8 @@ public class MessagePack {
 		});
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		encodeData(messages, output);
-		// System.out.println("Encode");
-		// System.out.println(StringUtils.byteToHex(output.toByteArray()));
+		// Logging.log("Encode");
+		// Logging.log(StringUtils.byteToHex(output.toByteArray()));
 		return output.toByteArray();
 	}
 
@@ -608,7 +608,7 @@ public class MessagePack {
 				boolean fix = Integer.parseInt(keyval[3]) == 1;
 				key = new Key(type, size, fix);
 			}
-			// System.out.println(key);
+			// Logging.log(key);
 
 			switch (key.type) {
 				case Integer : {

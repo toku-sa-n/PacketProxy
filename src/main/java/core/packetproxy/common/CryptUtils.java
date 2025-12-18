@@ -126,19 +126,19 @@ public class CryptUtils {
 	public static String encryptCBCISO10126(byte [] key, byte [] iv, byte [] input) throws Exception {
 	Cipher cipher = Cipher.getInstance("AES/CBC/ISO10126Padding");
 	if( iv != null) {
-	System.out.println("not null");
+	Logging.log("not null");
 	}else{
 	iv = cipher.getIV();
 	}
 	IvParameterSpec ivSpec = new IvParameterSpec(iv);
-	System.out.println("ivSpec="+ivSpec);
+	Logging.log("ivSpec="+ivSpec);
 	SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
-	System.out.println("keySpec="+keySpec);
+	Logging.log("keySpec="+keySpec);
 	cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
 	byte[] encrypted = cipher.doFinal(input);
 	byte[] result = new byte[iv.length+encrypted.length];
 	System.arraycopy(iv, 0, result, 0, iv.length);
-	System.out.println("iv="+toHex(iv));
+	Logging.log("iv="+toHex(iv));
 	System.arraycopy(encrypted, 0, result, iv.length, encrypted.length);
 	
 	return toHex(result);
@@ -151,20 +151,20 @@ public class CryptUtils {
 		Cipher cipher = Cipher.getInstance(style);
 		if (iv != null) {
 
-			// System.out.println("not null");
+			// Logging.log("not null");
 		} else {
 
 			iv = cipher.getIV();
 		}
 		IvParameterSpec ivSpec = new IvParameterSpec(iv);
-		// System.out.println("ivSpec="+ivSpec);
+		// Logging.log("ivSpec="+ivSpec);
 		SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
-		// System.out.println("keySpec="+keySpec);
+		// Logging.log("keySpec="+keySpec);
 		cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
 		byte[] encrypted = cipher.doFinal(input);
 		byte[] result = new byte[iv.length + encrypted.length];
 		System.arraycopy(iv, 0, result, 0, iv.length);
-		// System.out.println("iv="+toHex(iv));
+		// Logging.log("iv="+toHex(iv));
 		System.arraycopy(encrypted, 0, result, iv.length, encrypted.length);
 
 		return toHex(result);
@@ -198,7 +198,7 @@ public class CryptUtils {
 	System.arraycopy(input, 16, cipherByte, 0, input.length-16);
 	IvParameterSpec ivSpec = new IvParameterSpec(iv);
 	cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-	System.out.println(new String(input));
+	Logging.log(new String(input));
 	return new String(cipher.doFinal(cipherByte),"UTF-8");
 	
 	 }
@@ -216,7 +216,7 @@ public class CryptUtils {
 		System.arraycopy(input, 16, cipherByte, 0, input.length - 16);
 		IvParameterSpec ivSpec = new IvParameterSpec(iv);
 		cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-		// System.out.println(new String(input));
+		// Logging.log(new String(input));
 		return new String(cipher.doFinal(cipherByte), "UTF-8");
 	}
 

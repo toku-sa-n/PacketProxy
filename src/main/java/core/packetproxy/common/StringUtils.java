@@ -92,7 +92,7 @@ public class StringUtils {
 			throw new Exception(I18nString.get("Length of string is not multiples of 2"));
 		}
 
-		// System.out.println(hex);
+		// Logging.log(hex);
 		byte[] bytes = new byte[hex.length() / 2];
 		for (int index = 0; index < bytes.length; index++) {
 
@@ -226,7 +226,7 @@ public class StringUtils {
 		int start = 0;
 		while ((start = binaryFind(input, pattern, start)) > 0) {
 
-			// System.out.println("Replace : " + input.length + " : " + start + " : " + new
+			// Logging.log("Replace : " + input.length + " : " + start + " : " + new
 			// String(byteToHex(pattern)) + " -> " + new String(byteToHex(replace)));
 			for (int j = 0; j < replace.length; j++) {
 

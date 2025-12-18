@@ -175,7 +175,7 @@ public class GrpcStreaming extends FramesBase {
 		boolean isDataFrame = false;
 		for (HeaderField field : http.getHeader().getFields()) {
 
-			// System.out.println("header: " + field.getName());
+			// Logging.log("header: " + field.getName());
 			if (field.getName().startsWith("x-trailer-")) {
 
 				unusedHeaders.add(field.getName());
@@ -192,7 +192,7 @@ public class GrpcStreaming extends FramesBase {
 
 			http.removeHeader(name);
 		}
-		// System.out.println("isDataFrame: " + isDataFrame);
+		// Logging.log("isDataFrame: " + isDataFrame);
 
 		if (!isTrailerHeaderFrame && !isDataFrame) {
 

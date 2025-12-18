@@ -73,12 +73,12 @@ public class FrameManager {
 
 			HeadersFrame headersFrame = (HeadersFrame) frame;
 			headersDataFrames.add(headersFrame);
-			// System.out.println("HeadersFrame: " + headersFrame);
+			// Logging.log("HeadersFrame: " + headersFrame);
 		} else if (frame instanceof DataFrame) {
 
 			DataFrame dataFrame = (DataFrame) frame;
 			headersDataFrames.add(dataFrame);
-			// System.out.println("DataFrame: " + dataFrame);
+			// Logging.log("DataFrame: " + dataFrame);
 		} else if (frame instanceof SettingsFrame) {
 
 			SettingsFrame settingsFrame = (SettingsFrame) frame;
@@ -96,7 +96,7 @@ public class FrameManager {
 					flag_send_end_settings = true;
 				}
 			}
-			// System.out.println("SettingsFrame: " + settingsFrame);
+			// Logging.log("SettingsFrame: " + settingsFrame);
 			// System.out.flush();
 		} else if (frame instanceof GoawayFrame) {
 
@@ -120,7 +120,7 @@ public class FrameManager {
 
 			PingFrame pingFrame = (PingFrame) frame;
 			controlFrames.add(pingFrame);
-			// System.out.println("Ping:" + pingFrame);
+			// Logging.log("Ping:" + pingFrame);
 			// System.out.flush();
 		} else {
 

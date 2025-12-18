@@ -32,7 +32,7 @@ class NewConnectionIdFrameTest {
 		byte[] data = frame.getBytes();
 
 		NewConnectionIdFrame frame2 = NewConnectionIdFrame.parse(data);
-		System.out.println(frame2);
+		Logging.log(frame2);
 		assertThat(frame).isEqualTo(frame2);
 	}
 }

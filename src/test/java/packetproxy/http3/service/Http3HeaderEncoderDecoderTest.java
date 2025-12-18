@@ -39,7 +39,7 @@ class Http3HeaderEncoderDecoderTest {
 		decoder.putInstructions(headerInsts);
 		decoder.decode(0, headerEncoded).forEach(outputHeader -> {
 			HttpFields fields = outputHeader.getFields();
-			System.out.println(fields);
+			Logging.log(fields);
 		});
 		byte[] headerInstsFromDecoder = decoder.getInstructions();
 
@@ -57,10 +57,10 @@ class Http3HeaderEncoderDecoderTest {
 
 	@Test
 	public void capacityのデバッグ() {
-		System.out.println(Hex.encodeHexString(new Http3HeaderEncoder(0).getInstructions()));
-		System.out.println(Hex.encodeHexString(new Http3HeaderEncoder(1).getInstructions()));
-		System.out.println(Hex.encodeHexString(new Http3HeaderEncoder(10).getInstructions()));
-		System.out.println(Hex.encodeHexString(new Http3HeaderEncoder(1000).getInstructions()));
+		Logging.log(Hex.encodeHexString(new Http3HeaderEncoder(0).getInstructions()));
+		Logging.log(Hex.encodeHexString(new Http3HeaderEncoder(1).getInstructions()));
+		Logging.log(Hex.encodeHexString(new Http3HeaderEncoder(10).getInstructions()));
+		Logging.log(Hex.encodeHexString(new Http3HeaderEncoder(1000).getInstructions()));
 	}
 
 	@Test

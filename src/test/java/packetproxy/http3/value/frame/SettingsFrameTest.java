@@ -62,6 +62,6 @@ class SettingsFrameTest {
 		assertThat(frames.size()).isEqualTo(2);
 		assertThat(frames.get(0)).isInstanceOf(SettingsFrame.class);
 		assertThat(frames.get(1)).isInstanceOf(GreaseFrame.class);
-		System.out.println(frames);
+		Logging.log(frames);
 	}
 }

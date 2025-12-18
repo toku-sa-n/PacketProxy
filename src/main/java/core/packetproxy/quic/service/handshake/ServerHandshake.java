@@ -180,20 +180,20 @@ public class ServerHandshake implements Handshake {
 
 		@Override
 		public void earlySecretsKnown() {
-			// System.out.println("earlySecretsKnown");
+			// Logging.log("earlySecretsKnown");
 			conn.getKeys().computeZeroRttKey(engine.getClientEarlyTrafficSecret());
 		}
 
 		@Override
 		public void handshakeSecretsKnown() {
-			// System.out.println("handshakeSecretsKnown");
+			// Logging.log("handshakeSecretsKnown");
 			conn.getKeys().computeHandshakeKey(engine.getClientHandshakeTrafficSecret(),
 					engine.getServerHandshakeTrafficSecret());
 		}
 
 		@Override
 		public void handshakeFinished() {
-			// System.out.println("handshakeFinished");
+			// Logging.log("handshakeFinished");
 			conn.getKeys().computeApplicationKey(engine.getClientApplicationTrafficSecret(),
 					engine.getServerApplicationTrafficSecret());
 			conn.getKeys().discardInitialKey();
@@ -204,7 +204,7 @@ public class ServerHandshake implements Handshake {
 
 		@Override
 		public void newSessionTicketReceived(NewSessionTicket ticket) {
-			// System.out.println("newSessionTicketReceived");
+			// Logging.log("newSessionTicketReceived");
 		}
 
 		@Override
@@ -236,7 +236,7 @@ public class ServerHandshake implements Handshake {
 
 		@Override
 		public boolean isEarlyDataAccepted() {
-			// System.out.println("isEarlyDataAccepted");
+			// Logging.log("isEarlyDataAccepted");
 			return false;
 		}
 	}

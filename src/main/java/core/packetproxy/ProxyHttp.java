@@ -65,7 +65,7 @@ public class ProxyHttp extends Proxy {
 						byte[] result = new byte[]{};
 						synchronized (client_loopback) {
 							Http http = Http.create(data);
-							// System.out.println(String.format("%s: %s:%s", http.getMethod(),
+							// Logging.log(String.format("%s: %s:%s", http.getMethod(),
 							// http.getServerName(), http.getServerPort()));
 
 							if (http.getMethod().equals("CONNECT")) {

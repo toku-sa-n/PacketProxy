@@ -36,17 +36,17 @@ import packetproxy.model.CAs.CA;
 
 public class CAFactory {
 	// public static void main(String[] args) {
-	// CAFactory.queryAll().stream().forEach(ca -> System.out.println(ca));
-	// System.out.println("----");
-	// CAFactory.find("PacketProxy CA").ifPresent(ca -> System.out.println(ca));
-	// CAFactory.find("PacketProxy CA2").ifPresent(ca -> System.out.println(ca));
-	// System.out.println("----");
+	// CAFactory.queryAll().stream().forEach(ca -> Logging.log(ca));
+	// Logging.log("----");
+	// CAFactory.find("PacketProxy CA").ifPresent(ca -> Logging.log(ca));
+	// CAFactory.find("PacketProxy CA2").ifPresent(ca -> Logging.log(ca));
+	// Logging.log("----");
 	// CA a = CAFactory.find("PacketProxy CA").get();
 	// CA b = CAFactory.find("PacketProxy CA").get();
-	// System.out.println(a == b);
+	// Logging.log(a == b);
 	// String c = CAFactory.find("PacketProxy CA2").map(s -> {
-	// System.out.println(s); return "ok";}).orElse("Error");
-	// System.out.println(c);
+	// Logging.log(s); return "ok";}).orElse("Error");
+	// Logging.log(c);
 	// }
 
 	private static final Class<CA> ca_class = packetproxy.model.CAs.CA.class;

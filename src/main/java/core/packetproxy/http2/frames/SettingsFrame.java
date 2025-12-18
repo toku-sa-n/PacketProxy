@@ -55,7 +55,7 @@ public class SettingsFrame extends Frame {
 				int data = bb.getInt();
 				values.put(type, data);
 			}
-			// System.out.println(String.format("%s: %d", type, data));
+			// Logging.log(String.format("%s: %d", type, data));
 		}
 	}
 

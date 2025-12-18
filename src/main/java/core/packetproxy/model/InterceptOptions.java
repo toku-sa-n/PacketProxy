@@ -335,7 +335,7 @@ public class InterceptOptions implements PropertyChangeListener {
 
 	private boolean isLatestVersion() throws Exception {
 		String result = dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='interceptOptions'").getFirstResult()[0];
-		// System.out.println(result);
+		// Logging.log(result);
 		return result.equals(
 				"CREATE TABLE `interceptOptions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `direction` VARCHAR , `type` VARCHAR , `relationship` VARCHAR , `method` VARCHAR , `pattern` VARCHAR , `server_id` INTEGER , UNIQUE (`direction`,`type`,`relationship`,`method`,`pattern`,`server_id`) )");
 	}

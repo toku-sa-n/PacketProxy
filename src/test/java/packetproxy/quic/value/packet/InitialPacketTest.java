@@ -46,7 +46,7 @@ class InitialPacketTest {
 		InitialKey serverInitialKey = InitialKey.of(Role.SERVER, LongHeaderPacket.getDestConnId(clientReqBuffer));
 
 		InitialPacket ipCli = new InitialPacket(ByteBuffer.wrap(clientReq), clientInitialKey, PacketNumber.Infinite);
-		System.out.println(ipCli);
+		Logging.log(ipCli);
 		InitialPacket ipServ = new InitialPacket(ByteBuffer.wrap(serverRes), serverInitialKey, PacketNumber.Infinite);
 
 		assertTrue(ipCli.getPayload().length > 0);
@@ -69,8 +69,8 @@ class InitialPacketTest {
 		InitialPacket ipCli = new InitialPacket(ByteBuffer.wrap(clientReq), clientInitialKey, PacketNumber.Infinite);
 		InitialPacket ipServ = new InitialPacket(ByteBuffer.wrap(serverRes), serverInitialKey, PacketNumber.Infinite);
 
-		System.out.println(ipCli);
-		System.out.println(ipServ);
+		Logging.log(ipCli);
+		Logging.log(ipServ);
 
 		assertTrue(ipCli.getPayload().length > 0);
 		assertTrue(ipServ.getPayload().length > 0);
@@ -86,7 +86,7 @@ class InitialPacketTest {
 		InitialKey clientInitialKey = InitialKey.of(Role.CLIENT, LongHeaderPacket.getDestConnId(clientReqBuffer));
 
 		InitialPacket ipCli = new InitialPacket(ByteBuffer.wrap(clientReq), clientInitialKey, PacketNumber.Infinite);
-		System.out.println(ipCli);
+		Logging.log(ipCli);
 		assertTrue(ipCli.getPayload().length > 0);
 	}
 

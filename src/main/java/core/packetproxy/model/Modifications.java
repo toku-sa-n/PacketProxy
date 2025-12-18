@@ -204,7 +204,7 @@ public class Modifications implements PropertyChangeListener {
 
 	private boolean isLatestVersion() throws Exception {
 		String result = dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='modifications'").getFirstResult()[0];
-		// System.out.println(result);
+		// Logging.log(result);
 		return result.equals(
 				"CREATE TABLE `modifications` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `server_id` INTEGER , `direction` VARCHAR , `pattern` VARCHAR , `method` VARCHAR , `replaced` VARCHAR , UNIQUE (`server_id`,`direction`,`pattern`,`method`) )");
 	}

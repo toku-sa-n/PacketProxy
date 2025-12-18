@@ -48,7 +48,7 @@ class FramesTest {
 		assertTrue(frames.get(2) instanceof PaddingFrame);
 		for (Frame frame : frames) {
 
-			System.out.println(frame.toString());
+			Logging.log(frame.toString());
 		}
 	}
 }

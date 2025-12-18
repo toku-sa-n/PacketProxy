@@ -102,7 +102,7 @@ abstract class ExtendedTextPane extends JTextPane {
 					String removed_string = prev_text_panel.substring(e.getOffset(), e.getOffset() + e.getLength());
 					prev_text_panel = e.getDocument().getText(0, e.getDocument().getLength());
 					raw_data.remove(before_removed_string.getBytes().length, removed_string.getBytes().length);
-					// System.out.println(String.format("remove: <%s> %d %d", removed_string,
+					// Logging.log(String.format("remove: <%s> %d %d", removed_string,
 					// removed_string.getBytes().length, e.getLength()));
 				} catch (Exception e1) {
 

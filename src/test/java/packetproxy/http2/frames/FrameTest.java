@@ -25,7 +25,7 @@ public class FrameTest {
 		byte[] frameData = Hex.decodeHex("00000e0148000000010000000541414141414242424242".toCharArray());
 		Frame frame = new Frame(frameData);
 		byte[] bbbbb = frame.getExtra();
-		System.out.println(new String(bbbbb));
+		Logging.log(new String(bbbbb));
 	}
 
 	@Test
@@ -33,7 +33,7 @@ public class FrameTest {
 		byte[] frameData = Hex.decodeHex("00000e0148000000010000000541414141414242424242".toCharArray());
 		Frame frame = new Frame(frameData);
 		frame.removeExtra();
-		System.out.println(new String(Hex.encodeHex(frame.toByteArray())));
+		Logging.log(new String(Hex.encodeHex(frame.toByteArray())));
 	}
 
 	@Test
@@ -42,7 +42,7 @@ public class FrameTest {
 		Frame frame = new Frame(frameData);
 		frame.removeExtra();
 		frame.saveExtra("0123456789".getBytes());
-		System.out.println(new String(Hex.encodeHex(frame.toByteArray())));
+		Logging.log(new String(Hex.encodeHex(frame.toByteArray())));
 	}
 
 	@Test
@@ -51,6 +51,6 @@ public class FrameTest {
 		Frame frame = new Frame(frameData);
 		frame.removeExtra();
 		frame.saveExtra("0123456789".getBytes());
-		System.out.println(new String(Hex.encodeHex(frame.toByteArrayWithoutExtra())));
+		Logging.log(new String(Hex.encodeHex(frame.toByteArrayWithoutExtra())));
 	}
 }

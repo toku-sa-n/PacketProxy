@@ -451,7 +451,7 @@ public class RawTextPane extends ExtendedTextPane {
 	}
 
 	public byte[] getData() {
-		// System.out.println(raw_data.toString());
+		// Logging.log(raw_data.toString());
 		return raw_data.toByteArray();
 	}
 

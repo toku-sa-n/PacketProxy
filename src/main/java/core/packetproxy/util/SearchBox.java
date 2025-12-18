@@ -222,8 +222,8 @@ public class SearchBox extends JPanel {
 			document.setCharacterAttributes(key_start, key.length(), attributes, false);
 			javax.swing.text.StyleConstants.setForeground(attributes, java.awt.Color.red);
 			document.setCharacterAttributes(value_start, value.length(), attributes, false);
-			// System.out.println("key = " + key);
-			// System.out.println("value = " + value);
+			// Logging.log("key = " + key);
+			// Logging.log("value = " + value);
 		}
 	}
 

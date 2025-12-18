@@ -148,7 +148,7 @@ public class Https {
 		/* case: ALPN is not supported */
 		if (serverSSLSocket[0] == null) {
 
-			// System.out.println("ALPN is not supported: " + serverName);
+			// Logging.log("ALPN is not supported: " + serverName);
 			Socket serverSocket;
 			if (proxyAddr != null) {
 

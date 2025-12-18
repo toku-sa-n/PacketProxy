@@ -41,18 +41,18 @@ public class QpackTest {
 		ByteBuffer buffer = ByteBuffer.allocate(1024);
 		encoder.encode(buffer, 0x0, new MetaData(HttpVersion.HTTP_3, httpFields));
 		buffer.flip();
-		System.out.println(new Binary(SimpleBytes.parse(buffer, buffer.remaining()).getBytes()).toHexString());
+		Logging.log(new Binary(SimpleBytes.parse(buffer, buffer.remaining()).getBytes()).toHexString());
 
 		buffer.clear();
 		encoder.encode(buffer, 0xb, new MetaData(HttpVersion.HTTP_3, httpFields));
 		buffer.flip();
-		System.out.println(new Binary(SimpleBytes.parse(buffer, buffer.remaining()).getBytes()).toHexString());
+		Logging.log(new Binary(SimpleBytes.parse(buffer, buffer.remaining()).getBytes()).toHexString());
 
 		ByteArrayOutputStream encoderInsts = new ByteArrayOutputStream();
 		lease.getByteBuffers().forEach(rethrow(inst -> {
 			encoderInsts.write(SimpleBytes.parse(inst, inst.remaining()).getBytes());
 		}));
-		System.out.println("send: QpackEncoder Instructions: " + Hex.encodeHexString(encoderInsts.toByteArray()));
+		Logging.log("send: QpackEncoder Instructions: " + Hex.encodeHexString(encoderInsts.toByteArray()));
 	}
 
 	@Test
@@ -86,26 +86,26 @@ public class QpackTest {
 		lease.getByteBuffers().forEach(rethrow(inst -> {
 			encoderInsts.write(SimpleBytes.parse(inst, inst.remaining()).getBytes());
 		}));
-		System.out.println("send: QpackEncoder Instructions: " + Hex.encodeHexString(encoderInsts.toByteArray()));
-		System.out.println("send: HEADERS frame data: " + Hex.encodeHexString(HeadersBytes));
+		Logging.log("send: QpackEncoder Instructions: " + Hex.encodeHexString(encoderInsts.toByteArray()));
+		Logging.log("send: HEADERS frame data: " + Hex.encodeHexString(HeadersBytes));
 
 		/* processing by Decoder */
 		decoder.parseInstructions(ByteBuffer.wrap(encoderInsts.toByteArray()));
 		decoder.decode(0, ByteBuffer.wrap(HeadersBytes), (streamId, metadata) -> {
-			System.out.println("streamId: " + streamId + ", meta: " + metadata);
+			Logging.log("streamId: " + streamId + ", meta: " + metadata);
 			assertThat(httpFields.asImmutable()).isEqualTo(metadata.getFields());
 		});
 		ByteArrayOutputStream decoderInsts = new ByteArrayOutputStream();
 		lease2.getByteBuffers().forEach(rethrow(inst -> {
 			decoderInsts.write(SimpleBytes.parse(inst, inst.remaining()).getBytes());
 		}));
-		System.out.println("resp: QpackDecoder Instructions: " + Hex.encodeHexString(decoderInsts.toByteArray()));
+		Logging.log("resp: QpackDecoder Instructions: " + Hex.encodeHexString(decoderInsts.toByteArray()));
 
 		/* comparing internal contexts in Encoder and Decoder */
-		System.out.println("encoder before: " + encoder.dump());
+		Logging.log("encoder before: " + encoder.dump());
 		encoder.parseInstructions(ByteBuffer.wrap(decoderInsts.toByteArray()));
-		System.out.println("encoder after: " + encoder.dump());
-		System.out.println("decoder: " + decoder.dump());
+		Logging.log("encoder after: " + encoder.dump());
+		Logging.log("decoder: " + decoder.dump());
 	}
 
 	@Test
@@ -122,6 +122,6 @@ public class QpackTest {
 		MetaData md = new MetaData.Request(http.getMethod(), HttpURI.from("https://localhost/"), HttpVersion.HTTP_3,
 				jettyHttpFields);
 
-		System.out.println(md);
+		Logging.log(md);
 	}
 }
