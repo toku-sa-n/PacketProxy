@@ -18,7 +18,6 @@ package packetproxy.controller;
 import static packetproxy.http2.frames.FrameUtils.PREFACE;
 import static packetproxy.http2.frames.FrameUtils.SETTINGS;
 import static packetproxy.http2.frames.FrameUtils.WINDOW_UPDATE;
-import static packetproxy.util.Logging.err;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -71,48 +70,6 @@ public class SinglePacketAttackController {
 		launchAttack(count);
 	}
 
-	private void sendConnectionPreface() throws Exception {
-		final var preface = new ByteArrayOutputStream();
-		preface.write(PREFACE);
-		preface.write(SETTINGS);
-		preface.write(WINDOW_UPDATE);
-
-		attackConnection.execFastSend(preface.toByteArray());
-	}
-
-	private void launchAttack(final int count) throws Exception {
-		final var requests = new ArrayList<SingleAttackRequest>();
-
-		for (var i = 0; i < count; i++) {
-			final var streamId = i * 2 + 1;
-			try {
-				final var request = new SingleAttackRequest(streamId, baseAttackFrames, attackConnection);
-				request.sendFirstFrames();
-				requests.add(request);
-			} catch (Exception e) {
-				err("Stream %d : Single Packet Attack failed with exception: %s", streamId, e.getMessage());
-			}
-		}
-
-		Thread.sleep(sleepTimeMs);
-		sendPing();
-
-		for (final var request : requests) {
-			request.sendLastFrames();
-		}
-
-		for (var i = 0; i < requests.size(); i++) {
-			attackConnection.receive();
-		}
-	}
-
-	private void sendPing() throws Exception {
-		final var pingPayload = new byte[8];
-		final var pingFrame = new Frame(Frame.Type.PING, 0, 0, pingPayload);
-		final var pingData = pingFrame.toByteArray();
-		attackConnection.execFastSend(pingData);
-	}
-
 	private static boolean isHttp2(final OneShotPacket oneshot) {
 		var alpn = oneshot.getAlpn();
 		return alpn != null && (alpn.equals("h2") || alpn.equals("grpc") || alpn.equals("grpc-exp"));
@@ -138,6 +95,53 @@ public class SinglePacketAttackController {
 		final var method = parts[0].toUpperCase();
 
 		return method.equals("GET");
+	}
+
+	private void sendConnectionPreface() throws Exception {
+		final var preface = new ByteArrayOutputStream();
+		preface.write(PREFACE);
+		preface.write(SETTINGS);
+		preface.write(WINDOW_UPDATE);
+
+		attackConnection.execFastSend(preface.toByteArray());
+	}
+
+	private void launchAttack(final int count) throws Exception {
+		final var requests = createRequests(count);
+
+		for (final var request : requests) {
+			request.sendFirstFrames();
+		}
+
+		Thread.sleep(sleepTimeMs);
+		sendPing();
+
+		for (final var request : requests) {
+			request.sendLastFrames();
+		}
+
+		for (var i = 0; i < requests.size(); i++) {
+			attackConnection.receive();
+		}
+	}
+
+	private ArrayList<SingleAttackRequest> createRequests(final int count) throws Exception {
+		final var requests = new ArrayList<SingleAttackRequest>();
+
+		for (var i = 0; i < count; i++) {
+			final var streamId = i * 2 + 1;
+			final var request = new SingleAttackRequest(streamId, baseAttackFrames, attackConnection);
+			requests.add(request);
+		}
+
+		return requests;
+	}
+
+	private void sendPing() throws Exception {
+		final var pingPayload = new byte[8];
+		final var pingFrame = new Frame(Frame.Type.PING, 0, 0, pingPayload);
+		final var pingData = pingFrame.toByteArray();
+		attackConnection.execFastSend(pingData);
 	}
 
 	private static AttackFrames generateAttackFrames(final OneShotPacket packet) throws Exception {
@@ -363,6 +367,7 @@ public class SinglePacketAttackController {
 
 		public void sendFirstFrames() throws Exception {
 			final var firstFramesData = FrameUtils.toByteArray(streamAttackFrames.firstFrames);
+
 			connection.execFastSend(firstFramesData);
 		}
 
