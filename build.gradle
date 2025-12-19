@@ -117,7 +117,6 @@ spotless {
   java {
     target '**/*.java'
     targetExclude 'src/main/java/core/org/**/*.java'
-
     cleanthat()
     googleJavaFormat()
 
