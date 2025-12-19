@@ -82,18 +82,16 @@ public class SinglePacketAttackController {
 
 	private void launchAttack(final int count) throws Exception {
 		final var requests = new ArrayList<SingleAttackRequest>();
-		var currentStreamId = 1;
 
 		for (var i = 0; i < count; i++) {
+			final var streamId = i * 2 + 1;
 			try {
-				final var request = new SingleAttackRequest(currentStreamId, baseAttackFrames, attackConnection);
+				final var request = new SingleAttackRequest(streamId, baseAttackFrames, attackConnection);
 				request.sendFirstFrames();
 				requests.add(request);
 			} catch (Exception e) {
-				err("Stream %d : Single Packet Attack failed with exception: %s", currentStreamId, e.getMessage());
+				err("Stream %d : Single Packet Attack failed with exception: %s", streamId, e.getMessage());
 			}
-
-			currentStreamId += 2;
 		}
 
 		Thread.sleep(sleepTimeMs);
