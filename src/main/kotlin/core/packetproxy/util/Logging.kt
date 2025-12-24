@@ -95,20 +95,22 @@ object Logging {
 
   @JvmStatic
   @Throws(IllegalFormatException::class)
-  fun log(format: String, vararg args: Any?) {
+  fun log(format: Any, vararg args: Any?) {
     val fs = formatString(format, *args)
 
     logger.info(fs)
-    if (!isGulp) guiLog.append(fs)
+    if (isGulp) return
+    guiLog.append(fs)
   }
 
   @JvmStatic
   @Throws(IllegalFormatException::class)
-  fun err(format: String, vararg args: Any?) {
+  fun err(format: Any, vararg args: Any?) {
     val fs = formatString(format, *args)
 
     logger.error(Ansi.ansi().fg(RED).a(fs).reset().toString())
-    if (!isGulp) guiLog.appendErr(fs)
+    if (isGulp) return
+    guiLog.appendErr(fs)
   }
 
   /** 別のログが挟まらないように一塊にした上で１度に出力する */
