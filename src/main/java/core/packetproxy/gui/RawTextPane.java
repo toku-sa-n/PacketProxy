@@ -18,6 +18,8 @@ package packetproxy.gui;
 import static packetproxy.util.Logging.errWithStackTrace;
 
 import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -410,6 +412,20 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 	}
 
+	@Override
+	public void copy() {
+		String selected = getSelectedText();
+		if (selected == null || selected.isEmpty()) {
+			super.copy();
+			return;
+		}
+
+		String sanitized = stripTrailingNewlines(selected);
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		StringSelection selection = new StringSelection(sanitized);
+		clipboard.setContents(selection, selection);
+	}
+
 	public void setData(byte[] data) throws Exception {
 		init_flg = true;
 		fin_flg = true;
@@ -450,5 +466,18 @@ public class RawTextPane extends ExtendedTextPane {
 
 			errWithStackTrace(e);
 		}
+	}
+
+	private static String stripTrailingNewlines(String s) {
+		int end = s.length();
+		while (end > 0) {
+			char c = s.charAt(end - 1);
+			if (c == '\n' || c == '\r') {
+				end--;
+				continue;
+			}
+			break;
+		}
+		return end == s.length() ? s : s.substring(0, end);
 	}
 }
