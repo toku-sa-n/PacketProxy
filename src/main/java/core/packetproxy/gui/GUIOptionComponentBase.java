@@ -23,7 +23,6 @@ import java.awt.event.MouseAdapter;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
-import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -31,10 +30,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.RowFilter;
-import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
@@ -183,21 +180,7 @@ public abstract class GUIOptionComponentBase<T> implements PropertyChangeListene
 	}
 
 	private void setHeaderStyle(JTable table, int columnCount) {
-		DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
-			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-					boolean hasFocus, int row, int column) {
-				Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-				setBorder(BorderFactory.createCompoundBorder(
-						BorderFactory.createMatteBorder(0, 0, 1, 1, Color.LIGHT_GRAY),
-						BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-				return c;
-			}
-		};
-		headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-		for (int i = 0; i < columnCount; i++) {
-			table.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
-		}
+		TableHeaderStyle.apply(table, columnCount);
 	}
 
 	private JPanel createTableButton(ActionListener addAction, ActionListener editAction, ActionListener removeAction) {
