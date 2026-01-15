@@ -17,6 +17,7 @@ package packetproxy.gui;
 
 import static packetproxy.util.Logging.errWithStackTrace;
 
+import java.awt.Color;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -424,6 +425,14 @@ public class RawTextPane extends ExtendedTextPane {
 		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		StringSelection selection = new StringSelection(sanitized);
 		clipboard.setContents(selection, selection);
+	}
+
+	@Override
+	public void setEditable(boolean b) {
+		super.setEditable(b);
+		if (!b) {
+			this.setBackground(Color.WHITE);
+		}
 	}
 
 	public void setData(byte[] data) throws Exception {
