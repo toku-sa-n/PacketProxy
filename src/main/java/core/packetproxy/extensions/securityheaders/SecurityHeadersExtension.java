@@ -19,8 +19,13 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.RowSorter.SortKey;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableRowSorter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -48,11 +53,18 @@ public class SecurityHeadersExtension extends Extension {
 
 	private JTable table;
 	private DefaultTableModel model;
+	private TableRowSorter<DefaultTableModel> sorter;
 	private Map<String, Integer> endpointMap;
 	private Map<String, Packet> packetMap;
 	private Map<String, Map<String, SecurityCheckResult>> resultsMap;
 	private JTextPane detailArea;
 	private JTextPane headerPane;
+	private JTextField filterField;
+	private List<JCheckBox> methodCheckBoxes;
+	private List<JCheckBox> statusCheckBoxes;
+
+	private static final String[] METHOD_OPTIONS = {"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"};
+	private static final String[] STATUS_CODE_OPTIONS = {"2xx", "3xx", "4xx", "5xx"};
 
 	public SecurityHeadersExtension() {
 		super();
@@ -85,15 +97,68 @@ public class SecurityHeadersExtension extends Extension {
 	// ===== UI Component Creation =====
 
 	private JPanel createButtonPanel() {
-		JPanel buttonPanel = new JPanel();
+		JPanel buttonPanel = new JPanel(new BorderLayout());
 
+		// Left side: buttons
+		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		JButton scanButton = new JButton("Scan History");
 		scanButton.addActionListener(e -> scanHistory());
-		buttonPanel.add(scanButton);
+		leftPanel.add(scanButton);
 
 		JButton clearButton = new JButton("Clear");
 		clearButton.addActionListener(e -> clearTable());
-		buttonPanel.add(clearButton);
+		leftPanel.add(clearButton);
+
+		buttonPanel.add(leftPanel, BorderLayout.WEST);
+
+		// Right side: filter
+		JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+
+		// Method filter checkboxes
+		filterPanel.add(new JLabel("Method:"));
+		methodCheckBoxes = new ArrayList<>();
+		for (String method : METHOD_OPTIONS) {
+			JCheckBox cb = new JCheckBox(method, true); // default selected
+			cb.addActionListener(e -> applyFilter());
+			methodCheckBoxes.add(cb);
+			filterPanel.add(cb);
+		}
+
+		filterPanel.add(Box.createHorizontalStrut(10)); // spacer
+
+		// Status Code filter checkboxes
+		filterPanel.add(new JLabel("Server Response:"));
+		statusCheckBoxes = new ArrayList<>();
+		for (String status : STATUS_CODE_OPTIONS) {
+			JCheckBox cb = new JCheckBox(status, true); // default selected
+			cb.addActionListener(e -> applyFilter());
+			statusCheckBoxes.add(cb);
+			filterPanel.add(cb);
+		}
+
+		filterPanel.add(Box.createHorizontalStrut(10)); // spacer
+
+		// Text filter
+		filterPanel.add(new JLabel("Filter:"));
+		filterField = new JTextField(15);
+		filterField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				applyFilter();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				applyFilter();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				applyFilter();
+			}
+		});
+		filterPanel.add(filterField);
+		buttonPanel.add(filterPanel, BorderLayout.EAST);
 
 		return buttonPanel;
 	}
@@ -103,11 +168,10 @@ public class SecurityHeadersExtension extends Extension {
 		List<String> columns = new ArrayList<>();
 		columns.add("Method");
 		columns.add("URL");
-		columns.add("Code");
+		columns.add("Server Response");
 		for (SecurityCheck check : SECURITY_CHECKS) {
 			columns.add(check.getColumnName());
 		}
-		columns.add("Status");
 
 		model = new DefaultTableModel(columns.toArray(new String[0]), 0) {
 			@Override
@@ -120,10 +184,29 @@ public class SecurityHeadersExtension extends Extension {
 	private void initializeTable() {
 		table = new JTable(model);
 		table.setDefaultRenderer(Object.class, new SecurityHeaderRenderer());
-		table.setAutoCreateRowSorter(true);
 
-		// Hide Status column from view but keep in model for renderer
-		table.removeColumn(table.getColumnModel().getColumn(table.getColumnModel().getColumnIndex("Status")));
+		// Set up TableRowSorter for filtering
+		sorter = new TableRowSorter<>(model);
+		table.setRowSorter(sorter);
+
+		// Set custom header renderer (left-aligned text, sort icon on right)
+		table.getTableHeader().setDefaultRenderer(new HeaderRenderer(table));
+
+		// Set column widths
+		table.getColumnModel().getColumn(0).setPreferredWidth(30); // Method
+		table.getColumnModel().getColumn(1).setPreferredWidth(300); // URL
+		table.getColumnModel().getColumn(2).setPreferredWidth(50); // Code
+		// Security check columns
+		for (int i = 0; i < SECURITY_CHECKS.size(); i++) {
+			table.getColumnModel().getColumn(FIXED_COLUMNS + i).setPreferredWidth(80);
+		}
+
+		// Default sort by URL ascending
+		SwingUtilities.invokeLater(() -> {
+			List<SortKey> sortKeys = new ArrayList<>();
+			sortKeys.add(new SortKey(1, SortOrder.ASCENDING)); // URL column
+			sorter.setSortKeys(sortKeys);
+		});
 	}
 
 	private JSplitPane createDetailPanes() {
@@ -230,15 +313,88 @@ public class SecurityHeadersExtension extends Extension {
 		for (String line : lines) {
 			if (line.isEmpty())
 				continue;
-			SimpleAttributeSet style = getStyleForHeaderLine(line, results, styles);
-			doc.insertString(doc.getLength(), line + "\n", style);
+
+			// Try segment-based highlighting first
+			List<SecurityCheck.HighlightSegment> allSegments = collectHighlightSegments(line, results);
+
+			if (!allSegments.isEmpty()) {
+				// Sort segments by start position
+				allSegments.sort((a, b) -> Integer.compare(a.getStart(), b.getStart()));
+				insertLineWithSegments(doc, line, allSegments, styles);
+			} else {
+				// Fall back to whole-line highlighting
+				SimpleAttributeSet style = getStyleForHeaderLine(line, results, styles);
+				doc.insertString(doc.getLength(), line + "\n", style);
+			}
+		}
+	}
+
+	private List<SecurityCheck.HighlightSegment> collectHighlightSegments(String line,
+			Map<String, SecurityCheckResult> results) {
+		List<SecurityCheck.HighlightSegment> allSegments = new ArrayList<>();
+
+		for (SecurityCheck check : SECURITY_CHECKS) {
+			if (!check.matchesHeaderLine(line.toLowerCase()))
+				continue;
+
+			SecurityCheckResult result = results.get(check.getName());
+			List<SecurityCheck.HighlightSegment> segments = check.getHighlightSegments(line, result);
+			allSegments.addAll(segments);
+		}
+
+		return allSegments;
+	}
+
+	private void insertLineWithSegments(StyledDocument doc, String line, List<SecurityCheck.HighlightSegment> segments,
+			TextStyles styles) throws Exception {
+		int currentPos = 0;
+		int lineLength = line.length();
+
+		for (SecurityCheck.HighlightSegment segment : segments) {
+			int start = segment.getStart();
+			int end = segment.getEnd();
+
+			// Validate segment bounds
+			if (start < 0 || end < 0 || start > lineLength || end > lineLength || start > end) {
+				continue;
+			}
+
+			// Insert text before this segment (black)
+			if (start > currentPos) {
+				String beforeText = line.substring(currentPos, start);
+				doc.insertString(doc.getLength(), beforeText, styles.black);
+			}
+
+			// Insert the segment with appropriate style
+			String segmentText = line.substring(start, end);
+			SimpleAttributeSet style = getStyleForHighlightType(segment.getType(), styles);
+			doc.insertString(doc.getLength(), segmentText, style);
+			currentPos = end;
+		}
+
+		// Insert remaining text after last segment (black)
+		if (currentPos < line.length()) {
+			doc.insertString(doc.getLength(), line.substring(currentPos), styles.black);
+		}
+
+		doc.insertString(doc.getLength(), "\n", styles.black);
+	}
+
+	private SimpleAttributeSet getStyleForHighlightType(SecurityCheck.HighlightType type, TextStyles styles) {
+		switch (type) {
+			case GREEN :
+				return styles.green;
+			case RED :
+				return styles.red;
+			case YELLOW :
+				return styles.yellow;
+			default :
+				return styles.black;
 		}
 	}
 
 	private SimpleAttributeSet getStyleForHeaderLine(String line, Map<String, SecurityCheckResult> results,
 			TextStyles styles) {
-		String lowerLine = line.toLowerCase();
-
 		for (SecurityCheck check : SECURITY_CHECKS) {
 			SecurityCheckResult result = results.get(check.getName());
 			SecurityCheck.HighlightType type = check.getHighlightType(line, result);
@@ -250,6 +406,7 @@ public class SecurityHeadersExtension extends Extension {
 		}
 
 		// Special handling for Set-Cookie (per-line check)
+		String lowerLine = line.toLowerCase();
 		if (lowerLine.startsWith("set-cookie:")) {
 			return CookieCheck.hasSecureFlag(lowerLine) ? styles.green : styles.red;
 		}
@@ -272,9 +429,6 @@ public class SecurityHeadersExtension extends Extension {
 				writeCheckResult(doc, check, result, styles);
 			}
 		}
-
-		// Cookie details
-		populateCookieDetails(doc, header, styles);
 	}
 
 	private void writeCheckResult(StyledDocument doc, SecurityCheck check, SecurityCheckResult result,
@@ -286,7 +440,7 @@ public class SecurityHeadersExtension extends Extension {
 			doc.insertString(doc.getLength(), "  " + result.getDisplayValue() + "\n\n", styles.black);
 		} else if (result.isWarn()) {
 			doc.insertString(doc.getLength(), "WARNING\n", styles.yellow);
-			doc.insertString(doc.getLength(), "  " + check.getMissingMessage() + "\n", styles.red);
+			doc.insertString(doc.getLength(), "  " + check.getMissingMessage() + "\n", styles.yellow);
 			doc.insertString(doc.getLength(), "  Current: " + result.getDisplayValue() + "\n\n", styles.black);
 		} else {
 			doc.insertString(doc.getLength(), "FAIL\n", styles.red);
@@ -295,45 +449,47 @@ public class SecurityHeadersExtension extends Extension {
 		}
 	}
 
-	private void populateCookieDetails(StyledDocument doc, HttpHeader header, TextStyles styles) throws Exception {
-		List<String> setCookies = header.getAllValue("Set-Cookie");
-		if (setCookies.isEmpty())
-			return;
+	// ===== Table Operations =====
 
-		doc.insertString(doc.getLength(), "\n" + "=".repeat(40) + "\n", styles.black);
-		doc.insertString(doc.getLength(), "Cookie Details\n", styles.bold);
-		doc.insertString(doc.getLength(), "=".repeat(40) + "\n\n", styles.black);
+	private void applyFilter() {
+		List<RowFilter<DefaultTableModel, Object>> filters = new ArrayList<>();
 
-		for (String cookie : setCookies) {
-			writeCookieDetail(doc, cookie, styles);
+		// Method filter (OR between selected methods)
+		List<RowFilter<DefaultTableModel, Object>> methodFilters = new ArrayList<>();
+		for (JCheckBox cb : methodCheckBoxes) {
+			if (cb.isSelected()) {
+				methodFilters.add(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(cb.getText()) + "$", 0));
+			}
+		}
+		if (!methodFilters.isEmpty()) {
+			filters.add(RowFilter.orFilter(methodFilters));
+		}
+
+		// Status Code filter (OR between selected statuses)
+		List<RowFilter<DefaultTableModel, Object>> statusFilters = new ArrayList<>();
+		for (JCheckBox cb : statusCheckBoxes) {
+			if (cb.isSelected()) {
+				String statusPrefix = cb.getText().substring(0, 1); // "2", "3", "4", or "5"
+				statusFilters.add(RowFilter.regexFilter("^" + statusPrefix + "\\d{2}$", 2));
+			}
+		}
+		if (!statusFilters.isEmpty()) {
+			filters.add(RowFilter.orFilter(statusFilters));
+		}
+
+		// Text filter
+		String text = filterField.getText().trim();
+		if (!text.isEmpty()) {
+			filters.add(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text)));
+		}
+
+		// Apply combined filter (AND between method group, status group, and text)
+		if (filters.isEmpty()) {
+			sorter.setRowFilter(null);
+		} else {
+			sorter.setRowFilter(RowFilter.andFilter(filters));
 		}
 	}
-
-	private void writeCookieDetail(StyledDocument doc, String cookie, TextStyles styles) throws Exception {
-		String lowerCookie = cookie.toLowerCase();
-		boolean hasSecure = lowerCookie.contains("secure");
-		boolean hasHttpOnly = lowerCookie.contains("httponly");
-		boolean hasSameSite = lowerCookie.contains("samesite");
-
-		String cookieName = cookie.split("=")[0];
-		doc.insertString(doc.getLength(), cookieName + ":\n", styles.bold);
-		doc.insertString(doc.getLength(), "  " + cookie + "\n", styles.black);
-
-		doc.insertString(doc.getLength(), "  Secure: ", styles.black);
-		doc.insertString(doc.getLength(), hasSecure ? "Yes\n" : "Missing!\n", hasSecure ? styles.green : styles.red);
-
-		doc.insertString(doc.getLength(), "  HttpOnly: ", styles.black);
-		doc.insertString(doc.getLength(), hasHttpOnly ? "Yes\n" : "Missing!\n",
-				hasHttpOnly ? styles.green : styles.red);
-
-		doc.insertString(doc.getLength(), "  SameSite: ", styles.black);
-		doc.insertString(doc.getLength(), hasSameSite ? "Yes\n" : "Missing!\n",
-				hasSameSite ? styles.green : styles.red);
-
-		doc.insertString(doc.getLength(), "\n", styles.black);
-	}
-
-	// ===== Table Operations =====
 
 	private void clearTable() {
 		SwingUtilities.invokeLater(() -> {
@@ -343,6 +499,9 @@ public class SecurityHeadersExtension extends Extension {
 			resultsMap.clear();
 			detailArea.setText("");
 			headerPane.setText("");
+			filterField.setText("");
+			methodCheckBoxes.forEach(cb -> cb.setSelected(true));
+			statusCheckBoxes.forEach(cb -> cb.setSelected(true));
 		});
 	}
 
@@ -383,8 +542,13 @@ public class SecurityHeadersExtension extends Extension {
 			String method = reqHttp.getMethod();
 			String host = reqHttp.getHeader().getValue("Host").orElse(reqPacket.getServerName());
 			String path = reqHttp.getPath();
-			String url = (reqPacket.getUseSSL() ? "https://" : "http://") + host + path;
 			String statusCode = resHttp.getStatusCode();
+
+			if (method == null || host == null || path == null || statusCode == null) {
+				return;
+			}
+
+			String url = (reqPacket.getUseSSL() ? "https://" : "http://") + host + path;
 			String endpointKey = method + " " + url + " " + statusCode;
 
 			HttpHeader header = resHttp.getHeader();
@@ -398,10 +562,6 @@ public class SecurityHeadersExtension extends Extension {
 				results.put(check.getName(), result);
 			}
 
-			// Calculate overall status
-			boolean overallOk = calculateOverallStatus(results);
-			String status = overallOk ? "PASS" : "FAIL";
-
 			// Build row data
 			List<Object> rowData = new ArrayList<>();
 			rowData.add(method);
@@ -411,7 +571,6 @@ public class SecurityHeadersExtension extends Extension {
 				SecurityCheckResult result = results.get(check.getName());
 				rowData.add(result != null ? result.getDisplayValue() : "");
 			}
-			rowData.add(status);
 
 			Object[] rowArray = rowData.toArray();
 
@@ -434,21 +593,6 @@ public class SecurityHeadersExtension extends Extension {
 		}
 	}
 
-	private boolean calculateOverallStatus(Map<String, SecurityCheckResult> results) {
-		for (int i = 0; i < SECURITY_CHECKS.size(); i++) {
-			SecurityCheck check = SECURITY_CHECKS.get(i);
-			if (!check.affectsOverallStatus()) {
-				continue;
-			}
-
-			SecurityCheckResult result = results.get(check.getName());
-			if (result != null && (result.isFail() || result.isWarn())) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	// ===== Table Renderer =====
 
 	private static final int FIXED_COLUMNS = 3; // Method, URL, Code
@@ -456,6 +600,58 @@ public class SecurityHeadersExtension extends Extension {
 	private static final Color COLOR_WARN = new Color(220, 130, 0);
 	private static final Color COLOR_OK = new Color(0, 100, 0);
 	private static final Color COLOR_FAIL_BG = new Color(255, 240, 240);
+
+	/** Custom header renderer: left-aligned text with sort icon on the right */
+	class HeaderRenderer extends JPanel implements TableCellRenderer {
+		private final JLabel textLabel;
+		private final JLabel iconLabel;
+		private final TableCellRenderer defaultRenderer;
+
+		public HeaderRenderer(JTable table) {
+			this.defaultRenderer = table.getTableHeader().getDefaultRenderer();
+			setLayout(new BorderLayout());
+			setOpaque(true);
+
+			textLabel = new JLabel();
+			textLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
+			iconLabel = new JLabel();
+			iconLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+			add(textLabel, BorderLayout.CENTER);
+			add(iconLabel, BorderLayout.EAST);
+		}
+
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+				int row, int column) {
+			// Get default component to extract styling
+			Component defaultComponent = defaultRenderer.getTableCellRendererComponent(table, value, isSelected,
+					hasFocus, row, column);
+
+			// Copy background and border from default renderer
+			setBackground(defaultComponent.getBackground());
+			setForeground(defaultComponent.getForeground());
+			setFont(defaultComponent.getFont());
+			if (defaultComponent instanceof JComponent) {
+				setBorder(((JComponent) defaultComponent).getBorder());
+			}
+
+			// Set text
+			textLabel.setText(value != null ? value.toString() : "");
+			textLabel.setFont(getFont());
+			textLabel.setForeground(getForeground());
+
+			// Get sort icon from default renderer
+			iconLabel.setIcon(null);
+			if (defaultComponent instanceof JLabel) {
+				Icon icon = ((JLabel) defaultComponent).getIcon();
+				iconLabel.setIcon(icon);
+			}
+
+			return this;
+		}
+	}
 
 	class SecurityHeaderRenderer extends DefaultTableCellRenderer {
 		@Override
@@ -481,14 +677,15 @@ public class SecurityHeadersExtension extends Extension {
 		}
 
 		private void applyBackgroundColor(Component c, Map<String, SecurityCheckResult> results, boolean isSelected) {
-			if (isSelected) return;
+			if (isSelected)
+				return;
 
-			boolean hasFail = results != null && results.values().stream()
-					.anyMatch(r -> r.isFail() || r.isWarn());
+			boolean hasFail = results != null && results.values().stream().anyMatch(r -> r.isFail() || r.isWarn());
 			c.setBackground(hasFail ? COLOR_FAIL_BG : Color.WHITE);
 		}
 
-		private void applyForegroundColor(Component c, int column, Map<String, SecurityCheckResult> results, boolean isSelected) {
+		private void applyForegroundColor(Component c, int column, Map<String, SecurityCheckResult> results,
+				boolean isSelected) {
 			if (isSelected) {
 				c.setForeground(table.getSelectionForeground());
 				return;

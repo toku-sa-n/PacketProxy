@@ -27,9 +27,12 @@ public class SecurityCheckResult {
 	private final String rawValue;
 
 	public SecurityCheckResult(Status status, String displayValue, String rawValue) {
-		this.status = status;
-		this.displayValue = displayValue;
-		this.rawValue = rawValue;
+		if (status == null) {
+			throw new IllegalArgumentException("status must not be null");
+		}
+		this.status = status != null ? status : Status.FAIL;
+		this.displayValue = displayValue != null ? displayValue : this.status.name();
+		this.rawValue = rawValue != null ? rawValue : "";
 	}
 
 	public static SecurityCheckResult ok(String displayValue, String rawValue) {
