@@ -15,6 +15,7 @@
  */
 package packetproxy.extensions.securityheaders.checks;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import packetproxy.extensions.securityheaders.SecurityCheck;
@@ -59,17 +60,12 @@ public class CookieCheck implements SecurityCheck {
 		StringBuilder displayBuilder = new StringBuilder();
 
 		for (String cookie : setCookies) {
-			boolean hasSecure = cookie.toLowerCase().contains("secure");
-
-			if (!hasSecure) {
+			if (!cookie.toLowerCase().contains(" secure")) {
 				allSecure = false;
-				displayBuilder.append("[!Sec] ");
-			} else {
-				displayBuilder.append("[Sec] ");
 			}
 
 			// Truncate for display
-			String truncated = cookie.length() > 20 ? cookie.substring(0, 20) + "..." : cookie;
+			String truncated = cookie.length() > 100 ? cookie.substring(0, 100) + "..." : cookie;
 			displayBuilder.append(truncated).append("; ");
 		}
 
@@ -81,6 +77,11 @@ public class CookieCheck implements SecurityCheck {
 		} else {
 			return SecurityCheckResult.fail(displayValue, rawValue);
 		}
+	}
+
+	@Override
+	public List<String> getGreenPatterns() {
+		return Arrays.asList("set-cookie:", "secure");
 	}
 
 	@Override

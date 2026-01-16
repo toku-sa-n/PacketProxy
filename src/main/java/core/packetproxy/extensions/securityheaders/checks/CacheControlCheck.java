@@ -15,6 +15,8 @@
  */
 package packetproxy.extensions.securityheaders.checks;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import packetproxy.extensions.securityheaders.SecurityCheck;
 import packetproxy.extensions.securityheaders.SecurityCheckResult;
@@ -68,5 +70,10 @@ public class CacheControlCheck implements SecurityCheck {
 	public boolean affectsOverallStatus() {
 		// Cache-Control doesn't affect overall pass/fail
 		return false;
+	}
+
+	@Override
+	public List<String> getYellowPatterns() {
+		return Arrays.asList("cache-control:");
 	}
 }

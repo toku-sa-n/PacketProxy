@@ -15,6 +15,8 @@
  */
 package packetproxy.extensions.securityheaders.checks;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import packetproxy.extensions.securityheaders.SecurityCheck;
 import packetproxy.extensions.securityheaders.SecurityCheckResult;
@@ -60,7 +62,7 @@ public class CspCheck implements SecurityCheck {
 			return SecurityCheckResult.ok("frame-ancestors 'self'", csp);
 		}
 		if (!xfo.isEmpty()) {
-			return SecurityCheckResult.ok(xfo, "X-Frame-Options: " + xfo);
+			return SecurityCheckResult.ok("X-Frame-Options:" + xfo, "X-Frame-Options: " + xfo);
 		}
 
 		if (csp.isEmpty()) {
@@ -77,10 +79,26 @@ public class CspCheck implements SecurityCheck {
 
 	@Override
 	public HighlightType getHighlightType(String headerLine, SecurityCheckResult result) {
+		// For X-Frame-Options, use the default whole-line highlighting
 		String lowerLine = headerLine.toLowerCase();
-		if (lowerLine.startsWith("content-security-policy:") && !lowerLine.contains("frame-ancestors")) {
-			return HighlightType.NONE;
+		if (lowerLine.startsWith("x-frame-options:")) {
+			return SecurityCheck.super.getHighlightType(headerLine, result);
 		}
-		return SecurityCheck.super.getHighlightType(headerLine, result);
+		// For CSP, we use segment-based highlighting instead
+		return HighlightType.NONE;
+	}
+
+	// ===== Pattern-based Highlighting =====
+	// Simply define which patterns should be highlighted with each color.
+	// The base interface handles all the segment detection logic.
+
+	@Override
+	public List<String> getGreenPatterns() {
+		return Arrays.asList("frame-ancestors 'none'", "frame-ancestors 'self'");
+	}
+
+	@Override
+	public List<String> getRedPatterns() {
+		return Arrays.asList("content-security-policy:");
 	}
 }
