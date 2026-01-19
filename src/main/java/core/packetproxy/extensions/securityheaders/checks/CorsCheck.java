@@ -15,6 +15,8 @@
  */
 package packetproxy.extensions.securityheaders.checks;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import packetproxy.extensions.securityheaders.SecurityCheck;
 import packetproxy.extensions.securityheaders.SecurityCheckResult;
@@ -22,9 +24,17 @@ import packetproxy.http.HttpHeader;
 
 /**
  * CORS check (Access-Control-Allow-Origin). Validates that wildcard (*) is not
- * used.
+ * used and detects potential Origin reflection.
  */
 public class CorsCheck implements SecurityCheck {
+
+	/** Context key for request Origin header */
+	public static final String CONTEXT_KEY_REQUEST_ORIGIN = "requestOrigin";
+
+	private static final String MSG_WILDCARD = "Access-Control-Allow-Origin is set to '*' (wildcard)";
+	private static final String MSG_ORIGIN_REFLECTION = "Access-Control-Allow-Origin may be reflecting the Origin header (potential misconfiguration)";
+
+	private String currentMessage = MSG_WILDCARD;
 
 	@Override
 	public String getName() {
@@ -38,7 +48,7 @@ public class CorsCheck implements SecurityCheck {
 
 	@Override
 	public String getMissingMessage() {
-		return "Access-Control-Allow-Origin is set to '*' (wildcard)";
+		return currentMessage;
 	}
 
 	@Override
@@ -50,7 +60,15 @@ public class CorsCheck implements SecurityCheck {
 		}
 
 		if (cors.equals("*")) {
+			currentMessage = MSG_WILDCARD;
 			return SecurityCheckResult.fail(cors, cors);
+		}
+
+		// Check for Origin reflection
+		String requestOrigin = (String) context.get(CONTEXT_KEY_REQUEST_ORIGIN);
+		if (requestOrigin != null && !requestOrigin.isEmpty() && cors.equals(requestOrigin)) {
+			currentMessage = MSG_ORIGIN_REFLECTION;
+			return SecurityCheckResult.warn(cors, cors);
 		}
 
 		return SecurityCheckResult.ok(cors, cors);
@@ -59,5 +77,20 @@ public class CorsCheck implements SecurityCheck {
 	@Override
 	public boolean matchesHeaderLine(String headerLine) {
 		return headerLine.startsWith("access-control-allow-origin:");
+	}
+
+	@Override
+	public List<String> getGreenPatterns() {
+		return Arrays.asList("access-control-allow-origin");
+	}
+
+	@Override
+	public List<String> getYellowPatterns() {
+		return Arrays.asList("access-control-allow-origin");
+	}
+
+	@Override
+	public List<String> getRedPatterns() {
+		return Arrays.asList("access-control-allow-origin: *");
 	}
 }

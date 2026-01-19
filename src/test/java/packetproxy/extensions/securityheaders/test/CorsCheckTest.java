@@ -115,6 +115,59 @@ public class CorsCheckTest {
 		assertTrue(result.isOk());
 	}
 
+	// ===== Origin Reflection Detection =====
+
+	@Test
+	public void testCheck_OriginReflection_DevOrigin_Warn() {
+		// Even dev origins should warn if reflected
+		String origin = "https://dev.example.com";
+		context.put(CorsCheck.CONTEXT_KEY_REQUEST_ORIGIN, origin);
+		HttpHeader header = TestHttpHeader.withCors(origin);
+		SecurityCheckResult result = check.check(header, context);
+
+		assertTrue(result.isWarn());
+	}
+
+	@Test
+	public void testCheck_DifferentOrigin_Ok() {
+		// When ACAO is different from request Origin, it's OK (static config)
+		context.put(CorsCheck.CONTEXT_KEY_REQUEST_ORIGIN, "https://a.example.com");
+		HttpHeader header = TestHttpHeader.withCors("https://b.example.com");
+		SecurityCheckResult result = check.check(header, context);
+
+		assertTrue(result.isOk());
+		assertEquals("https://b.example.com", result.getDisplayValue());
+	}
+
+	@Test
+	public void testCheck_NoRequestOrigin_Ok() {
+		// When no Origin in request, can't detect reflection
+		HttpHeader header = TestHttpHeader.withCors("https://example.com");
+		SecurityCheckResult result = check.check(header, context);
+
+		assertTrue(result.isOk());
+	}
+
+	@Test
+	public void testCheck_EmptyRequestOrigin_Ok() {
+		// Empty Origin in context should not trigger reflection warning
+		context.put(CorsCheck.CONTEXT_KEY_REQUEST_ORIGIN, "");
+		HttpHeader header = TestHttpHeader.withCors("https://example.com");
+		SecurityCheckResult result = check.check(header, context);
+
+		assertTrue(result.isOk());
+	}
+
+	@Test
+	public void testCheck_WildcardStillFails_EvenWithOrigin() {
+		// Wildcard should still fail even if Origin is present
+		context.put(CorsCheck.CONTEXT_KEY_REQUEST_ORIGIN, "https://example.com");
+		HttpHeader header = TestHttpHeader.withCors("*");
+		SecurityCheckResult result = check.check(header, context);
+
+		assertTrue(result.isFail());
+	}
+
 	// ===== Edge Cases =====
 
 	@Test
