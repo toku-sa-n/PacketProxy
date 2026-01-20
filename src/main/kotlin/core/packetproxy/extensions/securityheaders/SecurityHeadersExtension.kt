@@ -39,6 +39,7 @@ import packetproxy.extensions.securityheaders.ui.SecurityHeadersDetailPanel
 import packetproxy.extensions.securityheaders.ui.SecurityHeadersTableRenderer
 import packetproxy.extensions.securityheaders.ui.SecurityHeadersToolbar
 import packetproxy.http.Http
+import packetproxy.http.HttpHeader
 import packetproxy.model.Extension
 import packetproxy.model.Packet
 import packetproxy.model.Packets
@@ -306,21 +307,15 @@ class SecurityHeadersExtension : Extension() {
         try {
           clearTable()
           val packets = Packets.getInstance().queryAll()
-          val requestMap = mutableMapOf<Long, Packet>()
+          val requestMap = buildRequestMap(packets)
 
           for (p in packets) {
-            if (p.direction == Packet.Direction.CLIENT) {
-              requestMap[p.group] = p
+            if (p.direction != Packet.Direction.SERVER) {
+              continue
             }
-          }
 
-          for (p in packets) {
-            if (p.direction == Packet.Direction.SERVER) {
-              val req = requestMap[p.group]
-              if (req != null) {
-                analyzePacket(p, req)
-              }
-            }
+            val req = requestMap[p.group] ?: continue
+            analyzePacket(p, req)
           }
         } catch (e: Exception) {
           e.printStackTrace()
@@ -329,7 +324,91 @@ class SecurityHeadersExtension : Extension() {
       .start()
   }
 
+  /**
+   * Builds a map of request packets indexed by group ID. Uses early return pattern to avoid nested
+   * conditions.
+   *
+   * @param packets All packets to process
+   * @return Map of group ID to request packet
+   */
+  private fun buildRequestMap(packets: List<Packet>): Map<Long, Packet> {
+    val requestMap = mutableMapOf<Long, Packet>()
+
+    for (p in packets) {
+      if (p.direction == Packet.Direction.CLIENT) {
+        requestMap[p.group] = p
+      }
+    }
+
+    return requestMap
+  }
+
   // ===== Packet Analysis =====
+
+  /**
+   * Calculates security check results for given HTTP headers. Pure function that performs all
+   * security checks without UI dependencies.
+   *
+   * @param resHeader Response HTTP header
+   * @param reqHeader Request HTTP header
+   * @return Map of check name to SecurityCheckResult
+   */
+  private fun calculateSecurityResults(
+    resHeader: HttpHeader,
+    reqHeader: HttpHeader,
+  ): Map<String, SecurityCheckResult> {
+    val context = mutableMapOf<String, Any>()
+    // Pass request Origin header for CORS reflection detection
+    reqHeader.getValue("Origin").ifPresent { origin -> context["requestOrigin"] = origin }
+
+    return SECURITY_CHECKS.associate { check -> check.name to check.check(resHeader, context) }
+  }
+
+  /**
+   * Updates the table UI with analysis results. Handles both new row insertion and existing row
+   * updates.
+   *
+   * @param method HTTP method
+   * @param url Full URL
+   * @param statusCode HTTP status code
+   * @param results Security check results
+   * @param resPacket Response packet for later reference
+   */
+  private fun updateTable(
+    method: String,
+    url: String,
+    statusCode: String,
+    results: Map<String, SecurityCheckResult>,
+    resPacket: Packet,
+  ) {
+    val endpointKey = "$method $url $statusCode"
+
+    // Build row data
+    val rowData = mutableListOf<Any>()
+    rowData.add(method)
+    rowData.add(url)
+    rowData.add(statusCode)
+    for (check in SECURITY_CHECKS) {
+      val result = results[check.name]
+      rowData.add(result?.displayValue ?: "")
+    }
+
+    val rowArray = rowData.toTypedArray()
+
+    SwingUtilities.invokeLater {
+      if (endpointMap.containsKey(endpointKey)) {
+        val row = endpointMap[endpointKey]!!
+        for (i in rowArray.indices) {
+          model.setValueAt(rowArray[i], row, i)
+        }
+      } else {
+        model.addRow(rowArray)
+        endpointMap[endpointKey] = model.rowCount - 1
+      }
+      packetMap[endpointKey] = resPacket
+      resultsMap[endpointKey] = results
+    }
+  }
 
   private fun analyzePacket(resPacket: Packet, reqPacket: Packet) {
     try {
@@ -346,48 +425,12 @@ class SecurityHeadersExtension : Extension() {
       }
 
       val url = (if (reqPacket.useSSL) "https://" else "http://") + host + path
-      val endpointKey = "$method $url $statusCode"
 
-      val header = resHttp.header
+      // Calculate security check results (pure function)
+      val results = calculateSecurityResults(resHttp.header, reqHttp.header)
 
-      // Run all security checks
-      val context = mutableMapOf<String, Any>()
-      // Pass request Origin header for CORS reflection detection
-      val reqHeader = reqHttp.header
-      reqHeader.getValue("Origin").ifPresent { origin -> context["requestOrigin"] = origin }
-
-      val results = linkedMapOf<String, SecurityCheckResult>()
-
-      for (check in SECURITY_CHECKS) {
-        val result = check.check(header, context)
-        results[check.name] = result
-      }
-
-      // Build row data
-      val rowData = mutableListOf<Any>()
-      rowData.add(method)
-      rowData.add(url)
-      rowData.add(statusCode)
-      for (check in SECURITY_CHECKS) {
-        val result = results[check.name]
-        rowData.add(result?.displayValue ?: "")
-      }
-
-      val rowArray = rowData.toTypedArray()
-
-      SwingUtilities.invokeLater {
-        if (endpointMap.containsKey(endpointKey)) {
-          val row = endpointMap[endpointKey]!!
-          for (i in rowArray.indices) {
-            model.setValueAt(rowArray[i], row, i)
-          }
-        } else {
-          model.addRow(rowArray)
-          endpointMap[endpointKey] = model.rowCount - 1
-        }
-        packetMap[endpointKey] = resPacket
-        resultsMap[endpointKey] = results
-      }
+      // Update UI
+      updateTable(method, url, statusCode, results, resPacket)
     } catch (e: Exception) {
       e.printStackTrace()
     }
