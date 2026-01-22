@@ -447,12 +447,6 @@ public class GUIHistory implements PropertyChangeListener {
 		JMenuItem copy = handles.getCopy();
 		JMenuItem copyAll = handles.getCopyAll();
 
-		// Warm up popup menu to avoid first-show delay (Swing cold start issue)
-		SwingUtilities.invokeLater(() -> {
-			menu.show(table, -1000, -1000);
-			menu.setVisible(false);
-		});
-
 		table.addKeyListener(new KeyAdapter() {
 
 			public void keyPressed(KeyEvent e) {
