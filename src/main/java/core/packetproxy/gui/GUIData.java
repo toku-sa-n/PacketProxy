@@ -25,6 +25,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.BoxLayout;
@@ -34,6 +36,10 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import packetproxy.controller.ResendController;
 import packetproxy.controller.SinglePacketAttackController;
@@ -406,7 +412,8 @@ public class GUIData {
 		button_panel.add(diff_panel);
 		button_panel.setLayout(new BoxLayout(button_panel, BoxLayout.LINE_AXIS));
 
-		main_panel.add(button_panel);
+		var button_scroll_pane = createButtonScrollPane(button_panel);
+		main_panel.add(button_scroll_pane);
 		return main_panel;
 	}
 
@@ -421,6 +428,24 @@ public class GUIData {
 		} else {
 			charSetCombo.setSelectedIndex(0);
 		}
+	}
+
+	static JScrollPane createButtonScrollPane(JPanel buttonPanel) {
+		var scrollBarThickness = UIManager.getInt("ScrollBar.width");
+		if (scrollBarThickness > 0) {
+			buttonPanel.setBorder(new EmptyBorder(0, 0, scrollBarThickness, 0));
+		}
+		var scrollPane = new JScrollPane(buttonPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setBorder(null);
+		scrollPane.getViewport().addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				scrollPane.revalidate();
+				scrollPane.repaint();
+			}
+		});
+		return scrollPane;
 	}
 
 	private void update() {
