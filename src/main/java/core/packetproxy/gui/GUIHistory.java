@@ -79,7 +79,6 @@ import packetproxy.model.Filters;
 import packetproxy.model.OptionTableModel;
 import packetproxy.model.Packet;
 import packetproxy.model.Packets;
-import packetproxy.model.ResenderPackets;
 
 public class GUIHistory implements PropertyChangeListener {
 
@@ -124,7 +123,7 @@ public class GUIHistory implements PropertyChangeListener {
 		owner = frame;
 		packets = Packets.getInstance(restore);
 		packets.addPropertyChangeListener(this);
-		ResenderPackets.getInstance().initTable(restore);
+		AppInitializer.getResenderPackets().initTable(restore);
 		Filters.getInstance().addPropertyChangeListener(this);
 		pairingService = new PacketPairingService();
 		gui_packet = new GUIPacket();

@@ -39,7 +39,6 @@ import packetproxy.controller.SinglePacketAttackController;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
 import packetproxy.model.ResenderPacket;
-import packetproxy.model.ResenderPackets;
 
 public class GUIResender implements PropertyChangeListener {
 
@@ -52,7 +51,7 @@ public class GUIResender implements PropertyChangeListener {
 
 				int resends_index = resends_indexes.get(index);
 				resends_indexes.remove(index);
-				ResenderPackets.getInstance().deleteResends(resends_index);
+				AppInitializer.getResenderPackets().deleteResends(resends_index);
 			} catch (Exception e) {
 
 				errWithStackTrace(e);
@@ -70,7 +69,7 @@ public class GUIResender implements PropertyChangeListener {
 		main_panel.setLayout(new BoxLayout(main_panel, BoxLayout.Y_AXIS));
 		main_panel.add(resends_tabs);
 		resends_indexes = new ArrayList<Integer>();
-		ResenderPackets.getInstance().addPropertyChangeListener(this);
+		AppInitializer.getResenderPackets().addPropertyChangeListener(this);
 		loadResenderPackets();
 	}
 
@@ -91,7 +90,7 @@ public class GUIResender implements PropertyChangeListener {
 	private void loadResenderPackets() {
 		try {
 
-			List<ResenderPacket> resender_packets = ResenderPackets.getInstance().queryAllOrdered();
+			List<ResenderPacket> resender_packets = AppInitializer.getResenderPackets().queryAllOrdered();
 			int before_resends_index = -1;
 			Resends resends = null;
 
@@ -162,7 +161,7 @@ public class GUIResender implements PropertyChangeListener {
 					int resend_index = resend_indexes.get(index);
 					resend_indexes.remove(index);
 					int resends_index = resends_indexes.get(resends_tabs.getSelectedIndex());
-					ResenderPackets.getInstance().deleteResend(resends_index, resend_index);
+					AppInitializer.getResenderPackets().deleteResend(resends_index, resend_index);
 				} catch (Exception e) {
 
 					errWithStackTrace(e);
@@ -191,10 +190,12 @@ public class GUIResender implements PropertyChangeListener {
 			resend.setOneShotPacket(send_packet, recv_packet);
 
 			int resends_index = resends_indexes.get(resends_tabs.getSelectedIndex());
-			ResenderPackets.getInstance().createResend(send_packet.getResenderPacket(resends_index, resend_index));
+			AppInitializer.getResenderPackets()
+					.createResend(send_packet.getResenderPacket(resends_index, resend_index));
 			if (recv_packet != null) {
 
-				ResenderPackets.getInstance().createResend(recv_packet.getResenderPacket(resends_index, resend_index));
+				AppInitializer.getResenderPackets()
+						.createResend(recv_packet.getResenderPacket(resends_index, resend_index));
 			}
 		}
 

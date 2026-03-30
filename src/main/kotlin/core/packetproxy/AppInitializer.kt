@@ -14,6 +14,7 @@ import packetproxy.model.Diff
 import packetproxy.model.DiffBinary
 import packetproxy.model.DiffJson
 import packetproxy.model.Packets
+import packetproxy.model.ResenderPackets
 import packetproxy.model.Resolutions
 import packetproxy.util.CharSetUtility
 import packetproxy.util.Logging
@@ -31,6 +32,7 @@ object AppInitializer {
   private var fontManager: FontManager? = null
   private var interceptController: InterceptController? = null
   private var listenPortManager: ListenPortManager? = null
+  private var resenderPackets: ResenderPackets? = null
   private var resolutions: Resolutions? = null
   private var vulCheckerManager: VulCheckerManager? = null
 
@@ -199,6 +201,10 @@ object AppInitializer {
   @JvmStatic
   fun getListenPortManager(): ListenPortManager =
     listenPortManager ?: ListenPortManager().also { listenPortManager = it }
+
+  @JvmStatic
+  fun getResenderPackets(): ResenderPackets =
+    resenderPackets ?: ResenderPackets().also { resenderPackets = it }
 
   @JvmStatic
   fun getResolutions(): Resolutions = resolutions ?: Resolutions().also { resolutions = it }

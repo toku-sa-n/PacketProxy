@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import packetproxy.AppInitializer;
 
 public class Database {
 
@@ -135,7 +136,7 @@ public class Database {
 		createTable(Modification.class, Modifications.getInstance());
 		createTable(SSLPassThrough.class, SSLPassThroughs.getInstance());
 		createTable(CharSet.class, CharSets.getInstance());
-		createTable(ResenderPacket.class, ResenderPackets.getInstance());
+		createTable(ResenderPacket.class, AppInitializer.getResenderPackets());
 		firePropertyChange(DatabaseMessage.RECREATE);
 
 		migrateTableWithoutHistory(src, dst);

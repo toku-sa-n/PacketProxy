@@ -14,22 +14,12 @@ import javax.swing.JOptionPane;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class ResenderPackets implements PropertyChangeListener {
-
-	private static ResenderPackets instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static ResenderPackets getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new ResenderPackets();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<ResenderPacket, Integer> dao;
 
-	private ResenderPackets() throws Exception {
+	public ResenderPackets() throws Exception {
 		database = Database.getInstance();
 		dao = database.createTable(ResenderPacket.class, this);
 	}
