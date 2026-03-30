@@ -75,6 +75,10 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 		return this.tabbedpane;
 	}
 
+	public GUIVulCheckHelper getGuiVulCheckHelper() {
+		return gui_vulcheckhelper;
+	}
+
 	private String getPaneString(Panes num) {
 		switch (num) {
 			case HISTORY :
@@ -115,7 +119,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 			gui_resender = GUIResender.getInstance();
 			gui_bulksender = GUIBulkSender.getInstance();
 			gui_extensions = GUIExtensions.getInstance();
-			gui_vulcheckhelper = GUIVulCheckHelper.getInstance();
+			gui_vulcheckhelper = new GUIVulCheckHelper();
 			gui_log = GUILog.getInstance();
 
 			tabbedpane = new JTabbedPane();

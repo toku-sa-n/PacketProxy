@@ -31,17 +31,7 @@ public class GUIVulCheckHelper {
 	private List<GUIVulCheckTab> list;
 	private int previousTabIndex;
 
-	private static GUIVulCheckHelper instance;
-
-	public static GUIVulCheckHelper getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new GUIVulCheckHelper();
-		}
-		return instance;
-	}
-
-	private GUIVulCheckHelper() {
+	public GUIVulCheckHelper() {
 		main_panel = new JPanel();
 		vulCheckTab = new CloseButtonTabbedPane();
 		previousTabIndex = vulCheckTab.getSelectedIndex();
