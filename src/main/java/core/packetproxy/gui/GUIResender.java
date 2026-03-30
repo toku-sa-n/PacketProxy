@@ -33,7 +33,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import packetproxy.controller.ResendController;
+import packetproxy.controller.InterceptController;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.controller.SinglePacketAttackController;
 import packetproxy.model.OneShotPacket;
@@ -236,7 +236,7 @@ public class GUIResender implements PropertyChangeListener {
 					try {
 
 						OneShotPacket sendPacket = send_panel.getOneShotPacket();
-						ResendController.getInstance().resend(new ResendWorker(sendPacket, 1) {
+						InterceptController.getInstance().getResendController().resend(new ResendWorker(sendPacket, 1) {
 
 							@Override
 							protected void process(List<OneShotPacket> packets) {
@@ -267,7 +267,8 @@ public class GUIResender implements PropertyChangeListener {
 				public void actionPerformed(ActionEvent e) {
 					try {
 
-						ResendController.getInstance().resend(send_panel.getOneShotPacket(), 20);
+						InterceptController.getInstance().getResendController().resend(send_panel.getOneShotPacket(),
+								20);
 						clearLog();
 						showLog("結果は履歴ウィンドウで確認してください！");
 						rollback();

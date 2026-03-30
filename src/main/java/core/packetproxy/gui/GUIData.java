@@ -45,7 +45,7 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.Scrollable;
 import javax.swing.border.LineBorder;
-import packetproxy.controller.ResendController;
+import packetproxy.controller.InterceptController;
 import packetproxy.controller.SinglePacketAttackController;
 import packetproxy.http.Http;
 import packetproxy.model.Diff;
@@ -276,7 +276,7 @@ public class GUIData {
 
 						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 						Packet packet = Packets.getInstance().query(id);
-						ResendController.getInstance().resend(packet.getOneShotPacket(data));
+						InterceptController.getInstance().getResendController().resend(packet.getOneShotPacket(data));
 						packet.setResend();
 						Packets.getInstance().update(packet);
 						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
@@ -302,7 +302,8 @@ public class GUIData {
 
 						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 						Packet packet = Packets.getInstance().query(id);
-						ResendController.getInstance().resend(packet.getOneShotPacket(data), 20);
+						InterceptController.getInstance().getResendController().resend(packet.getOneShotPacket(data),
+								20);
 						packet.setResend();
 						Packets.getInstance().update(packet);
 						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);

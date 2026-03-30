@@ -61,6 +61,7 @@ import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.data.Range;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import packetproxy.controller.InterceptController;
 import packetproxy.controller.ResendController;
 import packetproxy.extensions.randomness.test.RandomnessTestManager;
 import packetproxy.gui.GUIBulkSenderData;
@@ -186,41 +187,44 @@ public class RandomnessExtension extends Extension {
 						future = future.thenApplyAsync(arg -> {
 							try {
 
-								ResendController.getInstance().resend(new ResendController.ResendWorker(sendPacket, 1) {
+								InterceptController.getInstance().getResendController()
+										.resend(new ResendController.ResendWorker(sendPacket, 1) {
 
-									@Override
-									protected void process(List<OneShotPacket> oneshots) {
-										int id = requestProgressBar.getValue();
-										for (OneShotPacket oneshot : oneshots) {
+											@Override
+											protected void process(List<OneShotPacket> oneshots) {
+												int id = requestProgressBar.getValue();
+												for (OneShotPacket oneshot : oneshots) {
 
-											recvPackets.put(id++, oneshot);
-										}
-										requestProgressBar.setValue(requestProgressBar.getValue() + oneshots.size());
-										if (recvPackets.size() == count) {
+													recvPackets.put(id++, oneshot);
+												}
+												requestProgressBar
+														.setValue(requestProgressBar.getValue() + oneshots.size());
+												if (recvPackets.size() == count) {
 
-											log("all packet received");
-											for (Map.Entry<Integer, OneShotPacket> entry : recvPackets.entrySet()) {
+													log("all packet received");
+													for (Map.Entry<Integer, OneShotPacket> entry : recvPackets
+															.entrySet()) {
 
-												OneShotPacket packet = entry.getValue();
-												// TODO: auto encoding
-												String content = toUTF8(packet.getData());
-												Matcher match = pat.matcher(content);
-												if (match.find()) {
+														OneShotPacket packet = entry.getValue();
+														// TODO: auto encoding
+														String content = toUTF8(packet.getData());
+														Matcher match = pat.matcher(content);
+														if (match.find()) {
 
-													String token = "";
-													for (int idx = 1; idx <= match.groupCount(); idx++) {
+															String token = "";
+															for (int idx = 1; idx <= match.groupCount(); idx++) {
 
-														token += match.group(idx);
+																token += match.group(idx);
+															}
+															tokens.add(token);
+														}
 													}
-													tokens.add(token);
+													JOptionPane.showMessageDialog(owner,
+															String.format("get %d tokens", tokens.size()),
+															"Packet collection finished", JOptionPane.PLAIN_MESSAGE);
 												}
 											}
-											JOptionPane.showMessageDialog(owner,
-													String.format("get %d tokens", tokens.size()),
-													"Packet collection finished", JOptionPane.PLAIN_MESSAGE);
-										}
-									}
-								});
+										});
 							} catch (Exception e) {
 
 								errWithStackTrace(e);

@@ -34,7 +34,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import org.apache.commons.io.FileUtils;
-import packetproxy.controller.ResendController;
+import packetproxy.controller.InterceptController;
 import packetproxy.http.HeaderField;
 import packetproxy.http.Http;
 import packetproxy.model.Packet;
@@ -100,7 +100,7 @@ public class GUIHistoryContextMenuFactory {
 				if (packet == null) {
 					return;
 				}
-				ResendController.getInstance().resend(packet.getOneShotPacket(data));
+				InterceptController.getInstance().getResendController().resend(packet.getOneShotPacket(data));
 				packet.setResend();
 				packets.update(packet);
 				context.updateRequestOne(context.getSelectedPacketId());

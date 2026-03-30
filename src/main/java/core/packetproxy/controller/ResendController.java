@@ -37,17 +37,7 @@ import packetproxy.model.Packet;
 
 public class ResendController {
 
-	private static ResendController instance;
-
-	public static ResendController getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new ResendController();
-		}
-		return instance;
-	}
-
-	private ResendController() throws Exception {
+	public ResendController() throws Exception {
 	}
 
 	/** レスポンスを受け取って処理する必要がないとき用 */

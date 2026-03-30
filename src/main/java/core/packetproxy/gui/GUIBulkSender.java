@@ -30,7 +30,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import packetproxy.controller.ResendController;
+import packetproxy.controller.InterceptController;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
@@ -106,7 +106,7 @@ public class GUIBulkSender {
 
 					if (regexParams.size() == 0) { // parallel
 
-						ResendController.getInstance().resend(new ResendWorker(oneshots) {
+						InterceptController.getInstance().getResendController().resend(new ResendWorker(oneshots) {
 
 							@Override
 							protected void process(List<OneShotPacket> oneshots) {
@@ -147,34 +147,36 @@ public class GUIBulkSender {
 											}
 										}
 										final OneShotPacket sendOneshot = oneshot;
-										ResendController.getInstance().resend(new ResendWorker(sendOneshot, 1) {
+										InterceptController.getInstance().getResendController()
+												.resend(new ResendWorker(sendOneshot, 1) {
 
-											@Override
-											protected void process(List<OneShotPacket> oneshots) {
-												try {
+													@Override
+													protected void process(List<OneShotPacket> oneshots) {
+														try {
 
-													for (OneShotPacket oneshot : oneshots) {
+															for (OneShotPacket oneshot : oneshots) {
 
-														recvPackets.put(oneshot.getId(), oneshot);
-														recvTable.add(oneshot);
-														Packet packet = Packets.getInstance()
-																.query(sendPacketIds.get(oneshot.getId()));
-														packet.setResend();
-														Packets.getInstance().update(packet);
-														// pickup regex value
-														regexParams.stream().filter(v -> {
-															return v.getPacketId() == idx;
-														}).forEach(v -> {
-															regexParams.get(regexParams.indexOf(v)).setValue(oneshot);
-														});
-														latch.countDown();
+																recvPackets.put(oneshot.getId(), oneshot);
+																recvTable.add(oneshot);
+																Packet packet = Packets.getInstance()
+																		.query(sendPacketIds.get(oneshot.getId()));
+																packet.setResend();
+																Packets.getInstance().update(packet);
+																// pickup regex value
+																regexParams.stream().filter(v -> {
+																	return v.getPacketId() == idx;
+																}).forEach(v -> {
+																	regexParams.get(regexParams.indexOf(v))
+																			.setValue(oneshot);
+																});
+																latch.countDown();
+															}
+														} catch (Exception e) {
+
+															errWithStackTrace(e);
+														}
 													}
-												} catch (Exception e) {
-
-													errWithStackTrace(e);
-												}
-											}
-										});
+												});
 										latch.await();
 									}
 								} catch (Exception e) {

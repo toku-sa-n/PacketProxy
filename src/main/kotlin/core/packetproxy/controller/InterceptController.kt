@@ -38,7 +38,7 @@ import packetproxy.model.Server
 class InterceptController
 private constructor(
   private val interceptModel: InterceptModel = InterceptModel(),
-  private val resendController: ResendController = ResendController.getInstance(),
+  private val resendController: ResendController = ResendController(),
 ) {
   companion object {
     @Volatile private var instance: InterceptController? = null
@@ -61,6 +61,8 @@ private constructor(
   private var pendingDeferred: CompletableDeferred<InterceptDecision>? = null
 
   fun getInterceptModel(): InterceptModel = interceptModel
+
+  fun getResendController(): ResendController = resendController
 
   fun enableInterceptMode() {
     interceptModel.enableInterceptMode()

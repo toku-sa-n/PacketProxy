@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.swing.*;
 import packetproxy.common.FontManager;
 import packetproxy.common.Range;
-import packetproxy.controller.ResendController;
+import packetproxy.controller.InterceptController;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.model.OneShotPacket;
 import packetproxy.vulchecker.VulCheckPattern;
@@ -169,7 +169,7 @@ public class GUIVulCheckTab {
 					}
 					packet.setData(data);
 					Date sentTime = new Date();
-					ResendController.getInstance().resend(new ResendWorker(packet, 1) {
+					InterceptController.getInstance().getResendController().resend(new ResendWorker(packet, 1) {
 
 						@Override
 						protected void process(List<OneShotPacket> oneshots) {
@@ -213,26 +213,27 @@ public class GUIVulCheckTab {
 								Date sentTime = new Date();
 								OneShotPacket packet = pattern.getPacket();
 								packet.setData(manager.extractMacro(pattern.getName(), packet.getData()));
-								ResendController.getInstance().resend(new ResendWorker(packet, 1) {
+								InterceptController.getInstance().getResendController()
+										.resend(new ResendWorker(packet, 1) {
 
-									@Override
-									protected void process(List<OneShotPacket> oneshots) {
-										Date recvTime = new Date();
-										try {
+											@Override
+											protected void process(List<OneShotPacket> oneshots) {
+												Date recvTime = new Date();
+												try {
 
-											for (OneShotPacket res : oneshots) {
+													for (OneShotPacket res : oneshots) {
 
-												recvPackets.put(recvPacketId, res);
-												recvTable.add(recvPacketId, pattern.getName(), res,
-														recvTime.getTime() - sentTime.getTime());
-												recvPacketId++;
+														recvPackets.put(recvPacketId, res);
+														recvTable.add(recvPacketId, pattern.getName(), res,
+																recvTime.getTime() - sentTime.getTime());
+														recvPacketId++;
+													}
+												} catch (Exception e) {
+
+													errWithStackTrace(e);
+												}
 											}
-										} catch (Exception e) {
-
-											errWithStackTrace(e);
-										}
-									}
-								});
+										});
 							} catch (Exception e1) {
 
 								errWithStackTrace(e1);
