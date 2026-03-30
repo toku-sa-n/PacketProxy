@@ -44,9 +44,9 @@ import javax.swing.RowFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.CharSet;
-import packetproxy.util.CharSetUtility;
 
 public class GUIOptionCharSetDialog extends JDialog {
 
@@ -62,7 +62,7 @@ public class GUIOptionCharSetDialog extends JDialog {
 	private List<CharSet> charsets = new ArrayList<CharSet>();
 
 	private Object[][] getTableDataWithAvailableCharsets() {
-		List<String> availableCharSetList = CharSetUtility.getInstance().getAvailableCharSetList();
+		List<String> availableCharSetList = AppInitializer.getCharSetUtility().getAvailableCharSetList();
 		Object a[][] = new Object[Charset.availableCharsets().size() - availableCharSetList.size()][2];
 		int i = 0;
 		for (String k : Charset.availableCharsets().keySet()) {

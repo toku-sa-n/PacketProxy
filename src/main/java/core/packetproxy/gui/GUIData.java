@@ -70,7 +70,7 @@ public class GUIData {
 	private JButton diff_orig_button;
 	private JButton diff_button;
 	private JButton stop_diff_button;
-	private CharSetUtility charSetUtility = CharSetUtility.getInstance();
+	private CharSetUtility charSetUtility = AppInitializer.getCharSetUtility();
 	boolean isDiff = false;
 	boolean isOrigColorExists = false;
 	int origIndex;
@@ -484,7 +484,7 @@ public class GUIData {
 			}
 		});
 
-		charSetCombo.setSelectedItem(charSetUtility.getInstance().getCharSetForGUIComponent());
+		charSetCombo.setSelectedItem(charSetUtility.getCharSetForGUIComponent());
 	}
 
 	public void updateCharSetCombo() {
@@ -492,7 +492,7 @@ public class GUIData {
 		for (String charSetName : charSetUtility.getAvailableCharSetList()) {
 			charSetCombo.addItem(charSetName);
 		}
-		String charSetName = CharSetUtility.getInstance().getCharSetForGUIComponent();
+		String charSetName = AppInitializer.getCharSetUtility().getCharSetForGUIComponent();
 		if (charSetUtility.getAvailableCharSetList().contains(charSetName)) {
 			charSetCombo.setSelectedItem(charSetName);
 		} else {

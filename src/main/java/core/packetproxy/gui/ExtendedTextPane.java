@@ -32,6 +32,7 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.undo.UndoManager;
 import org.apache.commons.lang3.ArrayUtils;
+import packetproxy.AppInitializer;
 import packetproxy.common.BinaryBuffer;
 import packetproxy.common.FontManager;
 import packetproxy.common.Range;
@@ -194,7 +195,7 @@ abstract class ExtendedTextPane extends JTextPane {
 
 			show_all = false;
 			byte[] head = ArrayUtils.subarray(data, 0, DEFAULT_SHOW_SIZE);
-			CharSetUtility charSetUtility = CharSetUtility.getInstance();
+			CharSetUtility charSetUtility = AppInitializer.getCharSetUtility();
 			if (charSetUtility.isAuto()) {
 
 				charSetUtility.setGuessedCharSet(getData());

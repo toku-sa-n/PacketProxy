@@ -52,7 +52,7 @@ public class RawTextPane extends ExtendedTextPane {
 	private CharSetUtility charSetUtility;
 
 	public RawTextPane() throws Exception {
-		charSetUtility = CharSetUtility.getInstance();
+		charSetUtility = AppInitializer.getCharSetUtility();
 
 		int mask_key = ActionEvent.META_MASK;
 		if (!PacketProxyUtility.isMac()) {

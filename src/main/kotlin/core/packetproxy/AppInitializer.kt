@@ -10,12 +10,14 @@ import packetproxy.common.Utils
 import packetproxy.controller.InterceptController
 import packetproxy.model.Database
 import packetproxy.model.Packets
+import packetproxy.util.CharSetUtility
 import packetproxy.util.Logging
 
 object AppInitializer {
   private var isGulp = false // Gulp modeか否か
   private var settingsPath = "" // 設定用JSONのファイルpath
   private var certCacheManager: CertCacheManager? = null
+  private var charSetUtility: CharSetUtility? = null
   private var duplexManager: DuplexManager? = null
   private var encoderManager: EncoderManager? = null
   private var interceptController: InterceptController? = null
@@ -162,6 +164,10 @@ object AppInitializer {
   fun clearCertCache() {
     certCacheManager?.clearCacheEntries()
   }
+
+  @JvmStatic
+  fun getCharSetUtility(): CharSetUtility =
+    charSetUtility ?: CharSetUtility().also { charSetUtility = it }
 
   @JvmStatic
   fun getDuplexManager(): DuplexManager =

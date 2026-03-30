@@ -3,6 +3,7 @@ package packetproxy.model;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import java.nio.charset.Charset;
+import packetproxy.AppInitializer;
 import packetproxy.util.CharSetUtility;
 
 public class RegexParam {
@@ -41,7 +42,7 @@ public class RegexParam {
 
 	public void setValue(OneShotPacket oneshot) {
 		byte[] dataByte = oneshot.getData();
-		CharSetUtility charSetUtility = CharSetUtility.getInstance();
+		CharSetUtility charSetUtility = AppInitializer.getCharSetUtility();
 		String encoding = charSetUtility.guessCharSetFromHttpHeader(dataByte);
 		if (encoding == "") {
 
@@ -62,7 +63,7 @@ public class RegexParam {
 
 	public OneShotPacket applyToPacket(OneShotPacket oneshot) throws Exception {
 		byte[] data = oneshot.getData();
-		CharSetUtility charSetUtility = CharSetUtility.getInstance();
+		CharSetUtility charSetUtility = AppInitializer.getCharSetUtility();
 		String encoding = charSetUtility.guessCharSetFromHttpHeader(data);
 		if (encoding == "") {
 

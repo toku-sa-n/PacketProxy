@@ -29,22 +29,16 @@ import packetproxy.model.CharSets;
 
 public class CharSetUtility {
 
-	private static CharSetUtility instance = null;
 	private static String DEFAULT_CHARSET = "UTF-8";
 	private static String AUTO_CHARSET = "AUTO";
 	private String charSet = DEFAULT_CHARSET;
 	private boolean isAuto = false;
 
-	public static CharSetUtility getInstance() {
-		if (null == instance) {
+	public CharSetUtility() {
+		if (!getAvailableCharSetList().contains(DEFAULT_CHARSET)) {
 
-			instance = new CharSetUtility();
-			if (!instance.getAvailableCharSetList().contains(DEFAULT_CHARSET)) {
-
-				instance.charSet = instance.getAvailableCharSetList().get(0);
-			}
+			charSet = getAvailableCharSetList().get(0);
 		}
-		return instance;
 	}
 
 	private Object[] parseDocWithToken(String data, String[] startToken, String[] endToken, int cur, boolean allowEOL) {

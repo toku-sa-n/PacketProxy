@@ -131,7 +131,7 @@ public class GUIHistoryContextMenuFactory {
 					try {
 						Packet packet = gui_packet.getPacket();
 						Http http = Http.create(packet.getDecodedData());
-						CharSetUtility charsetutil = CharSetUtility.getInstance();
+						CharSetUtility charsetutil = AppInitializer.getCharSetUtility();
 						if (charsetutil.isAuto()) {
 							charsetutil.setGuessedCharSet(http.getBody());
 						}
