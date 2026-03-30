@@ -50,17 +50,7 @@ public class DiffBinary extends DiffBase {
 	// }
 	// }
 
-	private DiffBinary() {
-	}
-
-	static DiffBinary instance = null;
-
-	public static DiffBinary getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new DiffBinary();
-		}
-		return instance;
+	public DiffBinary() {
 	}
 
 	public static void diffPerCharacter(DiffSet set, DiffEventListener original_event, DiffEventListener target_event)

@@ -19,6 +19,7 @@ import static packetproxy.util.Logging.errWithStackTrace;
 
 import java.awt.*;
 import javax.swing.*;
+import packetproxy.AppInitializer;
 import packetproxy.common.Binary;
 import packetproxy.model.DiffBinary;
 import packetproxy.model.DiffEventAdapter;
@@ -49,10 +50,10 @@ public class GUIDiffBinary extends GUIDiffBase {
 		DiffSet ds;
 		if (jc.isSelected()) {
 
-			ds = sortUniq(DiffBinary.getInstance().getSet());
+			ds = sortUniq(AppInitializer.getDiffBinary().getSet());
 		} else {
 
-			ds = DiffBinary.getInstance().getSet();
+			ds = AppInitializer.getDiffBinary().getSet();
 		}
 		byte[] original = ds.getOriginal();
 		byte[] target = ds.getTarget();
