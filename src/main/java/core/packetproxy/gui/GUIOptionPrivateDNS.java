@@ -82,7 +82,7 @@ public class GUIOptionPrivateDNS implements PropertyChangeListener {
 	private JPanel base;
 
 	public GUIOptionPrivateDNS() throws Exception {
-		privateDNS = PrivateDNS.getInstance();
+		privateDNS = new PrivateDNS();
 
 		checkBox = createCheckBox();
 		textField = createAddressField();

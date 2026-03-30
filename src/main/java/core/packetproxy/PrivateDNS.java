@@ -45,7 +45,6 @@ public class PrivateDNS {
 	static int BUFSIZE = 1024;
 	static int DEFAULT_PORT = 53;
 	static String dnsServer = "8.8.8.8";
-	private static PrivateDNS instance;
 	private ConfigBoolean state;
 	private PrivateDNSImp dns;
 	private Servers servers;
@@ -130,15 +129,11 @@ public class PrivateDNS {
 		}
 	}
 
-	public static PrivateDNS getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new PrivateDNS();
-		}
-		return instance;
+	public static boolean isEnabled() throws Exception {
+		return new ConfigBoolean("PrivateDNS").getState();
 	}
 
-	private PrivateDNS() throws Exception {
+	public PrivateDNS() throws Exception {
 		lock = new Object();
 		state = new ConfigBoolean("PrivateDNS");
 		servers = Servers.getInstance();

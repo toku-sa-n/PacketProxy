@@ -54,7 +54,7 @@ public class PrivateDNSClient {
 
 	// システムのDNS設定が、PacketProxyのDNSサーバが設定されているときtrueになる
 	private static boolean dnsLoopDetectedInDnsServer() throws Exception {
-		if (!PrivateDNS.getInstance().isRunning()) {
+		if (!PrivateDNS.isEnabled()) {
 
 			return false;
 		}
