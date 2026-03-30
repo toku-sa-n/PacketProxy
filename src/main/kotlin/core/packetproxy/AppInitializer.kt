@@ -14,6 +14,7 @@ import packetproxy.util.Logging
 object AppInitializer {
   private var isGulp = false // Gulp modeか否か
   private var settingsPath = "" // 設定用JSONのファイルpath
+  private var certCacheManager: CertCacheManager? = null
   private var encoderManager: EncoderManager? = null
   private var listenPortManager: ListenPortManager? = null
   private var vulCheckerManager: VulCheckerManager? = null
@@ -148,6 +149,15 @@ object AppInitializer {
   private fun initListenPortManager() {
     getListenPortManager()
     Logging.log("ListenPortManagerを初期化しました")
+  }
+
+  @JvmStatic
+  fun getCertCacheManager(): CertCacheManager =
+    certCacheManager ?: CertCacheManager().also { certCacheManager = it }
+
+  @JvmStatic
+  fun clearCertCache() {
+    certCacheManager?.clearCacheEntries()
   }
 
   @JvmStatic
