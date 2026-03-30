@@ -113,7 +113,7 @@ public class RawTextPane extends ExtendedTextPane {
 				try {
 
 					Range range = Range.of(getSelectionStart(), getSelectionEnd());
-					Packet packet = GUIPacket.getInstance().getPacket();
+					Packet packet = GUIMain.getInstance().getGuiHistory().getGuiPacket().getPacket();
 					GUIMain.getInstance().getGuiVulCheckHelper().addVulCheck(vulChecker,
 							packet.getOneShotPacket(getData()), range);
 				} catch (Exception e) {

@@ -21,21 +21,12 @@ import packetproxy.model.Packet;
 
 public class GUIPacket {
 
-	private static GUIPacket instance;
 	private JFrame owner;
 	private GUIRequestResponsePanel request_response_panel;
 	private Packet showing_packet;
 	private Packet showing_response_packet;
 
-	public static GUIPacket getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new GUIPacket();
-		}
-		return instance;
-	}
-
-	private GUIPacket() throws Exception {
+	public GUIPacket() throws Exception {
 		this.owner = GUIHistory.getOwner();
 		this.showing_packet = null;
 		this.showing_response_packet = null;

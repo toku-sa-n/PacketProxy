@@ -147,7 +147,7 @@ public class GUIHistory implements PropertyChangeListener {
 		ResenderPackets.getInstance().initTable(restore);
 		Filters.getInstance().addPropertyChangeListener(this);
 		pairingService = new PacketPairingService();
-		gui_packet = GUIPacket.getInstance();
+		gui_packet = new GUIPacket();
 		colorManager = new TableCustomColorManager();
 		preferredPosition = 0;
 		update_packet_ids = new HashSet<Integer>();
@@ -157,6 +157,10 @@ public class GUIHistory implements PropertyChangeListener {
 
 	public DefaultTableModel getTableModel() {
 		return this.tableModel;
+	}
+
+	public GUIPacket getGuiPacket() {
+		return gui_packet;
 	}
 
 	public void filter() {

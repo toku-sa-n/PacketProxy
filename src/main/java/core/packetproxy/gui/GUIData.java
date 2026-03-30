@@ -464,7 +464,7 @@ public class GUIData {
 				charSetUtility.setCharSet((String) charSetCombo.getSelectedItem());
 				try {
 
-					GUIPacket.getInstance().update();
+					GUIMain.getInstance().getGuiHistory().getGuiPacket().update();
 				} catch (Exception e2) {
 					errWithStackTrace(e2);
 				}
@@ -581,7 +581,7 @@ public class GUIData {
 		if (choice == JOptionPane.CLOSED_OPTION)
 			return null;
 		if (choice == 0)
-			return GUIPacket.getInstance().getResponsePacket().getReceivedData();
+			return GUIMain.getInstance().getGuiHistory().getGuiPacket().getResponsePacket().getReceivedData();
 		return tabs.getRaw().getData();
 	}
 }

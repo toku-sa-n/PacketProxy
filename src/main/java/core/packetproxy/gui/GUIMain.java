@@ -91,6 +91,10 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 		return gui_extensions;
 	}
 
+	public GUIHistory getGuiHistory() {
+		return gui_history;
+	}
+
 	private String getPaneString(Panes num) {
 		switch (num) {
 			case HISTORY :

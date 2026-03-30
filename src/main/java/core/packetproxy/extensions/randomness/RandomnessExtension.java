@@ -64,7 +64,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import packetproxy.controller.ResendController;
 import packetproxy.extensions.randomness.test.RandomnessTestManager;
 import packetproxy.gui.GUIBulkSenderData;
-import packetproxy.gui.GUIPacket;
+import packetproxy.gui.GUIMain;
 import packetproxy.model.Extension;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
@@ -461,7 +461,7 @@ public class RandomnessExtension extends Extension {
 			public void actionPerformed(ActionEvent actionEvent) {
 				try {
 
-					Packet packet = GUIPacket.getInstance().getPacket();
+					Packet packet = GUIMain.getInstance().getGuiHistory().getGuiPacket().getPacket();
 					add(packet.getOneShotFromModifiedData(), packet.getId());
 				} catch (Exception e) {
 
