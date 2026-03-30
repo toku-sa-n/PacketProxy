@@ -200,7 +200,7 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data == null || data.length == 0)
 						return;
-					int id = GUIHistory.getInstance().getSelectedPacketId();
+					int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 					Packet packet = Packets.getInstance().query(id);
 					Http http = Http.create(data);
 					String copyData = http.getMethod() + "\t" + http.getURL(packet.getServerPort(), packet.getUseSSL())
@@ -248,7 +248,7 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data == null || data.length == 0)
 						return;
-					int id = GUIHistory.getInstance().getSelectedPacketId();
+					int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 					Packet packet = Packets.getInstance().query(id);
 					Http http = Http.create(data);
 					String url = http.getURL(packet.getServerPort(), packet.getUseSSL());
@@ -274,12 +274,12 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
 
-						int id = GUIHistory.getInstance().getSelectedPacketId();
+						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 						Packet packet = Packets.getInstance().query(id);
 						ResendController.getInstance().resend(packet.getOneShotPacket(data));
 						packet.setResend();
 						Packets.getInstance().update(packet);
-						GUIHistory.getInstance().updateRequestOne(id);
+						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 
@@ -300,12 +300,12 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
 
-						int id = GUIHistory.getInstance().getSelectedPacketId();
+						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 						Packet packet = Packets.getInstance().query(id);
 						ResendController.getInstance().resend(packet.getOneShotPacket(data), 20);
 						packet.setResend();
 						Packets.getInstance().update(packet);
-						GUIHistory.getInstance().updateRequestOne(id);
+						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 
@@ -322,12 +322,12 @@ public class GUIData {
 				try {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
-						int id = GUIHistory.getInstance().getSelectedPacketId();
+						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 						Packet packet = Packets.getInstance().query(id);
 						new SinglePacketAttackController(packet.getOneShotPacket(data)).attack(20);
 						packet.setResend();
 						Packets.getInstance().update(packet);
-						GUIHistory.getInstance().updateRequestOne(id);
+						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 					errWithStackTrace(e1);
@@ -346,12 +346,12 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
 
-						int id = GUIHistory.getInstance().getSelectedPacketId();
+						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
 						Packet packet = Packets.getInstance().query(id);
 						packet.setResend();
 						Packets.getInstance().update(packet);
 						GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotPacket(data));
-						GUIHistory.getInstance().updateRequestOne(id);
+						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 
@@ -376,10 +376,11 @@ public class GUIData {
 						if (isOrigColorExists) {
 
 							isOrigColorExists = false;
-							GUIHistory.getInstance().addCustomColoring(origIndex, new Color(0xb0, 0xb0, 0xb0)); // Gray
+							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex,
+									new Color(0xb0, 0xb0, 0xb0)); // Gray
 						} else {
 
-							GUIHistory.getInstance().addCustomColoring(origIndex, Color.WHITE);
+							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex, Color.WHITE);
 						}
 						isDiff = false;
 					}
@@ -432,23 +433,23 @@ public class GUIData {
 						if (isOrigColorExists) {
 
 							isOrigColorExists = false;
-							GUIHistory.getInstance().addCustomColoring(origIndex, origColor);
+							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex, origColor);
 						} else {
 
-							GUIHistory.getInstance().addCustomColoring(origIndex, Color.WHITE);
+							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex, Color.WHITE);
 						}
 					}
 					isDiff = true;
 					Diff.getInstance().markAsOriginal(data);
 					DiffBinary.getInstance().markAsOriginal(data);
 					DiffJson.getInstance().markAsOriginal(data);
-					if (GUIHistory.getInstance().containsColor()) {
+					if (GUIMain.getInstance().getGuiHistory().containsColor()) {
 
-						origColor = GUIHistory.getInstance().getColor();
+						origColor = GUIMain.getInstance().getGuiHistory().getColor();
 						isOrigColorExists = true;
 					}
-					origIndex = GUIHistory.getInstance().getSelectedIndex();
-					GUIHistory.getInstance().addCustomColoringToCursorPos(new Color(0xb0, 0xb0, 0xb0)); // Gray
+					origIndex = GUIMain.getInstance().getGuiHistory().getSelectedIndex();
+					GUIMain.getInstance().getGuiHistory().addCustomColoringToCursorPos(new Color(0xb0, 0xb0, 0xb0)); // Gray
 					log("Diff: original text was saved!");
 				} catch (Exception e1) {
 
@@ -550,7 +551,7 @@ public class GUIData {
 	 * ユーザに選択させる。単一パケット行の場合はRequestデータをそのまま返す。 ダイアログでキャンセルされた場合は null を返す。
 	 */
 	private byte[] resolveDataForCopyBody() throws Exception {
-		if (!GUIHistory.getInstance().isSelectedRowMerged()) {
+		if (!GUIMain.getInstance().getGuiHistory().isSelectedRowMerged()) {
 			return bodyDataProvider != null ? bodyDataProvider.get() : getActiveData();
 		}
 		// macOS の JOptionPane はボタンを右から左に描画するため、
@@ -570,7 +571,7 @@ public class GUIData {
 	 * ユーザに選択させる。単一パケット行の場合はRequestデータをそのまま返す。 ダイアログでキャンセルされた場合は null を返す。
 	 */
 	private byte[] resolveDataForDiff() throws Exception {
-		if (!GUIHistory.getInstance().isSelectedRowMerged()) {
+		if (!GUIMain.getInstance().getGuiHistory().isSelectedRowMerged()) {
 			return tabs.getRaw().getData();
 		}
 		// macOS の JOptionPane はボタンを右から左に描画するため、

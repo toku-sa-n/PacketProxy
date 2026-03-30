@@ -187,7 +187,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 	private GUIHistory initProjectAndHistory() throws Exception {
 		var chooser = new GUIProjectChooserDialog(this);
 		var restore = chooser.chooseAndSetup();
-		return restore ? GUIHistory.restoreLastInstance(this) : GUIHistory.getInstance(this);
+		return new GUIHistory(this, restore);
 	}
 
 	private void setLookandFeel() throws Exception {

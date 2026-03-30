@@ -89,31 +89,10 @@ public class GUIHistory implements PropertyChangeListener {
 	private static final int COL_MODIFIED = 10;
 	private static final int COL_CONTENT_TYPE = 11;
 
-	private static GUIHistory instance;
 	private static JFrame owner;
 
 	public static JFrame getOwner() {
 		return owner;
-	}
-
-	public static GUIHistory getInstance(JFrame frame) throws Exception {
-		owner = frame;
-		GUIHistory history = getInstance();
-		return history;
-	}
-
-	public static GUIHistory getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new GUIHistory(false);
-		}
-		return instance;
-	}
-
-	public static GUIHistory restoreLastInstance(JFrame frame) throws Exception {
-		owner = frame;
-		instance = new GUIHistory(true);
-		return instance;
 	}
 
 	private String[] columnNames = {"#", "Client Request", "Server Response", "Length", "Client IP", "Client Port",
@@ -141,7 +120,8 @@ public class GUIHistory implements PropertyChangeListener {
 	private Color packetColorBrown = new Color(0xd2, 0x69, 0x1e);
 	private Color packetColorYellow = new Color(0xff, 0xd7, 0x00);
 
-	private GUIHistory(boolean restore) throws Exception {
+	public GUIHistory(JFrame frame, boolean restore) throws Exception {
+		owner = frame;
 		packets = Packets.getInstance(restore);
 		packets.addPropertyChangeListener(this);
 		ResenderPackets.getInstance().initTable(restore);
