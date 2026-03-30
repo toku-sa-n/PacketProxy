@@ -22,7 +22,7 @@ import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import java.net.InetSocketAddress;
 import java.util.Date;
-import packetproxy.EncoderManager;
+import packetproxy.AppInitializer;
 import packetproxy.encode.Encoder;
 
 @DatabaseTable(tableName = "packets")
@@ -279,21 +279,21 @@ public class Packet implements PacketInfo {
 	}
 
 	public String getSummarizedRequest() throws Exception {
-		Encoder encoder = EncoderManager.getInstance().createInstance(encoder_name, null);
+		Encoder encoder = AppInitializer.getEncoderManager().createInstance(encoder_name, null);
 		if (encoder == null) {
 
 			err("エンコードモジュール: %s が見当たらないので、Sample とみなしました", encoder_name);
-			encoder = EncoderManager.getInstance().createInstance("Sample", null);
+			encoder = AppInitializer.getEncoderManager().createInstance("Sample", null);
 		}
 		return (getDirection() == Direction.CLIENT) ? encoder.getSummarizedRequest(this) : "";
 	}
 
 	public String getSummarizedResponse() throws Exception {
-		Encoder encoder = EncoderManager.getInstance().createInstance(encoder_name, null);
+		Encoder encoder = AppInitializer.getEncoderManager().createInstance(encoder_name, null);
 		if (encoder == null) {
 
 			err("エンコードモジュール: %s が見当たらないので、Sample とみなしました", encoder_name);
-			encoder = EncoderManager.getInstance().createInstance("Sample", null);
+			encoder = AppInitializer.getEncoderManager().createInstance("Sample", null);
 		}
 		return (getDirection() == Direction.SERVER) ? encoder.getSummarizedResponse(this) : "";
 	}

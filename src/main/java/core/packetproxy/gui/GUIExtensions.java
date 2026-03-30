@@ -35,7 +35,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import packetproxy.EncoderManager;
+import packetproxy.AppInitializer;
 import packetproxy.encode.Encoder;
 import packetproxy.model.Extension;
 import packetproxy.model.Extensions;
@@ -145,7 +145,7 @@ public class GUIExtensions {
 
 					continue;
 				}
-				EncoderManager.getInstance().addEncoder(name, encodeClass);
+				AppInitializer.getEncoderManager().addEncoder(name, encodeClass);
 			}
 		}
 
@@ -177,7 +177,7 @@ public class GUIExtensions {
 
 					continue;
 				}
-				EncoderManager.getInstance().removeEncoder(name);
+				AppInitializer.getEncoderManager().removeEncoder(name);
 			}
 		}
 

@@ -33,7 +33,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import packetproxy.EncoderManager;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.Server;
 
@@ -128,7 +128,7 @@ public class GUIOptionServerDialog extends JDialog {
 	}
 
 	private JComponent createModuleSetting() throws Exception {
-		String[] names = EncoderManager.getInstance().getEncoderNameList();
+		String[] names = AppInitializer.getEncoderManager().getEncoderNameList();
 		for (int i = 0; i < names.length; i++) {
 
 			combo.addItem(names[i]);
@@ -208,7 +208,7 @@ public class GUIOptionServerDialog extends JDialog {
 		panel.add(createIpSetting());
 		panel.add(createPortSetting());
 		panel.add(createUseSSLSetting());
-		if (EncoderManager.getInstance().hasDuplicateModules()) {
+		if (AppInitializer.getEncoderManager().hasDuplicateModules()) {
 
 			panel.add(createModuleAlert());
 		}

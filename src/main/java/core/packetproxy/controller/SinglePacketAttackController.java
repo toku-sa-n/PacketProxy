@@ -23,9 +23,9 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import packetproxy.AppInitializer;
 import packetproxy.DuplexFactory;
 import packetproxy.DuplexSync;
-import packetproxy.EncoderManager;
 import packetproxy.http2.frames.DataFrame;
 import packetproxy.http2.frames.Frame;
 import packetproxy.http2.frames.FrameUtils;
@@ -162,7 +162,7 @@ public class SinglePacketAttackController {
 	}
 
 	private static List<Frame> convertPacketToFrames(final OneShotPacket packet) throws Exception {
-		final var encoder = EncoderManager.getInstance().createInstance(packet.getEncoder(), packet.getAlpn());
+		final var encoder = AppInitializer.getEncoderManager().createInstance(packet.getEncoder(), packet.getAlpn());
 
 		if (encoder == null) {
 			throw new IllegalStateException("Could not create encoder for target packet");

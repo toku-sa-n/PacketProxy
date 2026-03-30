@@ -23,11 +23,11 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.swing.SwingWorker;
+import packetproxy.AppInitializer;
 import packetproxy.Duplex;
 import packetproxy.DuplexAsync;
 import packetproxy.DuplexFactory;
 import packetproxy.DuplexManager;
-import packetproxy.EncoderManager;
 import packetproxy.common.I18nString;
 import packetproxy.encode.EncodeHTTPBase;
 import packetproxy.encode.Encoder;
@@ -182,7 +182,8 @@ public class ResendController {
 			public DataToBeSend(OneShotPacket oneshot, Consumer<OneShotPacket> onReceived) throws Exception {
 				this.oneshot = oneshot;
 				this.onReceived = onReceived;
-				Encoder encoder = EncoderManager.getInstance().createInstance(oneshot.getEncoder(), oneshot.getAlpn());
+				Encoder encoder = AppInitializer.getEncoderManager().createInstance(oneshot.getEncoder(),
+						oneshot.getAlpn());
 				if (encoder.useNewConnectionForResend() == false && encoder.useNewEncoderForResend() == false) {
 
 					this.isDirectSend = true;
@@ -250,7 +251,7 @@ public class ResendController {
 					byte[] data = duplex.receive();
 
 					/* 100 Continue 対策 */
-					Encoder encoder = EncoderManager.getInstance().createInstance(oneshot.getEncoder(),
+					Encoder encoder = AppInitializer.getEncoderManager().createInstance(oneshot.getEncoder(),
 							oneshot.getAlpn());
 					if (encoder instanceof EncodeHTTPBase) {
 

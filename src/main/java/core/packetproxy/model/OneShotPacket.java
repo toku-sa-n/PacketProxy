@@ -19,7 +19,7 @@ import static packetproxy.util.Logging.err;
 
 import java.net.InetSocketAddress;
 import org.apache.commons.lang3.ArrayUtils;
-import packetproxy.EncoderManager;
+import packetproxy.AppInitializer;
 import packetproxy.common.Range;
 import packetproxy.common.Utils;
 import packetproxy.encode.Encoder;
@@ -186,21 +186,21 @@ public class OneShotPacket implements PacketInfo, Cloneable {
 	}
 
 	public String getSummarizedRequest() throws Exception {
-		Encoder encoder = EncoderManager.getInstance().createInstance(encoder_name, alpn);
+		Encoder encoder = AppInitializer.getEncoderManager().createInstance(encoder_name, alpn);
 		if (encoder == null) {
 
 			err("エンコードモジュール: %s が見当たらないので、Sample とみなしました", encoder_name);
-			encoder = EncoderManager.getInstance().createInstance("Sample", alpn);
+			encoder = AppInitializer.getEncoderManager().createInstance("Sample", alpn);
 		}
 		return (getDirection() == Direction.CLIENT) ? encoder.getSummarizedRequest(toPacket()) : "";
 	}
 
 	public String getSummarizedResponse() throws Exception {
-		Encoder encoder = EncoderManager.getInstance().createInstance(encoder_name, alpn);
+		Encoder encoder = AppInitializer.getEncoderManager().createInstance(encoder_name, alpn);
 		if (encoder == null) {
 
 			err("エンコードモジュール: %s が見当たらないので、Sample とみなしました", encoder_name);
-			encoder = EncoderManager.getInstance().createInstance("Sample", alpn);
+			encoder = AppInitializer.getEncoderManager().createInstance("Sample", alpn);
 		}
 		return (getDirection() == Direction.SERVER) ? encoder.getSummarizedResponse(toPacket()) : "";
 	}

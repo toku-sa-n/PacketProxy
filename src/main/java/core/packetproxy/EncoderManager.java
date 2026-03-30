@@ -40,17 +40,7 @@ import org.apache.commons.io.FilenameUtils;
 import packetproxy.encode.Encoder;
 
 public class EncoderManager {
-
-	private static EncoderManager instance;
 	private boolean isDuplicated = false;
-
-	public static EncoderManager getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new EncoderManager();
-		}
-		return instance;
-	}
 
 	private static final String DEFAULT_PLUGIN_DIR = System.getProperty("user.home") + "/.packetproxy/plugins";
 	private HashMap<String, Class<Encoder>> module_list;
@@ -59,7 +49,7 @@ public class EncoderManager {
 
 	// リフレクションを利用して自動でモジュールをロードするようになったので、クラス名を追記する必要はありません。
 
-	private EncoderManager() {
+	public EncoderManager() {
 		try {
 
 			loadModules();
