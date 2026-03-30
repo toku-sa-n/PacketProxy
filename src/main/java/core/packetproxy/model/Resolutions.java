@@ -65,7 +65,7 @@ public class Resolutions implements PropertyChangeListener {
 
 	public void setResolutionsBySystem() throws Exception {
 		List<String> fileLines;
-		if (PacketProxyUtility.getInstance().isWindows()) {
+		if (PacketProxyUtility.isWindows()) {
 
 			fileLines = Files.readAllLines(Paths.get("C:\\Windows\\System32\\drivers\\etc\\hosts"));
 		} else {

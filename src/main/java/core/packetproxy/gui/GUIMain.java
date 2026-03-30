@@ -171,7 +171,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 	}
 
 	private void setLookandFeel() throws Exception {
-		if (PacketProxyUtility.getInstance().isUnix()) {
+		if (PacketProxyUtility.isUnix()) {
 
 			System.setProperty("awt.useSystemAAFontSettings", "on");
 			System.setProperty("swing.aatext", "true");
@@ -207,7 +207,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 
 	/** Windowsにアイコンを表示する */
 	private void setIconForWindows() throws Exception {
-		if (!PacketProxyUtility.getInstance().isWindows()) {
+		if (!PacketProxyUtility.isWindows()) {
 
 			return;
 		}
@@ -217,7 +217,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 
 	/** MacのDock上でにPacketProxyアイコンを表示する */
 	private void addDockIconForMac() throws Exception {
-		if (!PacketProxyUtility.getInstance().isMac()) {
+		if (!PacketProxyUtility.isMac()) {
 
 			return;
 		}
@@ -227,7 +227,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 
 	/** JTextPane上でCommand+Cとかでコピペをできるようにする */
 	private void addShortcutForMac() {
-		if (!PacketProxyUtility.getInstance().isMac()) {
+		if (!PacketProxyUtility.isMac()) {
 
 			return;
 		}
@@ -270,7 +270,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 	}
 
 	private void addShortcutForWindows() {
-		if (PacketProxyUtility.getInstance().isMac()) {
+		if (PacketProxyUtility.isMac()) {
 
 			return;
 		}
@@ -300,7 +300,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 
 	/** Macでフルスクリーン表示できるようにする */
 	private void enableFullScreenForMac(Window window) throws Exception {
-		if (!PacketProxyUtility.getInstance().isMac()) {
+		if (!PacketProxyUtility.isMac()) {
 
 			return;
 		}

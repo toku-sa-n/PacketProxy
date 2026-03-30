@@ -148,7 +148,7 @@ public class GUIMenu extends JMenuBar {
 		});
 
 		String cmd_key = "⌘ ^ ";
-		if (!PacketProxyUtility.getInstance().isMac()) {
+		if (!PacketProxyUtility.isMac()) {
 
 			cmd_key = "Ctrl + ";
 		}

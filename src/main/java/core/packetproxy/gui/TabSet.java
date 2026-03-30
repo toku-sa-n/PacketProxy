@@ -178,7 +178,7 @@ public class TabSet {
 					binary_panel.setData(data);
 					break;
 				case 2 :
-					json_panel.setData(PacketProxyUtility.getInstance().prettyFormatJSONInRawData(data));
+					json_panel.setData(PacketProxyUtility.prettyFormatJSONInRawData(data));
 					break;
 				default :
 					err("Not effective index, though this returns raw_panel data in such case.");

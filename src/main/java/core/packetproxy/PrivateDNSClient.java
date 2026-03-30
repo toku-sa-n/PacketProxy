@@ -38,7 +38,6 @@ import packetproxy.util.PacketProxyUtility;
 public class PrivateDNSClient {
 
 	private static Resolutions resolutions;
-	private static PacketProxyUtility util;
 
 	private static boolean isLoopbackAddress(String addr) {
 		return addr.equals("127.0.0.1") || addr.equals("0:0:0:0:0:0:0:1") || addr.equals("::1");
@@ -76,7 +75,7 @@ public class PrivateDNSClient {
 	}
 
 	public static boolean dnsLoopDetectedInEtcHosts(String serverName) throws Exception {
-		if (PacketProxyUtility.getInstance().isMac() || PacketProxyUtility.getInstance().isUnix()) {
+		if (PacketProxyUtility.isMac() || PacketProxyUtility.isUnix()) {
 
 			return dnsLoopingFromHostsLines(Files.readAllLines(Paths.get("/etc/hosts")), serverName);
 		} else {
@@ -105,7 +104,6 @@ public class PrivateDNSClient {
 
 	public static InetAddress getByName(String serverName) throws Exception {
 		resolutions = resolutions.getInstance();
-		util = PacketProxyUtility.getInstance();
 		List<Resolution> resolution_list = resolutions.queryEnabled();
 		for (Resolution resolution : resolution_list) {
 

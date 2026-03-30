@@ -27,31 +27,23 @@ import org.json.JSONObject;
 public class PacketProxyUtility {
 
 	private static String OS = System.getProperty("os.name").toLowerCase();
-	private static PacketProxyUtility instance = null;
 
-	public static PacketProxyUtility getInstance() {
-		if (instance == null) {
-			instance = new PacketProxyUtility();
-		}
-		return instance;
+	private PacketProxyUtility() {
 	}
 
-	public PacketProxyUtility() {
-	}
-
-	public byte[] prettyFormatJSONInRawData(byte[] data) {
+	public static byte[] prettyFormatJSONInRawData(byte[] data) {
 		try {
 			String str = new String(data, "UTF-8");
 			Stream<String> stream = Arrays.asList(str.split("\r\n\r\n")).stream();
-			return stream.map(this::prettyFormatJSON).filter(j -> !j.isEmpty()).collect(Collectors.joining("\n"))
-					.getBytes();
+			return stream.map(PacketProxyUtility::prettyFormatJSON).filter(j -> !j.isEmpty())
+					.collect(Collectors.joining("\n")).getBytes();
 		} catch (UnsupportedEncodingException e) {
 			errWithStackTrace(e);
 			return "convert failed".getBytes();
 		}
 	}
 
-	public String prettyFormatJSON(String data) {
+	public static String prettyFormatJSON(String data) {
 		try {
 			JSONObject tmp_obj;
 			boolean begin_with_left_square_bracket = false; // This variable is true, if json string begin with [
@@ -78,19 +70,19 @@ public class PacketProxyUtility {
 		}
 	}
 
-	public boolean isWindows() {
+	public static boolean isWindows() {
 		return (OS.indexOf("win") >= 0);
 	}
 
-	public boolean isMac() {
+	public static boolean isMac() {
 		return (OS.indexOf("mac") >= 0);
 	}
 
-	public boolean isUnix() {
+	public static boolean isUnix() {
 		return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0);
 	}
 
-	public boolean isBinaryData(byte[] data, int defaultSize) {
+	public static boolean isBinaryData(byte[] data, int defaultSize) {
 		int cnt = 0;
 		for (int i = 0; i < Math.min(data.length, defaultSize); i++) {
 			if (data[i] == 0x09 || data[i] == 0x0a || data[i] == 0x0d) {

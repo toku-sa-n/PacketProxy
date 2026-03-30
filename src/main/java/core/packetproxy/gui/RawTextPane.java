@@ -54,7 +54,7 @@ public class RawTextPane extends ExtendedTextPane {
 		charSetUtility = CharSetUtility.getInstance();
 
 		int mask_key = ActionEvent.META_MASK;
-		if (!PacketProxyUtility.getInstance().isMac()) {
+		if (!PacketProxyUtility.isMac()) {
 
 			mask_key = ActionEvent.CTRL_MASK;
 		}
@@ -64,7 +64,7 @@ public class RawTextPane extends ExtendedTextPane {
 
 			public void keyPressed(KeyEvent e) {
 				int mask_key = KeyEvent.META_MASK;
-				if (!PacketProxyUtility.getInstance().isMac()) {
+				if (!PacketProxyUtility.isMac()) {
 
 					mask_key = KeyEvent.CTRL_MASK;
 				}

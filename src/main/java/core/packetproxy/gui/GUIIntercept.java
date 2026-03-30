@@ -80,7 +80,7 @@ public class GUIIntercept implements PropertyChangeListener {
 			}
 		});
 		String cmd_key = "⌘";
-		if (!PacketProxyUtility.getInstance().isMac()) {
+		if (!PacketProxyUtility.isMac()) {
 
 			cmd_key = "Ctrl+";
 		}
@@ -185,7 +185,7 @@ public class GUIIntercept implements PropertyChangeListener {
 
 		int condition = JComponent.WHEN_IN_FOCUSED_WINDOW;
 		int mask_key = KeyEvent.META_MASK;
-		if (!PacketProxyUtility.getInstance().isMac()) {
+		if (!PacketProxyUtility.isMac()) {
 
 			mask_key = KeyEvent.CTRL_MASK;
 		}

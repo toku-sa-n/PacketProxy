@@ -65,8 +65,8 @@ public class GUIDiffJson extends GUIDiffBase {
 
 			ds = DiffJson.getInstance().getSet();
 		}
-		byte[] origData = PacketProxyUtility.getInstance().prettyFormatJSONInRawData(ds.getOriginal());
-		byte[] targetData = PacketProxyUtility.getInstance().prettyFormatJSONInRawData(ds.getTarget());
+		byte[] origData = PacketProxyUtility.prettyFormatJSONInRawData(ds.getOriginal());
+		byte[] targetData = PacketProxyUtility.prettyFormatJSONInRawData(ds.getTarget());
 		textOrig.setData(origData, false);
 		textTarg.setData(targetData, false);
 

@@ -114,7 +114,7 @@ public class NativeFileChooser {
 	 * @return APPROVE_OPTION if a file was selected, CANCEL_OPTION otherwise
 	 */
 	public int showOpenDialog(Component parent) {
-		if (PacketProxyUtility.getInstance().isMac()) {
+		if (PacketProxyUtility.isMac()) {
 			return showNativeOpenDialog(parent);
 		} else {
 			return showSwingOpenDialog(parent);
@@ -129,7 +129,7 @@ public class NativeFileChooser {
 	 * @return APPROVE_OPTION if a file was selected, CANCEL_OPTION otherwise
 	 */
 	public int showSaveDialog(Component parent) {
-		if (PacketProxyUtility.getInstance().isMac()) {
+		if (PacketProxyUtility.isMac()) {
 			return showNativeSaveDialog(parent);
 		} else {
 			return showSwingSaveDialog(parent);

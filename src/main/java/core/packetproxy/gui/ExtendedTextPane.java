@@ -188,8 +188,8 @@ abstract class ExtendedTextPane extends JTextPane {
 		setFont(FontManager.getInstance().getFont());
 		this.data = data;
 		// データが多いと遅いので長いデータをトリミングする
-		if (trimming && (data.length > TEXT_TRIMMING_SIZE
-				|| (PacketProxyUtility.getInstance().isBinaryData(data, BINARY_TRIMMING_SIZE)
+		if (trimming
+				&& (data.length > TEXT_TRIMMING_SIZE || (PacketProxyUtility.isBinaryData(data, BINARY_TRIMMING_SIZE)
 						&& data.length > BINARY_TRIMMING_SIZE))) {
 
 			show_all = false;
