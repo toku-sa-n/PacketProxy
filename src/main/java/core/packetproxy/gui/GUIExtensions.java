@@ -42,7 +42,6 @@ import packetproxy.model.Extensions;
 
 public class GUIExtensions {
 
-	private static GUIExtensions instance;
 	private static JFrame owner;
 	private JPanel main_panel;
 	private JTabbedPane tabs;
@@ -54,15 +53,7 @@ public class GUIExtensions {
 		return owner;
 	}
 
-	public static GUIExtensions getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new GUIExtensions();
-		}
-		return instance;
-	}
-
-	private GUIExtensions() throws Exception {
+	public GUIExtensions() throws Exception {
 		extensionMenus = new HashMap<>();
 
 		main_panel = new JPanel();

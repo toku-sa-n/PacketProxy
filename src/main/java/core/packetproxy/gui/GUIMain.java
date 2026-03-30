@@ -87,6 +87,10 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 		return gui_resender;
 	}
 
+	public GUIExtensions getGuiExtensions() {
+		return gui_extensions;
+	}
+
 	private String getPaneString(Panes num) {
 		switch (num) {
 			case HISTORY :
@@ -126,7 +130,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 			gui_intercept = new GUIIntercept(this);
 			gui_resender = new GUIResender();
 			gui_bulksender = new GUIBulkSender();
-			gui_extensions = GUIExtensions.getInstance();
+			gui_extensions = new GUIExtensions();
 			gui_vulcheckhelper = new GUIVulCheckHelper();
 			gui_log = GUILog.getInstance();
 
