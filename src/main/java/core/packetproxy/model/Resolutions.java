@@ -29,23 +29,13 @@ import packetproxy.model.Database.DatabaseMessage;
 import packetproxy.util.PacketProxyUtility;
 
 public class Resolutions implements PropertyChangeListener {
-
-	private static Resolutions instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
-
-	public static Resolutions getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Resolutions();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<Resolution, Integer> dao;
 	private DaoQueryCache<Resolution> cache;
 
-	private Resolutions() throws Exception {
+	public Resolutions() throws Exception {
 		database = Database.getInstance();
 		dao = database.createTable(Resolution.class, this);
 		cache = new DaoQueryCache();

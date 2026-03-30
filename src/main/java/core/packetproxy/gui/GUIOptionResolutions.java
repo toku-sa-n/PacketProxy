@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.AppInitializer;
 import packetproxy.model.Resolution;
 import packetproxy.model.Resolutions;
 
@@ -35,7 +36,7 @@ public class GUIOptionResolutions extends GUIOptionComponentBase<Resolution> {
 
 	public GUIOptionResolutions(JFrame owner) throws Exception {
 		super(owner);
-		this.resolutions = Resolutions.getInstance();
+		this.resolutions = AppInitializer.getResolutions();
 		this.resolutions.addPropertyChangeListener(this);
 		this.table_ext_list = new ArrayList<Resolution>();
 		String[] menu = {"IP Addr", "Host", "Override", "Comment"};

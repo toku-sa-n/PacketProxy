@@ -103,7 +103,7 @@ public class PrivateDNSClient {
 	}
 
 	public static InetAddress getByName(String serverName) throws Exception {
-		resolutions = resolutions.getInstance();
+		resolutions = AppInitializer.getResolutions();
 		List<Resolution> resolution_list = resolutions.queryEnabled();
 		for (Resolution resolution : resolution_list) {
 
