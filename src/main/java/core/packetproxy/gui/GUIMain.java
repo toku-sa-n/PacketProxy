@@ -34,6 +34,7 @@ import packetproxy.AppInitializer;
 import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
 import packetproxy.model.InterceptModel;
+import packetproxy.util.Logging;
 import packetproxy.util.PacketProxyUtility;
 
 public class GUIMain extends JFrame implements PropertyChangeListener {
@@ -137,7 +138,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 			gui_bulksender = new GUIBulkSender();
 			gui_extensions = new GUIExtensions();
 			gui_vulcheckhelper = new GUIVulCheckHelper();
-			gui_log = GUILog.getInstance();
+			gui_log = Logging.getGuiLog();
 
 			tabbedpane = new JTabbedPane();
 

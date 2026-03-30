@@ -37,7 +37,7 @@ import packetproxy.gui.GUILog
 
 object Logging {
   private val dtf: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
-  private val guiLog: GUILog = GUILog.getInstance()
+  private val guiLog: GUILog = GUILog()
   private val logger = LoggerFactory.getLogger("")
   private var isGulp: Boolean = false
 
@@ -54,6 +54,8 @@ object Logging {
     if (!logFile.exists()) throw IOException("not found: ${logFile.absolutePath}")
     logFile
   }
+
+  @JvmStatic fun getGuiLog(): GUILog = guiLog
 
   @JvmStatic
   fun init(isGulp: Boolean) {
