@@ -12,6 +12,7 @@ import packetproxy.controller.InterceptController
 import packetproxy.model.Database
 import packetproxy.model.Diff
 import packetproxy.model.DiffBinary
+import packetproxy.model.DiffJson
 import packetproxy.model.Packets
 import packetproxy.util.CharSetUtility
 import packetproxy.util.Logging
@@ -23,6 +24,7 @@ object AppInitializer {
   private var charSetUtility: CharSetUtility? = null
   private var diff: Diff? = null
   private var diffBinary: DiffBinary? = null
+  private var diffJson: DiffJson? = null
   private var duplexManager: DuplexManager? = null
   private var encoderManager: EncoderManager? = null
   private var fontManager: FontManager? = null
@@ -178,6 +180,8 @@ object AppInitializer {
   @JvmStatic fun getDiff(): Diff = diff ?: Diff().also { diff = it }
 
   @JvmStatic fun getDiffBinary(): DiffBinary = diffBinary ?: DiffBinary().also { diffBinary = it }
+
+  @JvmStatic fun getDiffJson(): DiffJson = diffJson ?: DiffJson().also { diffJson = it }
 
   @JvmStatic
   fun getFontManager(): FontManager = fontManager ?: FontManager().also { fontManager = it }

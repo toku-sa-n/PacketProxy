@@ -20,6 +20,7 @@ import static packetproxy.util.Logging.errWithStackTrace;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
+import packetproxy.AppInitializer;
 import packetproxy.model.DiffEventAdapter;
 import packetproxy.model.DiffJson;
 import packetproxy.model.DiffSet;
@@ -60,10 +61,10 @@ public class GUIDiffJson extends GUIDiffBase {
 		DiffSet ds;
 		if (jc.isSelected()) {
 
-			ds = sortUniq(DiffJson.getInstance().getSet());
+			ds = sortUniq(AppInitializer.getDiffJson().getSet());
 		} else {
 
-			ds = DiffJson.getInstance().getSet();
+			ds = AppInitializer.getDiffJson().getSet();
 		}
 		byte[] origData = PacketProxyUtility.prettyFormatJSONInRawData(ds.getOriginal());
 		byte[] targetData = PacketProxyUtility.prettyFormatJSONInRawData(ds.getTarget());

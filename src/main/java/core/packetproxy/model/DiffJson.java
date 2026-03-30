@@ -50,17 +50,7 @@ public class DiffJson extends DiffBase {
 	// }
 	// }
 
-	private DiffJson() {
-	}
-
-	static DiffJson instance = null;
-
-	public static DiffJson getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new DiffJson();
-		}
-		return instance;
+	public DiffJson() {
 	}
 
 	public static void diffPerCharacter(DiffSet set, DiffEventListener original_event, DiffEventListener target_event)

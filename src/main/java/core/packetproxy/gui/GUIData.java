@@ -48,7 +48,6 @@ import javax.swing.border.LineBorder;
 import packetproxy.AppInitializer;
 import packetproxy.controller.SinglePacketAttackController;
 import packetproxy.http.Http;
-import packetproxy.model.DiffJson;
 import packetproxy.model.Packet;
 import packetproxy.model.Packets;
 import packetproxy.util.CharSetUtility;
@@ -372,7 +371,7 @@ public class GUIData {
 
 						AppInitializer.getDiff().clearAsOriginal();
 						AppInitializer.getDiffBinary().clearAsOriginal();
-						DiffJson.getInstance().clearAsOriginal();
+						AppInitializer.getDiffJson().clearAsOriginal();
 						if (isOrigColorExists) {
 
 							isOrigColorExists = false;
@@ -404,7 +403,7 @@ public class GUIData {
 						return;
 					AppInitializer.getDiff().markAsTarget(data);
 					AppInitializer.getDiffBinary().markAsTarget(data);
-					DiffJson.getInstance().markAsTarget(data);
+					AppInitializer.getDiffJson().markAsTarget(data);
 					GUIDiffDialogParent dlg = new GUIDiffDialogParent(owner);
 					dlg.showDialog();
 				} catch (Exception e1) {
@@ -429,7 +428,7 @@ public class GUIData {
 
 						AppInitializer.getDiff().clearAsOriginal();
 						AppInitializer.getDiffBinary().clearAsOriginal();
-						DiffJson.getInstance().clearAsOriginal();
+						AppInitializer.getDiffJson().clearAsOriginal();
 						if (isOrigColorExists) {
 
 							isOrigColorExists = false;
@@ -442,7 +441,7 @@ public class GUIData {
 					isDiff = true;
 					AppInitializer.getDiff().markAsOriginal(data);
 					AppInitializer.getDiffBinary().markAsOriginal(data);
-					DiffJson.getInstance().markAsOriginal(data);
+					AppInitializer.getDiffJson().markAsOriginal(data);
 					if (GUIMain.getInstance().getGuiHistory().containsColor()) {
 
 						origColor = GUIMain.getInstance().getGuiHistory().getColor();
