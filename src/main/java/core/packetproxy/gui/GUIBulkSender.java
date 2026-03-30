@@ -39,26 +39,17 @@ import packetproxy.model.RegexParam;
 
 public class GUIBulkSender {
 
-	private static GUIBulkSender instance;
 	private static JFrame owner;
 
 	public static JFrame getOwner() {
 		return owner;
 	}
 
-	public static GUIBulkSender getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new GUIBulkSender();
-		}
-		return instance;
-	}
-
 	private Map<Integer, OneShotPacket> sendPackets;
 	private Map<Integer, Integer> sendPacketIds;
 	private Map<Integer, OneShotPacket> recvPackets;
 
-	private GUIBulkSender() throws Exception {
+	public GUIBulkSender() throws Exception {
 		sendPackets = new HashMap<Integer, OneShotPacket>();
 		sendPacketIds = new HashMap<Integer, Integer>();
 		recvPackets = new HashMap<Integer, OneShotPacket>();

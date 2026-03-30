@@ -165,9 +165,9 @@ public class GUIHistoryContextMenuFactory {
 			try {
 				Packet packet = gui_packet.getPacket();
 				if (packet.getModifiedData().length == 0) {
-					GUIBulkSender.getInstance().add(packet.getOneShotFromDecodedData(), packet.getId());
+					GUIMain.getInstance().getGuiBulkSender().add(packet.getOneShotFromDecodedData(), packet.getId());
 				} else {
-					GUIBulkSender.getInstance().add(packet.getOneShotFromModifiedData(), packet.getId());
+					GUIMain.getInstance().getGuiBulkSender().add(packet.getOneShotFromModifiedData(), packet.getId());
 				}
 			} catch (Exception ex) {
 				errWithStackTrace(ex);
