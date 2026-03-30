@@ -25,7 +25,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import javax.swing.JOptionPane;
-import packetproxy.ListenPortManager;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class SSLPassThroughs implements PropertyChangeListener {
@@ -181,7 +181,7 @@ public class SSLPassThroughs implements PropertyChangeListener {
 		try {
 
 			// 設定を反映するためにポートを再起動する
-			ListenPortManager.getInstance().rebootIfHTTPProxyRunning();
+			AppInitializer.getListenPortManager().rebootIfHTTPProxyRunning();
 		} catch (Exception e) {
 
 			errWithStackTrace(e);

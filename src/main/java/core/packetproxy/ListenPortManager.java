@@ -37,17 +37,7 @@ public class ListenPortManager implements PropertyChangeListener {
 	private ListenPorts listenPorts;
 	private Map<String, Listen> listen_map;
 
-	private static ListenPortManager instance;
-
-	public static ListenPortManager getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new ListenPortManager();
-		}
-		return instance;
-	}
-
-	private ListenPortManager() throws Exception {
+	public ListenPortManager() throws Exception {
 		listen_map = new HashMap<String, Listen>();
 		listenPorts = ListenPorts.getInstance();
 		listenPorts.addPropertyChangeListener(this);
