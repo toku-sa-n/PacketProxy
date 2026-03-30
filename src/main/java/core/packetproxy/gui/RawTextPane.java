@@ -36,6 +36,7 @@ import javax.swing.JPopupMenu;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import packetproxy.AppInitializer;
 import packetproxy.VulCheckerManager;
 import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
@@ -105,9 +106,10 @@ public class RawTextPane extends ExtendedTextPane {
 		vulCheckers.setEnabled(false);
 		menu.add(vulCheckers);
 
-		for (String vulCheckerName : VulCheckerManager.getInstance().getAllVulCheckers().keySet()) {
+		VulCheckerManager vulCheckerManager = AppInitializer.getVulCheckerManager();
+		for (String vulCheckerName : vulCheckerManager.getAllVulCheckers().keySet()) {
 
-			VulChecker vulChecker = VulCheckerManager.getInstance().createInstance(vulCheckerName);
+			VulChecker vulChecker = vulCheckerManager.createInstance(vulCheckerName);
 			JMenuItem vulCheckerItem = new JMenuItem(vulChecker.getName());
 			vulCheckerItem.addActionListener(actionEvent -> {
 				try {

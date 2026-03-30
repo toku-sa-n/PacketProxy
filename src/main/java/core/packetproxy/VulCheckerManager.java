@@ -30,20 +30,10 @@ import packetproxy.vulchecker.VulChecker;
 
 public class VulCheckerManager {
 
-	private static VulCheckerManager instance;
-
-	public static VulCheckerManager getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new VulCheckerManager();
-		}
-		return instance;
-	}
-
 	private HashMap<String, Class<VulChecker>> vulCheckerMap = new HashMap<>();
 	private static final String vulCheckerPackage = "packetproxy.vulchecker";
 
-	private VulCheckerManager() {
+	public VulCheckerManager() {
 		try {
 
 			loadVulCheckers();

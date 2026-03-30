@@ -15,6 +15,7 @@ object AppInitializer {
   private var isGulp = false // Gulp modeか否か
   private var settingsPath = "" // 設定用JSONのファイルpath
   private var listenPortManager: ListenPortManager? = null
+  private var vulCheckerManager: VulCheckerManager? = null
 
   private var isCoreNotReady = true
   private var isGulpNotReady = true
@@ -158,9 +159,13 @@ object AppInitializer {
   }
 
   private fun initVulCheckerManager() {
-    VulCheckerManager.getInstance()
+    getVulCheckerManager()
     Logging.log("VulCheckerManagerを初期化しました")
   }
+
+  @JvmStatic
+  fun getVulCheckerManager(): VulCheckerManager =
+    vulCheckerManager ?: VulCheckerManager().also { vulCheckerManager = it }
 
   /** JSON設定ファイルを読み込んで適用 ListenPortManager初期化後に呼び出すことで、設定ファイル内の有効なプロキシが自動的に開始される */
   private fun loadSettingsFromJson() {
