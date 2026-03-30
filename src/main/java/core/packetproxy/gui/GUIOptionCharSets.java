@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import packetproxy.AppInitializer;
 import packetproxy.model.CharSet;
 import packetproxy.model.CharSets;
 
@@ -35,7 +36,7 @@ public class GUIOptionCharSets extends GUIOptionComponentBase<CharSet> {
 
 	public GUIOptionCharSets(JFrame owner) throws Exception {
 		super(owner);
-		charsets = CharSets.getInstance();
+		charsets = AppInitializer.getCharSets();
 		charsets.addPropertyChangeListener(this);
 		charsets_list = new ArrayList<CharSet>();
 		String[] menu = {"CharSetName"};

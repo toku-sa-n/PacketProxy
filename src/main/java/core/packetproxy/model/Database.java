@@ -135,7 +135,7 @@ public class Database {
 		createTable(InterceptOption.class, InterceptOptions.getInstance());
 		createTable(Modification.class, Modifications.getInstance());
 		createTable(SSLPassThrough.class, SSLPassThroughs.getInstance());
-		createTable(CharSet.class, CharSets.getInstance());
+		createTable(CharSet.class, AppInitializer.getCharSets());
 		createTable(ResenderPacket.class, AppInitializer.getResenderPackets());
 		firePropertyChange(DatabaseMessage.RECREATE);
 

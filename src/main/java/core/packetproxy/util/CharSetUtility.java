@@ -23,9 +23,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import packetproxy.AppInitializer;
 import packetproxy.http.HttpHeader;
 import packetproxy.model.CharSet;
-import packetproxy.model.CharSets;
 
 public class CharSetUtility {
 
@@ -271,7 +271,7 @@ public class CharSetUtility {
 		try {
 
 			ret.add(AUTO_CHARSET);
-			for (CharSet charset : CharSets.getInstance().queryAll()) {
+			for (CharSet charset : AppInitializer.getCharSets().queryAll()) {
 
 				ret.add(charset.toString());
 			}

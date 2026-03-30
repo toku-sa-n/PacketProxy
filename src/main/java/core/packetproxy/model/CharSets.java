@@ -26,20 +26,10 @@ import java.util.List;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class CharSets implements PropertyChangeListener {
-
-	private static CharSets instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 
 	private List<String> defaultCharSetList = Arrays
 			.asList(new String[]{"UTF-8", "Shift_JIS", "x-euc-jp-linux", "ISO-2022-JP", "ISO-8859-1"});
-
-	public static CharSets getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new CharSets();
-		}
-		return instance;
-	}
 
 	private void setDefaultCharSetIfNotFound() throws Exception {
 		if (dao.queryBuilder().query().size() == 0) {
@@ -57,7 +47,7 @@ public class CharSets implements PropertyChangeListener {
 	private Database database;
 	private Dao<CharSet, Integer> dao;
 
-	private CharSets() throws Exception {
+	public CharSets() throws Exception {
 		database = Database.getInstance();
 		dao = database.createTable(CharSet.class, this);
 	}
