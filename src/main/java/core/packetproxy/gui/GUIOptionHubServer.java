@@ -10,11 +10,11 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import org.apache.commons.lang3.RandomStringUtils;
+import packetproxy.AppInitializer;
 import packetproxy.common.ConfigHttpServer;
 import packetproxy.common.I18nString;
 import packetproxy.model.ConfigBoolean;
 import packetproxy.model.ConfigString;
-import packetproxy.model.Configs;
 
 public class GUIOptionHubServer implements PropertyChangeListener {
 
@@ -35,7 +35,7 @@ public class GUIOptionHubServer implements PropertyChangeListener {
 		panel.add(createCheckBox());
 		panel.add(createAccessTokenPanel());
 
-		Configs.getInstance().addPropertyChangeListener(this);
+		AppInitializer.getConfigs().addPropertyChangeListener(this);
 	}
 
 	private JCheckBox createCheckBox() {

@@ -15,6 +15,8 @@
  */
 package packetproxy.model;
 
+import packetproxy.AppInitializer;
+
 public class ConfigBoolean {
 
 	private String key;
@@ -23,7 +25,7 @@ public class ConfigBoolean {
 
 	public ConfigBoolean(String key) throws Exception {
 		this.key = key;
-		configs = Configs.getInstance();
+		configs = AppInitializer.getConfigs();
 		config = configs.query(key);
 		if (config == null) {
 

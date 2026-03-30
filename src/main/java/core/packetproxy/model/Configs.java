@@ -24,26 +24,17 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Configs implements PropertyChangeListener {
-
-	private static Configs instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static Configs getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Configs();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<Config, String> dao;
 	private DaoQueryCache<Config> cache;
 
-	private Configs() throws Exception {
+	public Configs() throws Exception {
 		database = Database.getInstance();
 		dao = database.createTable(Config.class, this);
 		cache = new DaoQueryCache();
@@ -123,7 +114,7 @@ public class Configs implements PropertyChangeListener {
 					// TODO ロックを解除
 					break;
 				case DISCONNECT_NOW :
-					instance = null;
+					AppInitializer.clearConfigs();
 					break;
 				case RECONNECT :
 					database = Database.getInstance();

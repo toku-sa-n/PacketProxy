@@ -129,7 +129,7 @@ public class Database {
 		createDB();
 		createTable(Filter.class, Filters.getInstance());
 		createTable(ListenPort.class, AppInitializer.getListenPorts());
-		createTable(Config.class, Configs.getInstance());
+		createTable(Config.class, AppInitializer.getConfigs());
 		createTable(Server.class, Servers.getInstance());
 		createTable(ClientCertificate.class, AppInitializer.getClientCertificates());
 		createTable(InterceptOption.class, InterceptOptions.getInstance());

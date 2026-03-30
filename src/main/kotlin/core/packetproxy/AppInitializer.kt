@@ -11,6 +11,7 @@ import packetproxy.common.Utils
 import packetproxy.controller.InterceptController
 import packetproxy.model.CharSets
 import packetproxy.model.ClientCertificates
+import packetproxy.model.Configs
 import packetproxy.model.Database
 import packetproxy.model.Diff
 import packetproxy.model.DiffBinary
@@ -30,6 +31,7 @@ object AppInitializer {
   private var clientCertificates: ClientCertificates? = null
   private var charSets: CharSets? = null
   private var charSetUtility: CharSetUtility? = null
+  private var configs: Configs? = null
   private var diff: Diff? = null
   private var diffBinary: DiffBinary? = null
   private var diffJson: DiffJson? = null
@@ -188,6 +190,13 @@ object AppInitializer {
   @JvmStatic
   fun getClientCertificates(): ClientCertificates =
     clientCertificates ?: ClientCertificates().also { clientCertificates = it }
+
+  @JvmStatic fun getConfigs(): Configs = configs ?: Configs().also { configs = it }
+
+  @JvmStatic
+  fun clearConfigs() {
+    configs = null
+  }
 
   @JvmStatic fun getCharSets(): CharSets = charSets ?: CharSets().also { charSets = it }
 

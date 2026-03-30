@@ -59,7 +59,6 @@ import packetproxy.AppInitializer;
 import packetproxy.PrivateDNS;
 import packetproxy.common.I18nString;
 import packetproxy.model.ConfigBoolean;
-import packetproxy.model.Configs;
 
 public class GUIOptionPrivateDNS implements PropertyChangeListener {
 
@@ -89,7 +88,7 @@ public class GUIOptionPrivateDNS implements PropertyChangeListener {
 		textField6 = createAddress6Field();
 		base = createPanel(checkBox, textField, textField6);
 
-		Configs.getInstance().addPropertyChangeListener(this);
+		AppInitializer.getConfigs().addPropertyChangeListener(this);
 		updateState();
 	}
 
