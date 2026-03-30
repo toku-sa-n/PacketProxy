@@ -56,9 +56,11 @@ public class OpenVPN {
 	private static final String imageName = "alekslitvinenk/openvpn";
 	private static final String containerName = "packetproxy_ovpn";
 	private static final String volumeName = "packetproxy_ovpn_volume";
+	private final OpenVPNForwardPorts openVPNForwardPorts;
 	private boolean pulling = false;
 
-	public OpenVPN() {
+	public OpenVPN(OpenVPNForwardPorts openVPNForwardPorts) {
+		this.openVPNForwardPorts = openVPNForwardPorts;
 	}
 
 	private DockerClient getClient() {
@@ -182,7 +184,7 @@ public class OpenVPN {
 	public void patchContainer(DockerClient client, String localIp, String proto) {
 		try {
 
-			List<OpenVPNForwardPort> forwardPorts = OpenVPNForwardPorts.getInstance().queryAll();
+			List<OpenVPNForwardPort> forwardPorts = openVPNForwardPorts.queryAll();
 			for (OpenVPNForwardPort forwardPort : forwardPorts) {
 
 				String command = "/sbin/iptables -t nat -A PREROUTING -p " + forwardPort.getType().toString()

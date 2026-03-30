@@ -29,22 +29,13 @@ import packetproxy.model.Database.DatabaseMessage;
 
 public class OpenVPNForwardPorts implements PropertyChangeListener {
 
-	private static OpenVPNForwardPorts instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
-
-	public static OpenVPNForwardPorts getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new OpenVPNForwardPorts();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<OpenVPNForwardPort, Integer> dao;
 	private DaoQueryCache<OpenVPNForwardPort> cache;
 
-	private OpenVPNForwardPorts() throws Exception {
+	public OpenVPNForwardPorts() throws Exception {
 		database = Database.getInstance();
 		dao = database.createTable(OpenVPNForwardPort.class, this);
 		cache = new DaoQueryCache<>();

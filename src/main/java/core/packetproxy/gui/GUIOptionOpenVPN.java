@@ -64,8 +64,8 @@ public class GUIOptionOpenVPN extends GUIOptionComponentBase<OpenVPNForwardPort>
 
 	public GUIOptionOpenVPN(JFrame owner) throws Exception {
 		super(owner);
-		this.openVPN = new OpenVPN();
-		this.openVPNForwardPorts = OpenVPNForwardPorts.getInstance();
+		this.openVPNForwardPorts = new OpenVPNForwardPorts();
+		this.openVPN = new OpenVPN(openVPNForwardPorts);
 		this.openVPNForwardPorts.addPropertyChangeListener(this);
 		this.table_ext_list = new ArrayList<OpenVPNForwardPort>();
 
@@ -96,7 +96,7 @@ public class GUIOptionOpenVPN extends GUIOptionComponentBase<OpenVPNForwardPort>
 					OpenVPNForwardPort forwardPort = dig.showDialog();
 					if (forwardPort != null) {
 
-						OpenVPNForwardPorts.getInstance().create(forwardPort);
+						openVPNForwardPorts.create(forwardPort);
 					}
 				} catch (Exception e1) {
 
@@ -115,8 +115,8 @@ public class GUIOptionOpenVPN extends GUIOptionComponentBase<OpenVPNForwardPort>
 					OpenVPNForwardPort newPort = dig.showDialog(forwardPort);
 					if (newPort != null) {
 
-						OpenVPNForwardPorts.getInstance().delete(forwardPort);
-						OpenVPNForwardPorts.getInstance().create(newPort);
+						openVPNForwardPorts.delete(forwardPort);
+						openVPNForwardPorts.create(newPort);
 					}
 				} catch (Exception e1) {
 
@@ -130,7 +130,7 @@ public class GUIOptionOpenVPN extends GUIOptionComponentBase<OpenVPNForwardPort>
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					OpenVPNForwardPorts.getInstance().delete(getSelectedTableContent());
+					openVPNForwardPorts.delete(getSelectedTableContent());
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);
