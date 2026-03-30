@@ -229,6 +229,6 @@ public class ProxySSLTransparent extends Proxy {
 			duplex = DuplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder(), alpn);
 		}
 		duplex.start();
-		DuplexManager.getInstance().registerDuplex(duplex);
+		AppInitializer.getDuplexManager().registerDuplex(duplex);
 	}
 }

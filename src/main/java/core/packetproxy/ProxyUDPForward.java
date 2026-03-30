@@ -49,7 +49,7 @@ public class ProxyUDPForward extends Proxy {
 				DuplexAsync duplex = DuplexFactory.createDuplexAsync(client_endpoint, server_endpoint,
 						listen_info.getServer().getEncoder());
 				duplex.start();
-				DuplexManager.getInstance().registerDuplex(duplex);
+				AppInitializer.getDuplexManager().registerDuplex(duplex);
 			}
 		} catch (Exception e) {
 

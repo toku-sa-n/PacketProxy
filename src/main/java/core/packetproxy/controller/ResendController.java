@@ -27,7 +27,6 @@ import packetproxy.AppInitializer;
 import packetproxy.Duplex;
 import packetproxy.DuplexAsync;
 import packetproxy.DuplexFactory;
-import packetproxy.DuplexManager;
 import packetproxy.common.I18nString;
 import packetproxy.encode.EncodeHTTPBase;
 import packetproxy.encode.Encoder;
@@ -177,7 +176,7 @@ public class ResendController {
 				if (encoder.useNewConnectionForResend() == false && encoder.useNewEncoderForResend() == false) {
 
 					this.isDirectSend = true;
-					this.duplex = DuplexManager.getInstance().getDuplex(oneshot.getConn());
+					this.duplex = AppInitializer.getDuplexManager().getDuplex(oneshot.getConn());
 					this.preparedData = this.oneshot.getData();
 					return;
 				}
@@ -187,7 +186,7 @@ public class ResendController {
 					this.isSync = false;
 				} else {
 
-					Duplex original_duplex = DuplexManager.getInstance().getDuplex(oneshot.getConn());
+					Duplex original_duplex = AppInitializer.getDuplexManager().getDuplex(oneshot.getConn());
 					if (original_duplex == null) {
 
 						err(I18nString.get("[Error] tried to resend packets, but the connection was already closed."));

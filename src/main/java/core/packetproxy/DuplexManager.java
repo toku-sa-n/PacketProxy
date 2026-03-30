@@ -21,16 +21,6 @@ import java.util.Map;
 
 public class DuplexManager {
 
-	private static DuplexManager instance;
-
-	public static DuplexManager getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new DuplexManager();
-		}
-		return instance;
-	}
-
 	private Map<Integer, Duplex> duplex_list;
 
 	public DuplexManager() {

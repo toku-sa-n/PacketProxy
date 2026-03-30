@@ -56,7 +56,7 @@ public class ProxyForward extends Proxy {
 	public void createConnection(Endpoint client, Endpoint server) throws Exception {
 		DuplexAsync duplex = DuplexFactory.createDuplexAsync(client, server, listen_info.getServer().getEncoder());
 		duplex.start();
-		DuplexManager.getInstance().registerDuplex(duplex);
+		AppInitializer.getDuplexManager().registerDuplex(duplex);
 	}
 
 	public void close() throws Exception {

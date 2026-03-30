@@ -30,7 +30,7 @@ public class Listen {
 		if (proxy != null) {
 
 			proxy.close();
-			DuplexManager.getInstance().closeAndClearDuplex(listen_info.getPort());
+			AppInitializer.getDuplexManager().closeAndClearDuplex(listen_info.getPort());
 		}
 	}
 

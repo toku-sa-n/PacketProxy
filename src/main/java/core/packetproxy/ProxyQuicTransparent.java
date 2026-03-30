@@ -68,7 +68,7 @@ public class ProxyQuicTransparent extends Proxy {
 				DuplexAsync duplex = DuplexFactory.createDuplexAsync(clientConnection, serverConnection, encoder, alpn);
 
 				duplex.start();
-				DuplexManager.getInstance().registerDuplex(duplex);
+				AppInitializer.getDuplexManager().registerDuplex(duplex);
 			}
 		} catch (Exception e) {
 

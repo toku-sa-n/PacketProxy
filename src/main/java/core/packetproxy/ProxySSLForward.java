@@ -114,7 +114,7 @@ public class ProxySSLForward extends Proxy {
 			duplex = DuplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder(), alpn);
 		}
 		duplex.start();
-		DuplexManager.getInstance().registerDuplex(duplex);
+		AppInitializer.getDuplexManager().registerDuplex(duplex);
 	}
 
 	public void close() throws Exception {

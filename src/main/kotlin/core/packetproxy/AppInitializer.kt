@@ -15,6 +15,7 @@ object AppInitializer {
   private var isGulp = false // Gulp modeか否か
   private var settingsPath = "" // 設定用JSONのファイルpath
   private var certCacheManager: CertCacheManager? = null
+  private var duplexManager: DuplexManager? = null
   private var encoderManager: EncoderManager? = null
   private var listenPortManager: ListenPortManager? = null
   private var vulCheckerManager: VulCheckerManager? = null
@@ -159,6 +160,10 @@ object AppInitializer {
   fun clearCertCache() {
     certCacheManager?.clearCacheEntries()
   }
+
+  @JvmStatic
+  fun getDuplexManager(): DuplexManager =
+    duplexManager ?: DuplexManager().also { duplexManager = it }
 
   @JvmStatic
   fun getListenPortManager(): ListenPortManager =

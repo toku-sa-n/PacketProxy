@@ -53,7 +53,7 @@ public class ProxyQuicForward extends Proxy {
 						this.listen_info.getServer().getEncoder());
 
 				duplex.start();
-				DuplexManager.getInstance().registerDuplex(duplex);
+				AppInitializer.getDuplexManager().registerDuplex(duplex);
 			}
 		} catch (Exception e) {
 
