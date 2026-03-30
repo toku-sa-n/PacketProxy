@@ -50,17 +50,7 @@ public class Diff extends DiffBase {
 	// }
 	// }
 
-	private Diff() {
-	}
-
-	static Diff instance = null;
-
-	public static Diff getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Diff();
-		}
-		return instance;
+	public Diff() {
 	}
 
 	public static void diffPerCharacter(DiffSet set, DiffEventListener original_event, DiffEventListener target_event)

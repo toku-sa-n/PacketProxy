@@ -21,6 +21,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
+import packetproxy.AppInitializer;
 import packetproxy.model.Diff;
 import packetproxy.model.DiffEventAdapter;
 import packetproxy.model.DiffSet;
@@ -60,10 +61,10 @@ public class GUIDiffRaw extends GUIDiffBase {
 		DiffSet ds;
 		if (jc.isSelected()) {
 
-			ds = sortUniq(Diff.getInstance().getSet());
+			ds = sortUniq(AppInitializer.getDiff().getSet());
 		} else {
 
-			ds = Diff.getInstance().getSet();
+			ds = AppInitializer.getDiff().getSet();
 		}
 		textOrig.setData(ds.getOriginal(), false);
 		textTarg.setData(ds.getTarget(), false);
