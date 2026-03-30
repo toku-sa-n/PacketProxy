@@ -20,8 +20,8 @@ import static packetproxy.util.Logging.errWithStackTrace;
 import java.util.HashMap;
 import java.util.List;
 import javax.net.ssl.KeyManager;
+import packetproxy.AppInitializer;
 import packetproxy.model.ClientCertificate;
-import packetproxy.model.ClientCertificates;
 import packetproxy.model.Server;
 
 /** KeyManager Class for Client Certificate */
@@ -36,7 +36,7 @@ public class ClientKeyManager {
 	 *             Failed to Get Instance of ClientCertificates
 	 */
 	public static void initialize() throws Exception {
-		List<ClientCertificate> certificateList = ClientCertificates.getInstance().queryEnabled();
+		List<ClientCertificate> certificateList = AppInitializer.getClientCertificates().queryEnabled();
 		for (ClientCertificate cert : certificateList) {
 
 			try {

@@ -35,9 +35,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.ClientCertificate;
-import packetproxy.model.ClientCertificates;
 import packetproxy.model.Server;
 import packetproxy.model.Servers;
 
@@ -235,7 +235,7 @@ public class GUIOptionClientCertificateDialog extends JDialog {
 					return;
 				}
 
-				if (ClientCertificates.getInstance().hasCorrectSecretKey(certificate) == false) {
+				if (AppInitializer.getClientCertificates().hasCorrectSecretKey(certificate) == false) {
 
 					certificate = null;
 					JOptionPane.showMessageDialog(this.owner, I18nString.get("[Error] incorrect secret key password."),

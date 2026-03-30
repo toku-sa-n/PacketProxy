@@ -30,23 +30,13 @@ import packetproxy.model.Database.DatabaseMessage;
 
 /** DAO for ClientCertificate */
 public class ClientCertificates implements PropertyChangeListener {
-
-	private static ClientCertificates instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 
 	private Database database;
 	private Dao<ClientCertificate, Integer> dao;
 	private Servers servers;
 
-	public static ClientCertificates getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new ClientCertificates();
-		}
-		return instance;
-	}
-
-	private ClientCertificates() throws Exception {
+	public ClientCertificates() throws Exception {
 		database = Database.getInstance();
 		servers = Servers.getInstance();
 		dao = database.createTable(ClientCertificate.class, this);

@@ -10,6 +10,7 @@ import packetproxy.common.FontManager
 import packetproxy.common.Utils
 import packetproxy.controller.InterceptController
 import packetproxy.model.CharSets
+import packetproxy.model.ClientCertificates
 import packetproxy.model.Database
 import packetproxy.model.Diff
 import packetproxy.model.DiffBinary
@@ -24,6 +25,7 @@ object AppInitializer {
   private var isGulp = false // Gulp modeか否か
   private var settingsPath = "" // 設定用JSONのファイルpath
   private var certCacheManager: CertCacheManager? = null
+  private var clientCertificates: ClientCertificates? = null
   private var charSets: CharSets? = null
   private var charSetUtility: CharSetUtility? = null
   private var diff: Diff? = null
@@ -178,6 +180,10 @@ object AppInitializer {
   fun clearCertCache() {
     certCacheManager?.clearCacheEntries()
   }
+
+  @JvmStatic
+  fun getClientCertificates(): ClientCertificates =
+    clientCertificates ?: ClientCertificates().also { clientCertificates = it }
 
   @JvmStatic fun getCharSets(): CharSets = charSets ?: CharSets().also { charSets = it }
 

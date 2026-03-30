@@ -25,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import packetproxy.AppInitializer;
 import packetproxy.model.ClientCertificate;
 import packetproxy.model.ClientCertificates;
 
@@ -36,7 +37,7 @@ public class GUIOptionClientCertificate extends GUIOptionComponentBase<ClientCer
 
 	public GUIOptionClientCertificate(JFrame owner) throws Exception {
 		super(owner);
-		clientCertificates = ClientCertificates.getInstance();
+		clientCertificates = AppInitializer.getClientCertificates();
 		clientCertificates.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<>();
 

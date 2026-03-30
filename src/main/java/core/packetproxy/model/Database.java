@@ -131,7 +131,7 @@ public class Database {
 		createTable(ListenPort.class, ListenPorts.getInstance());
 		createTable(Config.class, Configs.getInstance());
 		createTable(Server.class, Servers.getInstance());
-		createTable(ClientCertificate.class, ClientCertificates.getInstance());
+		createTable(ClientCertificate.class, AppInitializer.getClientCertificates());
 		createTable(InterceptOption.class, InterceptOptions.getInstance());
 		createTable(Modification.class, Modifications.getInstance());
 		createTable(SSLPassThrough.class, SSLPassThroughs.getInstance());
