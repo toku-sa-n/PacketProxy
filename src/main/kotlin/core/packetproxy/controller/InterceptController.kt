@@ -35,20 +35,10 @@ import packetproxy.model.Server
  * - suspend fun received(): 新プロキシ向け。コルーチンをサスペンドして UI 操作を待つ。
  * - receivedBlocking(): DuplexFactory.java 向けの暫定ブリッジ（Deprecated）。
  */
-class InterceptController
-private constructor(
+class InterceptController(
   private val interceptModel: InterceptModel = InterceptModel(),
   private val resendController: ResendController = ResendController(),
 ) {
-  companion object {
-    @Volatile private var instance: InterceptController? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): InterceptController =
-      instance ?: synchronized(this) { instance ?: InterceptController().also { instance = it } }
-  }
-
   private sealed class InterceptDecision {
     data class Forward(val data: ByteArray) : InterceptDecision()
 

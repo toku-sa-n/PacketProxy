@@ -35,6 +35,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
+import packetproxy.AppInitializer;
 import packetproxy.controller.InterceptController;
 import packetproxy.model.InterceptModel;
 import packetproxy.model.Packet;
@@ -59,7 +60,7 @@ public class GUIIntercept implements PropertyChangeListener {
 
 	public GUIIntercept(JFrame owner) throws Exception {
 		this.owner = owner;
-		this.intercept_controller = InterceptController.getInstance();
+		this.intercept_controller = AppInitializer.getInterceptController();
 		this.interceptModel = this.intercept_controller.getInterceptModel();
 		this.interceptModel.addPropertyChangeListener(this);
 	}

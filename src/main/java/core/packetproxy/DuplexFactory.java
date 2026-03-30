@@ -20,7 +20,6 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import packetproxy.common.*;
-import packetproxy.controller.InterceptController;
 import packetproxy.encode.Encoder;
 import packetproxy.http.Http;
 import packetproxy.http.HttpsProxySocketEndpoint;
@@ -107,7 +106,7 @@ public class DuplexFactory {
 
 				// TODO: InterceptController の receivedBlocking() はブロッキング互換ラッパーであり暫定対応。
 				// DuplexFactory を Kotlin 化する際は suspend fun received() に置き換えること。
-				byte[] intercepted_data = InterceptController.getInstance().receivedBlocking(decoded_data, server,
+				byte[] intercepted_data = AppInitializer.getInterceptController().receivedBlocking(decoded_data, server,
 						client_packet);
 
 				byte[] intercepted_hash = CryptUtils.sha1(intercepted_data);
@@ -170,7 +169,7 @@ public class DuplexFactory {
 
 				// TODO: InterceptController の receivedBlocking() はブロッキング互換ラッパーであり暫定対応。
 				// DuplexFactory を Kotlin 化する際は suspend fun received() に置き換えること。
-				byte[] intercepted_data = InterceptController.getInstance().receivedBlocking(decoded_data, server,
+				byte[] intercepted_data = AppInitializer.getInterceptController().receivedBlocking(decoded_data, server,
 						client_packet, server_packet);
 
 				byte[] intercepted_hash = CryptUtils.sha1(intercepted_data);

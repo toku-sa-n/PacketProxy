@@ -30,9 +30,9 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Keymap;
+import packetproxy.AppInitializer;
 import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
-import packetproxy.controller.InterceptController;
 import packetproxy.model.InterceptModel;
 import packetproxy.util.PacketProxyUtility;
 
@@ -160,7 +160,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 
 			getContentPane().add(tabbedpane, BorderLayout.CENTER);
 
-			interceptModel = InterceptController.getInstance().getInterceptModel();
+			interceptModel = AppInitializer.getInterceptController().getInterceptModel();
 			interceptModel.addPropertyChangeListener(this);
 			final Container cp = getContentPane();
 

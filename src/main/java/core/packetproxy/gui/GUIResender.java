@@ -33,7 +33,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import packetproxy.controller.InterceptController;
+import packetproxy.AppInitializer;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.controller.SinglePacketAttackController;
 import packetproxy.model.OneShotPacket;
@@ -236,22 +236,23 @@ public class GUIResender implements PropertyChangeListener {
 					try {
 
 						OneShotPacket sendPacket = send_panel.getOneShotPacket();
-						InterceptController.getInstance().getResendController().resend(new ResendWorker(sendPacket, 1) {
+						AppInitializer.getInterceptController().getResendController()
+								.resend(new ResendWorker(sendPacket, 1) {
 
-							@Override
-							protected void process(List<OneShotPacket> packets) {
-								try {
+									@Override
+									protected void process(List<OneShotPacket> packets) {
+										try {
 
-									OneShotPacket recvPacket = packets.get(0);
-									recv_panel.setOneShotPacket(recvPacket);
-									parent.addResend(sendPacket, recvPacket);
-									rollback();
-								} catch (Exception e) {
+											OneShotPacket recvPacket = packets.get(0);
+											recv_panel.setOneShotPacket(recvPacket);
+											parent.addResend(sendPacket, recvPacket);
+											rollback();
+										} catch (Exception e) {
 
-									errWithStackTrace(e);
-								}
-							}
-						});
+											errWithStackTrace(e);
+										}
+									}
+								});
 					} catch (Exception e1) {
 
 						errWithStackTrace(e1);
@@ -267,8 +268,8 @@ public class GUIResender implements PropertyChangeListener {
 				public void actionPerformed(ActionEvent e) {
 					try {
 
-						InterceptController.getInstance().getResendController().resend(send_panel.getOneShotPacket(),
-								20);
+						AppInitializer.getInterceptController().getResendController()
+								.resend(send_panel.getOneShotPacket(), 20);
 						clearLog();
 						showLog("結果は履歴ウィンドウで確認してください！");
 						rollback();

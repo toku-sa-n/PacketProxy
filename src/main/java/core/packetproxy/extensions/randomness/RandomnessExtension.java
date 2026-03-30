@@ -61,7 +61,7 @@ import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.data.Range;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import packetproxy.controller.InterceptController;
+import packetproxy.AppInitializer;
 import packetproxy.controller.ResendController;
 import packetproxy.extensions.randomness.test.RandomnessTestManager;
 import packetproxy.gui.GUIBulkSenderData;
@@ -187,7 +187,7 @@ public class RandomnessExtension extends Extension {
 						future = future.thenApplyAsync(arg -> {
 							try {
 
-								InterceptController.getInstance().getResendController()
+								AppInitializer.getInterceptController().getResendController()
 										.resend(new ResendController.ResendWorker(sendPacket, 1) {
 
 											@Override

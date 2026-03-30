@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.swing.*;
+import packetproxy.AppInitializer;
 import packetproxy.common.FontManager;
 import packetproxy.common.Range;
-import packetproxy.controller.InterceptController;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.model.OneShotPacket;
 import packetproxy.vulchecker.VulCheckPattern;
@@ -169,7 +169,7 @@ public class GUIVulCheckTab {
 					}
 					packet.setData(data);
 					Date sentTime = new Date();
-					InterceptController.getInstance().getResendController().resend(new ResendWorker(packet, 1) {
+					AppInitializer.getInterceptController().getResendController().resend(new ResendWorker(packet, 1) {
 
 						@Override
 						protected void process(List<OneShotPacket> oneshots) {
@@ -213,7 +213,7 @@ public class GUIVulCheckTab {
 								Date sentTime = new Date();
 								OneShotPacket packet = pattern.getPacket();
 								packet.setData(manager.extractMacro(pattern.getName(), packet.getData()));
-								InterceptController.getInstance().getResendController()
+								AppInitializer.getInterceptController().getResendController()
 										.resend(new ResendWorker(packet, 1) {
 
 											@Override

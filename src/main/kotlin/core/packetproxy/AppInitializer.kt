@@ -7,6 +7,7 @@ import kotlin.system.exitProcess
 import packetproxy.common.ClientKeyManager
 import packetproxy.common.ConfigIO
 import packetproxy.common.Utils
+import packetproxy.controller.InterceptController
 import packetproxy.model.Database
 import packetproxy.model.Packets
 import packetproxy.util.Logging
@@ -17,6 +18,7 @@ object AppInitializer {
   private var certCacheManager: CertCacheManager? = null
   private var duplexManager: DuplexManager? = null
   private var encoderManager: EncoderManager? = null
+  private var interceptController: InterceptController? = null
   private var listenPortManager: ListenPortManager? = null
   private var vulCheckerManager: VulCheckerManager? = null
 
@@ -164,6 +166,10 @@ object AppInitializer {
   @JvmStatic
   fun getDuplexManager(): DuplexManager =
     duplexManager ?: DuplexManager().also { duplexManager = it }
+
+  @JvmStatic
+  fun getInterceptController(): InterceptController =
+    interceptController ?: InterceptController().also { interceptController = it }
 
   @JvmStatic
   fun getListenPortManager(): ListenPortManager =

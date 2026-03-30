@@ -30,7 +30,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import packetproxy.controller.InterceptController;
+import packetproxy.AppInitializer;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
@@ -106,26 +106,28 @@ public class GUIBulkSender {
 
 					if (regexParams.size() == 0) { // parallel
 
-						InterceptController.getInstance().getResendController().resend(new ResendWorker(oneshots) {
+						AppInitializer.getInterceptController().getResendController()
+								.resend(new ResendWorker(oneshots) {
 
-							@Override
-							protected void process(List<OneShotPacket> oneshots) {
-								try {
+									@Override
+									protected void process(List<OneShotPacket> oneshots) {
+										try {
 
-									for (OneShotPacket oneshot : oneshots) {
+											for (OneShotPacket oneshot : oneshots) {
 
-										recvPackets.put(oneshot.getId(), oneshot);
-										recvTable.add(oneshot);
-										Packet packet = Packets.getInstance().query(sendPacketIds.get(oneshot.getId()));
-										packet.setResend();
-										Packets.getInstance().update(packet);
+												recvPackets.put(oneshot.getId(), oneshot);
+												recvTable.add(oneshot);
+												Packet packet = Packets.getInstance()
+														.query(sendPacketIds.get(oneshot.getId()));
+												packet.setResend();
+												Packets.getInstance().update(packet);
+											}
+										} catch (Exception e) {
+
+											errWithStackTrace(e);
+										}
 									}
-								} catch (Exception e) {
-
-									errWithStackTrace(e);
-								}
-							}
-						});
+								});
 					} else { // sequential
 
 						new Thread() {
@@ -147,7 +149,7 @@ public class GUIBulkSender {
 											}
 										}
 										final OneShotPacket sendOneshot = oneshot;
-										InterceptController.getInstance().getResendController()
+										AppInitializer.getInterceptController().getResendController()
 												.resend(new ResendWorker(sendOneshot, 1) {
 
 													@Override
