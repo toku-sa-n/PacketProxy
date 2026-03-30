@@ -85,11 +85,13 @@ public class RandomnessExtension extends Extension {
 
 	private GUIBulkSenderData sendData;
 	private int sendPacketId;
+	private final RandomnessTestManager randomnessTestManager;
 
 	public RandomnessExtension() {
 		super();
 		recvPackets = new HashMap<>();
 		tokens = new ArrayList<>();
+		randomnessTestManager = new RandomnessTestManager();
 		this.setName("Randomness");
 	}
 
@@ -97,6 +99,7 @@ public class RandomnessExtension extends Extension {
 		super(name, path);
 		recvPackets = new HashMap<>();
 		tokens = new ArrayList<>();
+		randomnessTestManager = new RandomnessTestManager();
 		this.setName("Randomness");
 	}
 
@@ -294,7 +297,7 @@ public class RandomnessExtension extends Extension {
 		testPanel.setBackground(Color.WHITE);
 		testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.X_AXIS));
 		testPanel.add(new JLabel("testing method:"));
-		testMethods = RandomnessTestManager.getInstance().createTestList();
+		testMethods = randomnessTestManager.createTestList();
 		testPanel.add(testMethods);
 
 		JButton analyzeButton = new JButton("Start analysis");
@@ -356,7 +359,7 @@ public class RandomnessExtension extends Extension {
 							throw new Exception("preprocessKey " + preprocessKey + " not found");
 					}
 
-					double[][] points = RandomnessTestManager.getInstance().analyze(testMethodKey, preprocessed);
+					double[][] points = randomnessTestManager.analyze(testMethodKey, preprocessed);
 					XYSeries series = new XYSeries("data", false);
 					for (int i = 0; i < points.length; i++) {
 

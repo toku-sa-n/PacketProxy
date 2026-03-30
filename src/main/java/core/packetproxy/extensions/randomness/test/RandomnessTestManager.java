@@ -25,19 +25,10 @@ import javax.swing.JComboBox;
 
 public class RandomnessTestManager {
 
-	private static RandomnessTestManager instance;
 	private final Map<String, RandomnessTest> testMap = new HashMap<>();
 	private final double[] x;
 
-	public static RandomnessTestManager getInstance() {
-		if (instance == null) {
-
-			instance = new RandomnessTestManager();
-		}
-		return instance;
-	}
-
-	RandomnessTestManager() {
+	public RandomnessTestManager() {
 		x = DoubleStream.iterate(-3.0, v -> (v <= 0.0), v -> (v + 0.1)).toArray();
 		for (int i = 0; i < x.length; i++) {
 
