@@ -34,24 +34,15 @@ import packetproxy.ppcontextmenu.PPContextMenu;
 
 public class PPContextMenuManager {
 
-	private static PPContextMenuManager instance;
 	private List<PPContextMenu> module_list;
 	private static final String item_package = "packetproxy.ppcontextmenu";
 	private static final Class<PPContextMenu> item_class = packetproxy.ppcontextmenu.PPContextMenu.class;
-
-	public static PPContextMenuManager getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new PPContextMenuManager();
-		}
-		return instance;
-	}
 
 	public List<PPContextMenu> getMenuItemList() {
 		return module_list;
 	}
 
-	private PPContextMenuManager() {
+	public PPContextMenuManager() {
 		try {
 
 			loadItems();
