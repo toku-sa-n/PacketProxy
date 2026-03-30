@@ -116,9 +116,9 @@ public class GUIHistoryContextMenuFactory {
 						packet.setResend();
 						packets.update(packet);
 						if (packet.getModifiedData().length == 0) {
-							GUIResender.getInstance().addResends(packet.getOneShotFromDecodedData());
+							GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotFromDecodedData());
 						} else {
-							GUIResender.getInstance().addResends(packet.getOneShotFromModifiedData());
+							GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotFromModifiedData());
 						}
 						context.updateRequestOne(context.getSelectedPacketId());
 					} catch (Exception ex) {

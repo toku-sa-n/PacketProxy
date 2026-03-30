@@ -64,17 +64,7 @@ public class GUIResender implements PropertyChangeListener {
 	private ResendsCloseButtonTabbedPane resends_tabs; // 上側のタブ一覧
 	private List<Integer> resends_indexes; // 上側のタブの番号一覧
 
-	private static GUIResender instance;
-
-	public static GUIResender getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new GUIResender();
-		}
-		return instance;
-	}
-
-	private GUIResender() throws Exception {
+	public GUIResender() throws Exception {
 		main_panel = new JPanel();
 		resends_tabs = new ResendsCloseButtonTabbedPane();
 		main_panel.setLayout(new BoxLayout(main_panel, BoxLayout.Y_AXIS));

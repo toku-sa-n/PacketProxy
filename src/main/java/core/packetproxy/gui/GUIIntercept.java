@@ -140,7 +140,7 @@ public class GUIIntercept implements PropertyChangeListener {
 					Packet packet = InterceptModel.getInstance().getClientPacket();
 					packet.setResend();
 					Packets.getInstance().update(packet);
-					GUIResender.getInstance().addResends(packet.getOneShotPacket(getInterceptData()));
+					GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotPacket(getInterceptData()));
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);

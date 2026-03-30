@@ -350,7 +350,7 @@ public class GUIData {
 						Packet packet = Packets.getInstance().query(id);
 						packet.setResend();
 						Packets.getInstance().update(packet);
-						GUIResender.getInstance().addResends(packet.getOneShotPacket(data));
+						GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotPacket(data));
 						GUIHistory.getInstance().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
