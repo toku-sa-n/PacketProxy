@@ -238,7 +238,7 @@ public class GrpcStreaming extends FramesBase {
 				packet.setGroup(groupMap.get(streamId));
 			} else {
 
-				long groupId = UniqueID.getInstance().createId();
+				long groupId = UniqueID.createId();
 				groupMap.put(streamId, groupId);
 				packet.setGroup(groupId);
 			}

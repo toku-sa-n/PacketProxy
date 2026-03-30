@@ -86,7 +86,7 @@ public class DuplexFactory {
 
 			@Override
 			public byte[] onClientChunkReceived(byte[] data) throws Exception {
-				long initialGroupId = UniqueID.getInstance().createId();
+				long initialGroupId = UniqueID.createId();
 				client_packet = new Packet(0, client_addr, server_addr, server_endpoint.getName(), use_ssl,
 						encoder_name, ALPN, Packet.Direction.CLIENT, duplex.hashCode(), initialGroupId);
 				client_packet.setReceivedData(data);
@@ -139,7 +139,7 @@ public class DuplexFactory {
 				} else {
 
 					// サーバから先にレスポンスがあった場合
-					group_id = UniqueID.getInstance().createId();
+					group_id = UniqueID.createId();
 				}
 				server_packet = new Packet(0, client_addr, server_addr, server_endpoint.getName(), use_ssl,
 						encoder_name, ALPN, Packet.Direction.SERVER, duplex.hashCode(), group_id);
@@ -226,8 +226,7 @@ public class DuplexFactory {
 			@Override
 			public byte[] onClientChunkSendForced(byte[] data) throws Exception {
 				Packet client_packet = new Packet(0, client_addr, server_addr, server_endpoint.getName(), use_ssl,
-						encoder_name, ALPN, Packet.Direction.CLIENT, duplex.hashCode(),
-						UniqueID.getInstance().createId());
+						encoder_name, ALPN, Packet.Direction.CLIENT, duplex.hashCode(), UniqueID.createId());
 				packets.update(client_packet);
 				client_packet.setModified();
 				client_packet.setDecodedData(data);
@@ -256,7 +255,7 @@ public class DuplexFactory {
 				} else {
 
 					// サーバから先にレスポンスがあった場合
-					group_id = UniqueID.getInstance().createId();
+					group_id = UniqueID.createId();
 				}
 				Packet server_packet = new Packet(0, client_addr, server_addr, server_endpoint.getName(), use_ssl,
 						encoder_name, ALPN, Packet.Direction.SERVER, duplex.hashCode(), group_id);
@@ -376,7 +375,7 @@ public class DuplexFactory {
 				} else {
 
 					// サーバから先にレスポンスがあった場合
-					group_id = UniqueID.getInstance().createId();
+					group_id = UniqueID.createId();
 				}
 				server_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.SERVER,
@@ -411,7 +410,7 @@ public class DuplexFactory {
 			public byte[] onClientChunkSend(byte[] data) throws Exception {
 				client_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.CLIENT,
-						duplex.hashCode(), UniqueID.getInstance().createId());
+						duplex.hashCode(), UniqueID.createId());
 				client_packet.setModified();
 				client_packet.setReceivedData(data);
 				client_packet.setDecodedData(data);
@@ -558,7 +557,7 @@ public class DuplexFactory {
 			public byte[] onServerChunkReceived(byte[] data) throws Exception {
 				client_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.CLIENT,
-						duplex.hashCode(), packetproxy.common.UniqueID.getInstance().createId());
+						duplex.hashCode(), packetproxy.common.UniqueID.createId());
 				client_packet.setDecodedData(oneshot.getData());
 				client_packet.setModifiedData(oneshot.getData());
 				client_packet.setResend();
@@ -724,7 +723,7 @@ public class DuplexFactory {
 				} else {
 
 					// サーバから先にレスポンスがあった場合
-					group_id = UniqueID.getInstance().createId();
+					group_id = UniqueID.createId();
 				}
 				server_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.SERVER,
@@ -759,7 +758,7 @@ public class DuplexFactory {
 			public byte[] onClientChunkSend(byte[] data) throws Exception {
 				client_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.CLIENT,
-						original_duplex.hashCode(), UniqueID.getInstance().createId());
+						original_duplex.hashCode(), UniqueID.createId());
 				packets.update(client_packet);
 				client_packet.setModified();
 				client_packet.setDecodedData(data);

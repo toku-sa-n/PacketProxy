@@ -21,23 +21,12 @@ import static packetproxy.util.Logging.err;
 // かならず昇順の番号を採番するため、ソートするのに便利
 public class UniqueID {
 
-	private static UniqueID instance;
+	private static long lastId = getNow();
 
-	public static UniqueID getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new UniqueID();
-		}
-		return instance;
+	private UniqueID() {
 	}
 
-	private long lastId = 0;
-
-	private UniqueID() throws Exception {
-		lastId = getNow();
-	}
-
-	public synchronized long createId() throws Exception {
+	public static synchronized long createId() throws Exception {
 		while (true) {
 
 			long newId = getNow();
@@ -53,7 +42,7 @@ public class UniqueID {
 		}
 	}
 
-	private long getNow() throws Exception {
+	private static long getNow() {
 		return System.currentTimeMillis();
 	}
 }

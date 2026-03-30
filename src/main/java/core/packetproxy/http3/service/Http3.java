@@ -273,7 +273,7 @@ public class Http3 {
 				packet.setGroup(groupMap.get(streamId));
 			} else {
 
-				long groupId = UniqueID.getInstance().createId();
+				long groupId = UniqueID.createId();
 				groupMap.put(streamId, groupId);
 				packet.setGroup(groupId);
 			}
