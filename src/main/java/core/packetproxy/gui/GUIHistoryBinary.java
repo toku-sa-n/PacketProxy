@@ -31,8 +31,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import org.apache.commons.lang3.ArrayUtils;
+import packetproxy.AppInitializer;
 import packetproxy.common.Binary;
-import packetproxy.common.FontManager;
 import packetproxy.common.StringUtils;
 
 public class GUIHistoryBinary extends GUIHistoryPanel implements BinaryTextPane.DataChangedListener {
@@ -61,7 +61,7 @@ public class GUIHistoryBinary extends GUIHistoryPanel implements BinaryTextPane.
 		hex_text.setParentHistory(this);
 		hex_text.addDataChangedListener(this);
 		// hex_text.setLineWrap(true);
-		hex_text.setFont(FontManager.getInstance().getFont());
+		hex_text.setFont(AppInitializer.getFontManager().getFont());
 		hex_text.addMouseListener(new MouseListener() {
 
 			@Override
@@ -132,7 +132,7 @@ public class GUIHistoryBinary extends GUIHistoryPanel implements BinaryTextPane.
 
 		ascii_text = new JTextPane();
 		// ascii_text.setLineWrap(true);
-		ascii_text.setFont(FontManager.getInstance().getFont());
+		ascii_text.setFont(AppInitializer.getFontManager().getFont());
 		ascii_text.addMouseListener(new MouseListener() {
 
 			@Override
@@ -168,7 +168,7 @@ public class GUIHistoryBinary extends GUIHistoryPanel implements BinaryTextPane.
 		scrollpane4.getVerticalScrollBar().setModel(scrollpane3.getVerticalScrollBar().getModel()); // 縦方向のスクロールをhex側と同期させる
 
 		search_text = new JTextField();
-		search_text.setFont(FontManager.getInstance().getFont());
+		search_text.setFont(AppInitializer.getFontManager().getFont());
 		search_text.addKeyListener(new KeyListener() {
 
 			@Override
@@ -207,9 +207,9 @@ public class GUIHistoryBinary extends GUIHistoryPanel implements BinaryTextPane.
 	private void setData(byte[] data, boolean trimming) {
 		try {
 
-			hex_text.setFont(FontManager.getInstance().getFont());
-			ascii_text.setFont(FontManager.getInstance().getFont());
-			search_text.setFont(FontManager.getInstance().getFont());
+			hex_text.setFont(AppInitializer.getFontManager().getFont());
+			ascii_text.setFont(AppInitializer.getFontManager().getFont());
+			search_text.setFont(AppInitializer.getFontManager().getFont());
 			hex_text.setData(data, false);
 			this.data = data;
 			// データが多いと遅いので長いデータをトリミングする

@@ -22,7 +22,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.table.TableRowSorter;
-import packetproxy.common.FontManager;
+import packetproxy.AppInitializer;
 import packetproxy.model.OptionTableModel;
 import packetproxy.model.RegexParam;
 
@@ -183,7 +183,7 @@ public class GUIRegexParamsTableDialog extends JDialog {
 		}
 		((JComponent) table.getDefaultRenderer(Boolean.class)).setOpaque(true);
 		table.addMouseListener(tableAction);
-		table.setRowHeight(FontManager.getInstance().getUIFontHeight(table));
+		table.setRowHeight(AppInitializer.getFontManager().getUIFontHeight(table));
 
 		table.setRowSorter(sorter);
 		table.setModel(option_model);

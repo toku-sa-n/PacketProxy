@@ -29,7 +29,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import packetproxy.common.FontManager;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 
 public class GUIOptionFonts {
@@ -44,8 +44,9 @@ public class GUIOptionFonts {
 
 	public JPanel createPanel() throws Exception {
 
-		uiFontInfo = new JTextField(String.format("%s (size: %d)", FontManager.getInstance().getUIFont().getName(),
-				FontManager.getInstance().getUIFont().getSize()));
+		uiFontInfo = new JTextField(
+				String.format("%s (size: %d)", AppInitializer.getFontManager().getUIFont().getName(),
+						AppInitializer.getFontManager().getUIFont().getSize()));
 		uiFontInfo.setEditable(false);
 		uiFontInfo.setMaximumSize(new Dimension(Short.MAX_VALUE, uiFontInfo.getMinimumSize().height));
 
@@ -56,15 +57,15 @@ public class GUIOptionFonts {
 			public void mousePressed(MouseEvent e) {
 				try {
 
-					JFontChooser jfc = new JFontChooser(FontManager.getInstance().getUIFont());
+					JFontChooser jfc = new JFontChooser(AppInitializer.getFontManager().getUIFont());
 					int result = jfc.showDialog(owner);
 					if (result == JFontChooser.OK_OPTION) {
 
 						Font font = jfc.getSelectedFont();
-						FontManager.getInstance().setUIFont(font);
-						uiFontInfo
-								.setText(String.format("%s (size: %d)", FontManager.getInstance().getUIFont().getName(),
-										FontManager.getInstance().getUIFont().getSize()));
+						AppInitializer.getFontManager().setUIFont(font);
+						uiFontInfo.setText(
+								String.format("%s (size: %d)", AppInitializer.getFontManager().getUIFont().getName(),
+										AppInitializer.getFontManager().getUIFont().getSize()));
 					}
 				} catch (Exception e1) {
 
@@ -80,9 +81,10 @@ public class GUIOptionFonts {
 			public void mousePressed(MouseEvent e) {
 				try {
 
-					FontManager.getInstance().restoreUIFont();
-					uiFontInfo.setText(String.format("%s (size: %d)", FontManager.getInstance().getUIFont().getName(),
-							FontManager.getInstance().getUIFont().getSize()));
+					AppInitializer.getFontManager().restoreUIFont();
+					uiFontInfo.setText(
+							String.format("%s (size: %d)", AppInitializer.getFontManager().getUIFont().getName(),
+									AppInitializer.getFontManager().getUIFont().getSize()));
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);
@@ -98,8 +100,8 @@ public class GUIOptionFonts {
 		uiPanel.add(uiButton);
 		uiPanel.add(uiRestore);
 
-		fontInfo = new JTextField(String.format("%s (size: %d)", FontManager.getInstance().getFont().getName(),
-				FontManager.getInstance().getFont().getSize()));
+		fontInfo = new JTextField(String.format("%s (size: %d)", AppInitializer.getFontManager().getFont().getName(),
+				AppInitializer.getFontManager().getFont().getSize()));
 		fontInfo.setEditable(false);
 		fontInfo.setMaximumSize(new Dimension(Short.MAX_VALUE, fontInfo.getMinimumSize().height));
 
@@ -110,14 +112,15 @@ public class GUIOptionFonts {
 			public void mousePressed(MouseEvent e) {
 				try {
 
-					JFontChooser jfc = new JFontChooser(FontManager.getInstance().getFont());
+					JFontChooser jfc = new JFontChooser(AppInitializer.getFontManager().getFont());
 					int result = jfc.showDialog(owner);
 					if (result == JFontChooser.OK_OPTION) {
 
 						Font font = jfc.getSelectedFont();
-						FontManager.getInstance().setFont(font);
-						fontInfo.setText(String.format("%s (size: %d)", FontManager.getInstance().getFont().getName(),
-								FontManager.getInstance().getFont().getSize()));
+						AppInitializer.getFontManager().setFont(font);
+						fontInfo.setText(
+								String.format("%s (size: %d)", AppInitializer.getFontManager().getFont().getName(),
+										AppInitializer.getFontManager().getFont().getSize()));
 					}
 				} catch (Exception e1) {
 
@@ -133,9 +136,9 @@ public class GUIOptionFonts {
 			public void mousePressed(MouseEvent e) {
 				try {
 
-					FontManager.getInstance().restoreFont();
-					fontInfo.setText(String.format("%s (size: %d)", FontManager.getInstance().getFont().getName(),
-							FontManager.getInstance().getFont().getSize()));
+					AppInitializer.getFontManager().restoreFont();
+					fontInfo.setText(String.format("%s (size: %d)", AppInitializer.getFontManager().getFont().getName(),
+							AppInitializer.getFontManager().getFont().getSize()));
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);

@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import packetproxy.common.FontManager;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.common.Utils;
 
@@ -40,12 +40,12 @@ public class BinaryTextPane extends ExtendedTextPane {
 
 	public BinaryTextPane() throws Exception {
 		setEditorKit(editor);
-		setFont(FontManager.getInstance().getFont());
+		setFont(AppInitializer.getFontManager().getFont());
 
 		JPopupMenu menu = new JPopupMenu();
 
 		JMenuItem title_encoders = new JMenuItem(I18nString.get("Encoders"));
-		title_encoders.setFont(FontManager.getInstance().getUICaptionFont());
+		title_encoders.setFont(AppInitializer.getFontManager().getUICaptionFont());
 		title_encoders.setEnabled(false);
 		menu.add(title_encoders);
 

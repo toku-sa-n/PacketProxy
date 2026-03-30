@@ -33,7 +33,7 @@ import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
-import packetproxy.common.FontManager;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.OptionTableModel;
 
@@ -76,7 +76,7 @@ public abstract class GUIOptionComponentBase<T> implements PropertyChangeListene
 		setHeaderStyle(table, menu.length);
 		((JComponent) table.getDefaultRenderer(Boolean.class)).setOpaque(true);
 		table.addMouseListener(tableAction);
-		table.setRowHeight(FontManager.getInstance().getUIFontHeight(table));
+		table.setRowHeight(AppInitializer.getFontManager().getUIFontHeight(table));
 
 		CustomScrollPane scrollpane1 = new CustomScrollPane();
 		scrollpane1.setViewportView(table);
@@ -152,7 +152,7 @@ public abstract class GUIOptionComponentBase<T> implements PropertyChangeListene
 		setHeaderStyle(table, menu.length);
 		((JComponent) table.getDefaultRenderer(Boolean.class)).setOpaque(true);
 		table.addMouseListener(tableAction);
-		table.setRowHeight(FontManager.getInstance().getUIFontHeight(table));
+		table.setRowHeight(AppInitializer.getFontManager().getUIFontHeight(table));
 
 		table.setRowSorter(sorter);
 		table.setModel(option_model);

@@ -33,7 +33,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import packetproxy.common.FontManager;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.CAFactory;
 import packetproxy.model.CAs.CA;
@@ -52,7 +52,7 @@ public class GUIOption {
 		JLabel label = new JLabel(title);
 		label.setForeground(Color.decode("61136"));
 		label.setBackground(Color.WHITE);
-		label.setFont(FontManager.getInstance().getUICaptionFont());
+		label.setFont(AppInitializer.getFontManager().getUICaptionFont());
 		label.setMaximumSize(new Dimension(Short.MAX_VALUE, label.getMinimumSize().height));
 		label.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return label;

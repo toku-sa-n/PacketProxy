@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutionException
 import kotlin.system.exitProcess
 import packetproxy.common.ClientKeyManager
 import packetproxy.common.ConfigIO
+import packetproxy.common.FontManager
 import packetproxy.common.Utils
 import packetproxy.controller.InterceptController
 import packetproxy.model.Database
@@ -20,6 +21,7 @@ object AppInitializer {
   private var charSetUtility: CharSetUtility? = null
   private var duplexManager: DuplexManager? = null
   private var encoderManager: EncoderManager? = null
+  private var fontManager: FontManager? = null
   private var interceptController: InterceptController? = null
   private var listenPortManager: ListenPortManager? = null
   private var vulCheckerManager: VulCheckerManager? = null
@@ -168,6 +170,9 @@ object AppInitializer {
   @JvmStatic
   fun getCharSetUtility(): CharSetUtility =
     charSetUtility ?: CharSetUtility().also { charSetUtility = it }
+
+  @JvmStatic
+  fun getFontManager(): FontManager = fontManager ?: FontManager().also { fontManager = it }
 
   @JvmStatic
   fun getDuplexManager(): DuplexManager =

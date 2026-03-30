@@ -34,7 +34,6 @@ import javax.swing.undo.UndoManager;
 import org.apache.commons.lang3.ArrayUtils;
 import packetproxy.AppInitializer;
 import packetproxy.common.BinaryBuffer;
-import packetproxy.common.FontManager;
 import packetproxy.common.Range;
 import packetproxy.common.Utils;
 import packetproxy.util.CharSetUtility;
@@ -61,7 +60,7 @@ abstract class ExtendedTextPane extends JTextPane {
 
 	public ExtendedTextPane() throws Exception {
 		setEditorKit(editor);
-		setFont(FontManager.getInstance().getFont());
+		setFont(AppInitializer.getFontManager().getFont());
 		getDocument().addDocumentListener(new DocumentListener() {
 
 			@Override
@@ -186,7 +185,7 @@ abstract class ExtendedTextPane extends JTextPane {
 	}
 
 	public void setData(byte[] data, boolean trimming) throws Exception {
-		setFont(FontManager.getInstance().getFont());
+		setFont(AppInitializer.getFontManager().getFont());
 		this.data = data;
 		// データが多いと遅いので長いデータをトリミングする
 		if (trimming

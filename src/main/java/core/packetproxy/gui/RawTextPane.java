@@ -38,7 +38,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import packetproxy.AppInitializer;
 import packetproxy.VulCheckerManager;
-import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
 import packetproxy.common.Range;
 import packetproxy.common.Utils;
@@ -102,7 +101,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 
 		JMenuItem vulCheckers = new JMenuItem(I18nString.get("VulCheck Helpers"));
-		vulCheckers.setFont(FontManager.getInstance().getUICaptionFont());
+		vulCheckers.setFont(AppInitializer.getFontManager().getUICaptionFont());
 		vulCheckers.setEnabled(false);
 		menu.add(vulCheckers);
 
@@ -128,7 +127,7 @@ public class RawTextPane extends ExtendedTextPane {
 
 		menu.addSeparator();
 		JMenuItem title_decoders = new JMenuItem(I18nString.get("Decoders"));
-		title_decoders.setFont(FontManager.getInstance().getUICaptionFont());
+		title_decoders.setFont(AppInitializer.getFontManager().getUICaptionFont());
 		title_decoders.setEnabled(false);
 		menu.add(title_decoders);
 
@@ -247,7 +246,7 @@ public class RawTextPane extends ExtendedTextPane {
 
 		menu.addSeparator();
 		JMenuItem title_encoders = new JMenuItem(I18nString.get("Encoders"));
-		title_encoders.setFont(FontManager.getInstance().getUICaptionFont());
+		title_encoders.setFont(AppInitializer.getFontManager().getUICaptionFont());
 		title_encoders.setEnabled(false);
 		menu.add(title_encoders);
 

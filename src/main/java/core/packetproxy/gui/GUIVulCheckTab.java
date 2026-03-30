@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.swing.*;
 import packetproxy.AppInitializer;
-import packetproxy.common.FontManager;
 import packetproxy.common.Range;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.model.OneShotPacket;
@@ -63,7 +62,7 @@ public class GUIVulCheckTab {
 		JLabel label = new JLabel(name);
 		label.setBackground(Color.WHITE);
 		label.setForeground(new Color(0, 200, 0));
-		label.setFont(FontManager.getInstance().getUICaptionFont());
+		label.setFont(AppInitializer.getFontManager().getUICaptionFont());
 
 		JPanel main = new JPanel();
 		main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));

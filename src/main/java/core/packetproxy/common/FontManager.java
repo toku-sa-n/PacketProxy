@@ -26,16 +26,6 @@ import packetproxy.model.ConfigString;
 @SuppressWarnings("serial")
 public class FontManager {
 
-	private static FontManager instance;
-
-	public static FontManager getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new FontManager();
-		}
-		return instance;
-	}
-
 	private ConfigString configUIFontName = new ConfigString("UIFontName");
 	private ConfigInteger configUIFontSize = new ConfigInteger("UIFontSize");
 	private ConfigString configFontName = new ConfigString("FontName");
@@ -61,7 +51,7 @@ public class FontManager {
 		}
 	};
 
-	private FontManager() throws Exception {
+	public FontManager() throws Exception {
 		createUIFont();
 		createFont();
 	}

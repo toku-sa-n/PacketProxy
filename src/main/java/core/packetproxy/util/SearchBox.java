@@ -26,7 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
-import packetproxy.common.FontManager;
+import packetproxy.AppInitializer;
 import packetproxy.common.Range;
 
 @SuppressWarnings("serial")
@@ -60,7 +60,7 @@ public class SearchBox extends JPanel {
 
 	public SearchBox() throws Exception {
 		search_text = new JTextField();
-		search_text.setFont(FontManager.getInstance().getFont());
+		search_text.setFont(AppInitializer.getFontManager().getFont());
 		search_text.addKeyListener(new KeyListener() {
 
 			private String prev_word = null;
@@ -71,7 +71,7 @@ public class SearchBox extends JPanel {
 				try {
 
 					// テキストの色変更
-					search_text.setFont(FontManager.getInstance().getFont());
+					search_text.setFont(AppInitializer.getFontManager().getFont());
 					updateSearchText();
 
 					// returnキーの時は、そこへ移動してハイライト

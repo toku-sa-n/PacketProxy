@@ -69,8 +69,8 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
+import packetproxy.AppInitializer;
 import packetproxy.common.FilterTextParser;
-import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
 import packetproxy.common.Utils;
 import packetproxy.model.Database;
@@ -402,7 +402,7 @@ public class GUIHistory implements PropertyChangeListener {
 				return c;
 			}
 		};
-		table.setRowHeight(FontManager.getInstance().getUIFontHeight(table));
+		table.setRowHeight(AppInitializer.getFontManager().getUIFontHeight(table));
 		for (int i = 0; i < columnNames.length; i++) {
 
 			table.getColumn(columnNames[i]).setPreferredWidth(columnWidth[i]);

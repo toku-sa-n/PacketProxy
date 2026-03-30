@@ -55,8 +55,8 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import org.xbill.DNS.DNSSpoofingIPGetter;
+import packetproxy.AppInitializer;
 import packetproxy.PrivateDNS;
-import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
 import packetproxy.model.ConfigBoolean;
 import packetproxy.model.Configs;
@@ -119,7 +119,7 @@ public class GUIOptionPrivateDNS implements PropertyChangeListener {
 		TitledBorder rewriteRuleBorder = new TitledBorder(I18nString.get("Rewrite Rule"));
 		LineBorder inborder = new LineBorder(Color.BLACK, 1);
 		rewriteRuleBorder.setBorder(inborder);
-		rewriteRuleBorder.setTitleFont(FontManager.getInstance().getUIFont());
+		rewriteRuleBorder.setTitleFont(AppInitializer.getFontManager().getUIFont());
 		rewriteRuleBorder.setTitleJustification(TitledBorder.LEFT);
 		rewriteRuleBorder.setTitlePosition(TitledBorder.TOP);
 

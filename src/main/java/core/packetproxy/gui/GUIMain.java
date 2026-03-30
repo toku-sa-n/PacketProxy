@@ -31,7 +31,6 @@ import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Keymap;
 import packetproxy.AppInitializer;
-import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
 import packetproxy.model.InterceptModel;
 import packetproxy.util.Logging;
@@ -213,10 +212,10 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 		}
 
 		// フォント設定をデフォルトに復元（シンタックスハイライト機能による影響を防ぐため）
-		FontManager.getInstance().restoreUIFont();
-		FontManager.getInstance().restoreFont();
+		AppInitializer.getFontManager().restoreUIFont();
+		AppInitializer.getFontManager().restoreFont();
 
-		UIManager.getLookAndFeelDefaults().put("defaultFont", FontManager.getInstance().getUIFont());
+		UIManager.getLookAndFeelDefaults().put("defaultFont", AppInitializer.getFontManager().getUIFont());
 		// OptionPaneのロケール
 		JOptionPane.setDefaultLocale(I18nString.locale);
 
