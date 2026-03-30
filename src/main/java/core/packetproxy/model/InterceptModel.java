@@ -23,23 +23,14 @@ import java.beans.PropertyChangeSupport;
 
 public class InterceptModel {
 
-	private static InterceptModel instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
-
-	public static InterceptModel getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new InterceptModel();
-		}
-		return instance;
-	}
 
 	private byte[] data;
 	private Packet client_packet;
 	private Packet server_packet;
 	private boolean intercept_mode = false;
 
-	private InterceptModel() {
+	public InterceptModel() {
 		clear();
 	}
 

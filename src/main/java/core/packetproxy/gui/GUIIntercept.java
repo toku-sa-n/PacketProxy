@@ -60,7 +60,7 @@ public class GUIIntercept implements PropertyChangeListener {
 	public GUIIntercept(JFrame owner) throws Exception {
 		this.owner = owner;
 		this.intercept_controller = InterceptController.getInstance();
-		this.interceptModel = InterceptModel.getInstance();
+		this.interceptModel = this.intercept_controller.getInterceptModel();
 		this.interceptModel.addPropertyChangeListener(this);
 	}
 
@@ -137,7 +137,7 @@ public class GUIIntercept implements PropertyChangeListener {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					Packet packet = InterceptModel.getInstance().getClientPacket();
+					Packet packet = interceptModel.getClientPacket();
 					packet.setResend();
 					Packets.getInstance().update(packet);
 					GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotPacket(getInterceptData()));
@@ -155,7 +155,7 @@ public class GUIIntercept implements PropertyChangeListener {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					Packet packet = InterceptModel.getInstance().getClientPacket();
+					Packet packet = interceptModel.getClientPacket();
 					GUIMain.getInstance().getGuiBulkSender().add(packet.getOneShotPacket(getInterceptData()),
 							packet.getId());
 				} catch (Exception e1) {
