@@ -17,13 +17,6 @@ package packetproxy.controller;
 
 public class MainWindowController {
 
-	private static MainWindowController controller;
-
-	public static MainWindowController getInstance() throws Exception {
-		if (controller == null) {
-
-			controller = new MainWindowController();
-		}
-		return controller;
+	public MainWindowController() {
 	}
 }
