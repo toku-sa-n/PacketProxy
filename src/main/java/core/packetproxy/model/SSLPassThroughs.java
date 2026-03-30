@@ -48,7 +48,7 @@ public class SSLPassThroughs implements PropertyChangeListener {
 
 	private SSLPassThroughs() throws Exception {
 		database = Database.getInstance();
-		listenPorts = ListenPorts.getInstance();
+		listenPorts = AppInitializer.getListenPorts();
 		dao = database.createTable(SSLPassThrough.class, this);
 		cache = new DaoQueryCache<>();
 		if (!isLatestVersion()) {

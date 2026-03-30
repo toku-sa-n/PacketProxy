@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.swing.*;
+import packetproxy.AppInitializer;
 import packetproxy.gui.GUIMain;
 import packetproxy.model.*;
 
@@ -109,7 +110,7 @@ public class ConfigHttpServer extends NanoHTTPD {
 
 				DaoHub daoHub = new DaoHub();
 
-				daoHub.listenPortList = ListenPorts.getInstance().queryAll();
+				daoHub.listenPortList = AppInitializer.getListenPorts().queryAll();
 				daoHub.serverList = Servers.getInstance().queryAll();
 				daoHub.modificationList = Modifications.getInstance().queryAll();
 				daoHub.sslPassThroughList = SSLPassThroughs.getInstance().queryAll();
@@ -159,7 +160,7 @@ public class ConfigHttpServer extends NanoHTTPD {
 
 				for (ListenPort listenPort : daoHub.listenPortList) {
 
-					ListenPorts.getInstance().create(listenPort);
+					AppInitializer.getListenPorts().create(listenPort);
 				}
 				for (Server server : daoHub.serverList) {
 

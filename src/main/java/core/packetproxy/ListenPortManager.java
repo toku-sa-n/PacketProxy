@@ -39,7 +39,7 @@ public class ListenPortManager implements PropertyChangeListener {
 
 	public ListenPortManager() throws Exception {
 		listen_map = new HashMap<String, Listen>();
-		listenPorts = ListenPorts.getInstance();
+		listenPorts = AppInitializer.getListenPorts();
 		listenPorts.addPropertyChangeListener(this);
 		Servers.getInstance().addPropertyChangeListener(this);
 		listenPorts.refresh();

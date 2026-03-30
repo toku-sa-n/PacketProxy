@@ -28,23 +28,13 @@ import java.util.stream.Collectors;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class ListenPorts implements PropertyChangeListener {
-
-	private static ListenPorts instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static ListenPorts getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new ListenPorts();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<ListenPort, Integer> dao;
 	private Servers servers;
 
-	private ListenPorts() throws Exception {
+	public ListenPorts() throws Exception {
 		database = Database.getInstance();
 		servers = Servers.getInstance();
 		dao = database.createTable(ListenPort.class, this);

@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.AppInitializer;
 import packetproxy.model.ListenPort;
 import packetproxy.model.ListenPort.TYPE;
 import packetproxy.model.ListenPorts;
@@ -37,7 +38,7 @@ public class GUIOptionListenPorts extends GUIOptionComponentBase<ListenPort> {
 
 	public GUIOptionListenPorts(JFrame owner) throws Exception {
 		super(owner);
-		listenPorts = ListenPorts.getInstance();
+		listenPorts = AppInitializer.getListenPorts();
 		listenPorts.addPropertyChangeListener(this);
 		Servers.getInstance().addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<ListenPort>();

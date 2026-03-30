@@ -110,7 +110,7 @@ public class Database {
 		dropTable(Modification.class);
 		dropTable(SSLPassThrough.class);
 
-		createTable(ListenPort.class, ListenPorts.getInstance());
+		createTable(ListenPort.class, AppInitializer.getListenPorts());
 		createTable(Server.class, Servers.getInstance());
 		createTable(Modification.class, Modifications.getInstance());
 		createTable(SSLPassThrough.class, SSLPassThroughs.getInstance());
@@ -128,7 +128,7 @@ public class Database {
 
 		createDB();
 		createTable(Filter.class, Filters.getInstance());
-		createTable(ListenPort.class, ListenPorts.getInstance());
+		createTable(ListenPort.class, AppInitializer.getListenPorts());
 		createTable(Config.class, Configs.getInstance());
 		createTable(Server.class, Servers.getInstance());
 		createTable(ClientCertificate.class, AppInitializer.getClientCertificates());
