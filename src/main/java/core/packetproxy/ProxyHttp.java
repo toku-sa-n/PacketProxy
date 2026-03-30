@@ -30,7 +30,6 @@ import packetproxy.common.SocketEndpoint;
 import packetproxy.http.Http;
 import packetproxy.http.Https;
 import packetproxy.model.ListenPort;
-import packetproxy.model.SSLPassThroughs;
 import packetproxy.model.Server;
 import packetproxy.model.Servers;
 
@@ -82,7 +81,7 @@ public class ProxyHttp extends Proxy {
 									log("Overwrite CN: %s --> %s", http.getServerName(), serverName);
 								}
 
-								if (SSLPassThroughs.getInstance().includes(serverName, listen_info.getPort())) {
+								if (AppInitializer.getSSLPassThroughs().includes(serverName, listen_info.getPort())) {
 
 									SocketEndpoint server_e = new SocketEndpoint(http.getServerAddr());
 									SocketEndpoint client_e = new SocketEndpoint(client);

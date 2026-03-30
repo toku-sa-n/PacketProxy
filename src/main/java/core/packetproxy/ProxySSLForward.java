@@ -29,7 +29,6 @@ import packetproxy.common.SocketEndpoint;
 import packetproxy.encode.EncodeHTTPBase;
 import packetproxy.encode.Encoder;
 import packetproxy.model.ListenPort;
-import packetproxy.model.SSLPassThroughs;
 import packetproxy.model.Server;
 
 public class ProxySSLForward extends Proxy {
@@ -73,7 +72,7 @@ public class ProxySSLForward extends Proxy {
 	private void checkSSLForward(Socket client) throws Exception {
 		Server server = listen_info.getServer();
 		InetSocketAddress serverAddr = server.getAddress();
-		if (SSLPassThroughs.getInstance().includes(server.getIp(), listen_info.getPort())) {
+		if (AppInitializer.getSSLPassThroughs().includes(server.getIp(), listen_info.getPort())) {
 
 			SocketEndpoint server_e = new SocketEndpoint(serverAddr);
 			SocketEndpoint client_e = new SocketEndpoint(client);

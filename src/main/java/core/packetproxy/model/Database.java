@@ -113,7 +113,7 @@ public class Database {
 		createTable(ListenPort.class, AppInitializer.getListenPorts());
 		createTable(Server.class, Servers.getInstance());
 		createTable(Modification.class, Modifications.getInstance());
-		createTable(SSLPassThrough.class, SSLPassThroughs.getInstance());
+		createTable(SSLPassThrough.class, AppInitializer.getSSLPassThroughs());
 
 		firePropertyChange(DatabaseMessage.RECONNECT);
 	}
@@ -134,7 +134,7 @@ public class Database {
 		createTable(ClientCertificate.class, AppInitializer.getClientCertificates());
 		createTable(InterceptOption.class, InterceptOptions.getInstance());
 		createTable(Modification.class, Modifications.getInstance());
-		createTable(SSLPassThrough.class, SSLPassThroughs.getInstance());
+		createTable(SSLPassThrough.class, AppInitializer.getSSLPassThroughs());
 		createTable(CharSet.class, AppInitializer.getCharSets());
 		createTable(ResenderPacket.class, AppInitializer.getResenderPackets());
 		firePropertyChange(DatabaseMessage.RECREATE);

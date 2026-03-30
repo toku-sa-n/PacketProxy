@@ -26,6 +26,7 @@ import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.AppInitializer;
 import packetproxy.model.SSLPassThrough;
 import packetproxy.model.SSLPassThroughs;
 
@@ -37,7 +38,7 @@ public class GUIOptionSSLPassThrough extends GUIOptionComponentBase<SSLPassThrou
 
 	public GUIOptionSSLPassThrough(JFrame owner) throws Exception {
 		super(owner);
-		this.sslPassThroughs = SSLPassThroughs.getInstance();
+		this.sslPassThroughs = AppInitializer.getSSLPassThroughs();
 		this.sslPassThroughs.addPropertyChangeListener(this);
 		this.table_ext_list = new ArrayList<SSLPassThrough>();
 
@@ -83,7 +84,7 @@ public class GUIOptionSSLPassThrough extends GUIOptionComponentBase<SSLPassThrou
 					if (ssl != null) {
 
 						ssl.setEnabled();
-						SSLPassThroughs.getInstance().create(ssl);
+						AppInitializer.getSSLPassThroughs().create(ssl);
 					}
 				} catch (Exception e1) {
 
@@ -102,9 +103,9 @@ public class GUIOptionSSLPassThrough extends GUIOptionComponentBase<SSLPassThrou
 					SSLPassThrough new_ssl = dlg.showDialog(old_ssl);
 					if (new_ssl != null) {
 
-						SSLPassThroughs.getInstance().delete(old_ssl);
+						AppInitializer.getSSLPassThroughs().delete(old_ssl);
 						new_ssl.setEnabled();
-						SSLPassThroughs.getInstance().create(new_ssl);
+						AppInitializer.getSSLPassThroughs().create(new_ssl);
 					}
 				} catch (Exception e1) {
 
@@ -118,7 +119,7 @@ public class GUIOptionSSLPassThrough extends GUIOptionComponentBase<SSLPassThrou
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					SSLPassThroughs.getInstance().delete(getSelectedTableContent());
+					AppInitializer.getSSLPassThroughs().delete(getSelectedTableContent());
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);

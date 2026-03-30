@@ -29,24 +29,14 @@ import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class SSLPassThroughs implements PropertyChangeListener {
-
-	private static SSLPassThroughs instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static SSLPassThroughs getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new SSLPassThroughs();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<SSLPassThrough, Integer> dao;
 	private DaoQueryCache<SSLPassThrough> cache;
 	private ListenPorts listenPorts;
 
-	private SSLPassThroughs() throws Exception {
+	public SSLPassThroughs() throws Exception {
 		database = Database.getInstance();
 		listenPorts = AppInitializer.getListenPorts();
 		dao = database.createTable(SSLPassThrough.class, this);

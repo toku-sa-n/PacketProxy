@@ -19,6 +19,7 @@ import packetproxy.model.ListenPorts
 import packetproxy.model.Packets
 import packetproxy.model.ResenderPackets
 import packetproxy.model.Resolutions
+import packetproxy.model.SSLPassThroughs
 import packetproxy.util.CharSetUtility
 import packetproxy.util.Logging
 
@@ -40,6 +41,7 @@ object AppInitializer {
   private var listenPorts: ListenPorts? = null
   private var resenderPackets: ResenderPackets? = null
   private var resolutions: Resolutions? = null
+  private var sslPassThroughs: SSLPassThroughs? = null
   private var vulCheckerManager: VulCheckerManager? = null
 
   private var isCoreNotReady = true
@@ -223,6 +225,10 @@ object AppInitializer {
 
   @JvmStatic
   fun getResolutions(): Resolutions = resolutions ?: Resolutions().also { resolutions = it }
+
+  @JvmStatic
+  fun getSSLPassThroughs(): SSLPassThroughs =
+    sslPassThroughs ?: SSLPassThroughs().also { sslPassThroughs = it }
 
   private fun initEncoderManager() {
     getEncoderManager()

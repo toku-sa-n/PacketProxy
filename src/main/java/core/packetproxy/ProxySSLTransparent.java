@@ -34,7 +34,6 @@ import packetproxy.common.*;
 import packetproxy.encode.EncodeHTTPBase;
 import packetproxy.encode.Encoder;
 import packetproxy.model.ListenPort;
-import packetproxy.model.SSLPassThroughs;
 import packetproxy.model.Server;
 import packetproxy.model.Servers;
 
@@ -185,7 +184,7 @@ public class ProxySSLTransparent extends Proxy {
 					log("[Fallback port] %d -> 443", proxyPort);
 				}
 
-				if (SSLPassThroughs.getInstance().includes(serverName, listen_info.getPort())) {
+				if (AppInitializer.getSSLPassThroughs().includes(serverName, listen_info.getPort())) {
 
 					SocketEndpoint server_e = new SocketEndpoint(serverAddr);
 					SocketEndpoint client_e = new SocketEndpoint(client, bais);
