@@ -37,11 +37,11 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.CAFactory;
 import packetproxy.model.ListenPort;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 
 public class GUIOptionListenPortDialog extends JDialog {
 
@@ -129,19 +129,19 @@ public class GUIOptionListenPortDialog extends JDialog {
 		List<Server> servers = null;
 		if (item.equals("HTTP_PROXY")) {
 
-			servers = Servers.getInstance().queryHttpProxies();
+			servers = AppInitializer.getServers().queryHttpProxies();
 			combo.addItem(I18nString.get("Forward to server directly without upstream proxy"));
 		} else if (item.equals("SSL_TRANSPARENT_PROXY")) {
 
-			servers = Servers.getInstance().queryHttpProxies();
+			servers = AppInitializer.getServers().queryHttpProxies();
 			combo.addItem(I18nString.get("Forward to server specified in SNI header"));
 		} else if (item.equals("HTTP_TRANSPARENT_PROXY")) {
 
-			servers = Servers.getInstance().queryHttpProxies();
+			servers = AppInitializer.getServers().queryHttpProxies();
 			combo.addItem(I18nString.get("Forward to server specified in Hosts header"));
 		} else if (item.equals("UDP_FORWARDER")) {
 
-			servers = Servers.getInstance().queryNonHttpProxies();
+			servers = AppInitializer.getServers().queryNonHttpProxies();
 			if (servers.isEmpty()) {
 
 				JOptionPane.showMessageDialog(this,
@@ -150,7 +150,7 @@ public class GUIOptionListenPortDialog extends JDialog {
 			}
 		} else if (item.equals("SSL_FORWARDER")) {
 
-			servers = Servers.getInstance().queryNonHttpProxies();
+			servers = AppInitializer.getServers().queryNonHttpProxies();
 			if (servers.isEmpty()) {
 
 				JOptionPane.showMessageDialog(this,
@@ -159,7 +159,7 @@ public class GUIOptionListenPortDialog extends JDialog {
 			}
 		} else if (item.equals("FORWARDER")) {
 
-			servers = Servers.getInstance().queryNonHttpProxies();
+			servers = AppInitializer.getServers().queryNonHttpProxies();
 			if (servers.isEmpty()) {
 
 				JOptionPane.showMessageDialog(this,
@@ -168,7 +168,7 @@ public class GUIOptionListenPortDialog extends JDialog {
 			}
 		} else if (item.equals("QUIC_FORWARDER")) {
 
-			servers = Servers.getInstance().queryNonHttpProxies();
+			servers = AppInitializer.getServers().queryNonHttpProxies();
 			if (servers.isEmpty()) {
 
 				JOptionPane.showMessageDialog(this,
@@ -181,7 +181,7 @@ public class GUIOptionListenPortDialog extends JDialog {
 			combo.addItem(I18nString.get("Forward to server specified in SNI header"));
 		} else if (item.equals("XMPP_SSL_FORWARDER")) {
 
-			servers = Servers.getInstance().queryNonHttpProxies();
+			servers = AppInitializer.getServers().queryNonHttpProxies();
 			if (servers.isEmpty()) {
 
 				JOptionPane.showMessageDialog(this,
@@ -190,7 +190,7 @@ public class GUIOptionListenPortDialog extends JDialog {
 			}
 		} else {
 
-			servers = Servers.getInstance().queryNonHttpProxies();
+			servers = AppInitializer.getServers().queryNonHttpProxies();
 		}
 		for (Server server : servers) {
 
@@ -311,7 +311,7 @@ public class GUIOptionListenPortDialog extends JDialog {
 					}
 					String server_str = (String) combo.getSelectedItem();
 					listenPort = new ListenPort(Integer.parseInt(text_port.getText()), type,
-							Servers.getInstance().queryByString(server_str),
+							AppInitializer.getServers().queryByString(server_str),
 							CAFactory.findByUTF8Name(ca_combo.getSelectedItem().toString()).map(ca -> ca.getName())
 									.orElse("Error"));
 					dispose();

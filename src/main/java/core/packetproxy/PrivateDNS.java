@@ -136,7 +136,7 @@ public class PrivateDNS {
 	public PrivateDNS() throws Exception {
 		lock = new Object();
 		state = new ConfigBoolean("PrivateDNS");
-		servers = Servers.getInstance();
+		servers = AppInitializer.getServers();
 		dns = null;
 	}
 

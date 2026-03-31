@@ -25,6 +25,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import java.util.stream.Collectors;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class ListenPorts implements PropertyChangeListener {
@@ -36,7 +37,7 @@ public class ListenPorts implements PropertyChangeListener {
 
 	public ListenPorts() throws Exception {
 		database = Database.getInstance();
-		servers = Servers.getInstance();
+		servers = AppInitializer.getServers();
 		dao = database.createTable(ListenPort.class, this);
 	}
 

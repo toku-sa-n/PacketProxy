@@ -99,7 +99,7 @@ public class DuplexFactory {
 					packets.update(client_packet);
 				}
 
-				Server server = Servers.getInstance().queryByAddress(server_addr);
+				Server server = AppInitializer.getServers().queryByAddress(server_addr);
 				decoded_data = mods.replaceOnRequest(decoded_data, server, client_packet);
 
 				byte[] decoded_hash = CryptUtils.sha1(decoded_data);
@@ -162,7 +162,7 @@ public class DuplexFactory {
 					packets.update(client_packet);
 				}
 
-				Server server = Servers.getInstance().queryByAddress(server_addr);
+				Server server = AppInitializer.getServers().queryByAddress(server_addr);
 				decoded_data = mods.replaceOnResponse(decoded_data, server, server_packet);
 
 				byte[] decoded_hash = CryptUtils.sha1(decoded_data);

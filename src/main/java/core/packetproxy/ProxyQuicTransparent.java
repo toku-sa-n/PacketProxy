@@ -21,7 +21,6 @@ import static packetproxy.util.Logging.log;
 
 import packetproxy.model.ListenPort;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 import packetproxy.quic.service.connection.ClientConnection;
 import packetproxy.quic.service.connection.ClientConnections;
 import packetproxy.quic.service.connection.ServerConnection;
@@ -53,10 +52,10 @@ public class ProxyQuicTransparent extends Proxy {
 						sniServerName, this.listen_info.getPort());
 
 				String encoder = "HTTP";
-				Server server = Servers.getInstance().queryByHostName(sniServerName);
+				Server server = AppInitializer.getServers().queryByHostName(sniServerName);
 				if (server != null) {
 
-					String encoderTemp = Servers.getInstance().queryByHostName(sniServerName).getEncoder();
+					String encoderTemp = AppInitializer.getServers().queryByHostName(sniServerName).getEncoder();
 					if (encoderTemp != null) {
 
 						encoder = encoderTemp;

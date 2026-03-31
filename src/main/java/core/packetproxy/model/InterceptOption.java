@@ -19,6 +19,7 @@ import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import packetproxy.AppInitializer;
 import packetproxy.common.Binary;
 import packetproxy.common.Binary.HexString;
 import packetproxy.common.Utils;
@@ -108,7 +109,7 @@ public class InterceptOption {
 	}
 
 	public Server getServer() throws Exception {
-		return Servers.getInstance().query(this.server_id);
+		return AppInitializer.getServers().query(this.server_id);
 	}
 
 	public String getServerName() throws Exception {
@@ -116,7 +117,7 @@ public class InterceptOption {
 
 			return "*";
 		}
-		Server server = Servers.getInstance().query(this.server_id);
+		Server server = AppInitializer.getServers().query(this.server_id);
 		return server != null ? server.toString() : "";
 	}
 

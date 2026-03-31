@@ -80,7 +80,7 @@ public class ConfigIO {
 		DaoHub daoHub = new DaoHub();
 
 		daoHub.listenPortList = AppInitializer.getListenPorts().queryAll();
-		daoHub.serverList = Servers.getInstance().queryAll();
+		daoHub.serverList = AppInitializer.getServers().queryAll();
 		daoHub.modificationList = AppInitializer.getModifications().queryAll();
 		daoHub.sslPassThroughList = AppInitializer.getSSLPassThroughs().queryAll();
 
@@ -103,7 +103,7 @@ public class ConfigIO {
 		}
 		for (Server server : daoHub.serverList) {
 
-			Servers.getInstance().create(server);
+			AppInitializer.getServers().create(server);
 		}
 		for (Modification mod : daoHub.modificationList) {
 

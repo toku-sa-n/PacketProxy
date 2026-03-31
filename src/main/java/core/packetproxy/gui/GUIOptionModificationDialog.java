@@ -32,10 +32,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.Modification;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 
 public class GUIOptionModificationDialog extends JDialog {
 
@@ -90,7 +90,7 @@ public class GUIOptionModificationDialog extends JDialog {
 
 	private JComponent createAppliedServers() throws Exception {
 		server_combo.addItem("*");
-		List<Server> servers = Servers.getInstance().queryAll();
+		List<Server> servers = AppInitializer.getServers().queryAll();
 		for (Server server : servers) {
 
 			server_combo.addItem(server.toString());
@@ -200,7 +200,7 @@ public class GUIOptionModificationDialog extends JDialog {
 
 					String server_str = server_combo.getSelectedItem().toString();
 					modification = new Modification(type, text_pattern.getText(), text_replaced.getText(), method,
-							Servers.getInstance().queryByString(server_str));
+							AppInitializer.getServers().queryByString(server_str));
 					dispose();
 				} catch (Exception e1) {
 

@@ -51,7 +51,6 @@ import packetproxy.common.Utils;
 import packetproxy.model.CAs.CA;
 import packetproxy.model.ConfigString;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 
 public class Https {
 
@@ -59,7 +58,7 @@ public class Https {
 
 	public static SSLContext createSSLContext(String commonName, CA ca) throws Exception {
 		SSLContext sslContext = SSLContext.getInstance("TLS");
-		String[] domainNames = Servers.getInstance().queryResolvedByDNS().stream().map(a -> a.getIp())
+		String[] domainNames = AppInitializer.getServers().queryResolvedByDNS().stream().map(a -> a.getIp())
 				.sorted(String::compareTo).toArray(String[]::new);
 		KeyStore ks = AppInitializer.getCertCacheManager().getKeyStore(commonName, domainNames, ca);
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -90,7 +89,7 @@ public class Https {
 				.createSocket(clientSocket, lookahead, true);
 		clientSSLSocket.setUseClientMode(false);
 
-		Server server = Servers.getInstance().queryByAddress(serverAddr);
+		Server server = AppInitializer.getServers().queryByAddress(serverAddr);
 		clientKeyManagers = ClientKeyManager.getKeyManagers(server);
 		SSLSocket[] serverSSLSocket = new SSLSocket[1];
 		clientSSLSocket.setHandshakeApplicationProtocolSelector((clientSocketParam, clientProtocols) -> {
@@ -287,7 +286,7 @@ public class Https {
 		/* SNI */
 		SNIHostName serverName = new SNIHostName(SNIServerName);
 		/* Fetch Client Certificate from ClientKeyManager */
-		Server server = Servers.getInstance().queryByAddress(addr);
+		Server server = AppInitializer.getServers().queryByAddress(addr);
 		clientKeyManagers = ClientKeyManager.getKeyManagers(server);
 
 		SSLSocketFactory ssf = createSSLSocketFactory();

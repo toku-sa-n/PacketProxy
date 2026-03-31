@@ -35,7 +35,6 @@ import packetproxy.encode.EncodeHTTPBase;
 import packetproxy.encode.Encoder;
 import packetproxy.model.ListenPort;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 
 public class ProxySSLTransparent extends Proxy {
 	private ListenPort listen_info;
@@ -146,7 +145,7 @@ public class ProxySSLTransparent extends Proxy {
 			WrapEndpoint wep_e = new WrapEndpoint(client_e, ArrayUtils.subarray(buff, 0, length));
 			InetSocketAddress serverAddr = new InetSocketAddress(PrivateDNSClient.getByName(serverName), proxyPort);
 			// SNIヘッダが無い場合、SSLPassThroughは使えない
-			Server server = Servers.getInstance().queryByHostNameAndPort(serverName, proxyPort);
+			Server server = AppInitializer.getServers().queryByHostNameAndPort(serverName, proxyPort);
 			SSLSocketEndpoint server_e = new SSLSocketEndpoint(serverAddr, serverName, null);
 			createConnection(wep_e, server_e, server);
 		} else {
@@ -192,7 +191,8 @@ public class ProxySSLTransparent extends Proxy {
 					duplex.start();
 				} else {
 
-					Server server = Servers.getInstance().queryByHostNameAndPort(serverName, serverAddr.getPort());
+					Server server = AppInitializer.getServers().queryByHostNameAndPort(serverName,
+							serverAddr.getPort());
 					SSLSocketEndpoint[] eps = EndpointFactory.createBothSideSSLEndpoints(client, bais, serverAddr, null,
 							serverName, listen_info.getCA().get());
 					createConnection(eps[0], eps[1], server);

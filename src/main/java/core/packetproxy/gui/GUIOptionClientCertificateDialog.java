@@ -39,7 +39,6 @@ import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.ClientCertificate;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 
 public class GUIOptionClientCertificateDialog extends JDialog {
 
@@ -80,7 +79,7 @@ public class GUIOptionClientCertificateDialog extends JDialog {
 	}
 
 	public ClientCertificate showDialog() throws Exception {
-		if (Servers.getInstance().queryAll().isEmpty()) {
+		if (AppInitializer.getServers().queryAll().isEmpty()) {
 
 			JOptionPane.showMessageDialog(this.owner,
 					I18nString.get("Set server you wish to connect into 'Servers setting' first."),
@@ -176,7 +175,7 @@ public class GUIOptionClientCertificateDialog extends JDialog {
 
 	private JComponent createAppliedServers() throws Exception {
 		// TODO: 任意のホスト名も選べるようにする
-		List<Server> servers = Servers.getInstance().queryAll();
+		List<Server> servers = AppInitializer.getServers().queryAll();
 		for (Server server : servers) {
 
 			serverCombo.addItem(server.toString());
@@ -223,7 +222,7 @@ public class GUIOptionClientCertificateDialog extends JDialog {
 
 				try {
 
-					certificate = ClientCertificate.convert(type, Servers.getInstance().queryByString(serverName),
+					certificate = ClientCertificate.convert(type, AppInitializer.getServers().queryByString(serverName),
 							certificatePathField.getText(), storePasswordField.getPassword(),
 							keyPasswordField.getPassword());
 				} catch (Exception e2) {

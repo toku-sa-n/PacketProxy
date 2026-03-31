@@ -18,6 +18,7 @@ package packetproxy.model;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import java.util.Optional;
+import packetproxy.AppInitializer;
 import packetproxy.model.CAs.CA;
 
 @DatabaseTable(tableName = "listenports")
@@ -124,7 +125,7 @@ public class ListenPort {
 	}
 
 	public Server getServer() throws Exception {
-		return Servers.getInstance().query(this.server_id);
+		return AppInitializer.getServers().query(this.server_id);
 	}
 
 	public Protocol getProtocol() {

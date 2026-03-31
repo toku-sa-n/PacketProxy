@@ -28,7 +28,6 @@ import packetproxy.AppInitializer;
 import packetproxy.model.ListenPort;
 import packetproxy.model.ListenPort.TYPE;
 import packetproxy.model.ListenPorts;
-import packetproxy.model.Servers;
 
 public class GUIOptionListenPorts extends GUIOptionComponentBase<ListenPort> {
 
@@ -40,7 +39,7 @@ public class GUIOptionListenPorts extends GUIOptionComponentBase<ListenPort> {
 		super(owner);
 		listenPorts = AppInitializer.getListenPorts();
 		listenPorts.addPropertyChangeListener(this);
-		Servers.getInstance().addPropertyChangeListener(this);
+		AppInitializer.getServers().addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<ListenPort>();
 
 		String[] menu = {"Enabled", "Protocol", "Listen Port", "Port Type", "CA", "Forward Server"};

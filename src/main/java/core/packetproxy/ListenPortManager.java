@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import packetproxy.model.ListenPort;
 import packetproxy.model.ListenPorts;
-import packetproxy.model.Servers;
 
 public class ListenPortManager implements PropertyChangeListener {
 
@@ -41,7 +40,7 @@ public class ListenPortManager implements PropertyChangeListener {
 		listen_map = new HashMap<String, Listen>();
 		listenPorts = AppInitializer.getListenPorts();
 		listenPorts.addPropertyChangeListener(this);
-		Servers.getInstance().addPropertyChangeListener(this);
+		AppInitializer.getServers().addPropertyChangeListener(this);
 		listenPorts.refresh();
 	}
 

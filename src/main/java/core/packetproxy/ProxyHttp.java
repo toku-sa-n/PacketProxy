@@ -31,7 +31,6 @@ import packetproxy.http.Http;
 import packetproxy.http.Https;
 import packetproxy.model.ListenPort;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 
 public class ProxyHttp extends Proxy {
 	private ListenPort listen_info;
@@ -112,7 +111,8 @@ public class ProxyHttp extends Proxy {
 										/* The client does not support ALPN. It seems to be an old HTTP client */
 										ALPN = "http/1.1";
 									}
-									Server serverSetting = Servers.getInstance().queryByAddress(http.getServerAddr());
+									Server serverSetting = AppInitializer.getServers()
+											.queryByAddress(http.getServerAddr());
 									String encoderName = (serverSetting != null) ? serverSetting.getEncoder() : "HTTP";
 									DuplexAsync d = DuplexFactory.createDuplexAsync(clientE, serverE, encoderName,
 											ALPN);
@@ -132,7 +132,7 @@ public class ProxyHttp extends Proxy {
 								} else {
 
 									http.disableProxyFormatUrl(); // direct connect!
-									Server s = Servers.getInstance().queryByAddress(http.getServerAddr());
+									Server s = AppInitializer.getServers().queryByAddress(http.getServerAddr());
 									if (s != null) {
 
 										server_e = EndpointFactory.createFromServer(s);
@@ -188,7 +188,7 @@ public class ProxyHttp extends Proxy {
 	}
 
 	private byte[] createConnection(Endpoint client, Endpoint server, byte[] input_data) throws Exception {
-		Server s = Servers.getInstance().queryByAddress(server.getAddress());
+		Server s = AppInitializer.getServers().queryByAddress(server.getAddress());
 		DuplexSync duplex = (s != null)
 				? DuplexFactory.createDuplexSync(client, server, s.getEncoder(), "http/1.1")
 				: DuplexFactory.createDuplexSync(client, server, "HTTP", "http/1.1");

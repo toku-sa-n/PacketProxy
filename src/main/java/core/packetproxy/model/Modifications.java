@@ -24,6 +24,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Modifications implements PropertyChangeListener {
@@ -36,7 +37,7 @@ public class Modifications implements PropertyChangeListener {
 
 	public Modifications() throws Exception {
 		database = Database.getInstance();
-		servers = Servers.getInstance();
+		servers = AppInitializer.getServers();
 		dao = database.createTable(Modification.class, this);
 		cache = new DaoQueryCache<Modification>();
 		if (!isLatestVersion()) {

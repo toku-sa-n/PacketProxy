@@ -29,23 +29,13 @@ import java.util.List;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Servers implements PropertyChangeListener {
-
-	private static Servers instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static Servers getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Servers();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<Server, Integer> dao;
 	private DaoQueryCache<Server> cache;
 
-	private Servers() throws Exception {
+	public Servers() throws Exception {
 		database = Database.getInstance();
 		dao = database.createTable(Server.class, this);
 		cache = new DaoQueryCache();

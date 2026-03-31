@@ -25,6 +25,7 @@ import packetproxy.model.Packets
 import packetproxy.model.ResenderPackets
 import packetproxy.model.Resolutions
 import packetproxy.model.SSLPassThroughs
+import packetproxy.model.Servers
 import packetproxy.util.CharSetUtility
 import packetproxy.util.Logging
 
@@ -52,6 +53,7 @@ object AppInitializer {
   private var packets: Packets? = null
   private var resenderPackets: ResenderPackets? = null
   private var resolutions: Resolutions? = null
+  private var servers: Servers? = null
   private var sslPassThroughs: SSLPassThroughs? = null
   private var vulCheckerManager: VulCheckerManager? = null
 
@@ -260,6 +262,8 @@ object AppInitializer {
 
   @JvmStatic
   fun getResolutions(): Resolutions = resolutions ?: Resolutions().also { resolutions = it }
+
+  @JvmStatic fun getServers(): Servers = servers ?: Servers().also { servers = it }
 
   @JvmStatic
   fun getSSLPassThroughs(): SSLPassThroughs =

@@ -33,7 +33,6 @@ import packetproxy.common.StringUtils;
 import packetproxy.http.Http;
 import packetproxy.model.ListenPort;
 import packetproxy.model.Server;
-import packetproxy.model.Servers;
 
 public class ProxyHttpTransparent extends Proxy {
 
@@ -152,7 +151,8 @@ public class ProxyHttpTransparent extends Proxy {
 				server_e = EndpointFactory.createServerEndpoint(hostPort.getInetSocketAddress());
 			}
 
-			Server server = Servers.getInstance().queryByHostNameAndPort(hostPort.getHostName(), listen_info.getPort());
+			Server server = AppInitializer.getServers().queryByHostNameAndPort(hostPort.getHostName(),
+					listen_info.getPort());
 			createConnection(client_e, server_e, server);
 		} catch (ConnectException e) {
 

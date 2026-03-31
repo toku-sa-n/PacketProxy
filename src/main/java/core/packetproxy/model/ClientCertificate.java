@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
+import packetproxy.AppInitializer;
 
 /** Certificate Model for Client Certificate Authentication */
 @DatabaseTable(tableName = "clientCertificates")
@@ -257,11 +258,11 @@ public class ClientCertificate {
 	}
 
 	public Server getServer() throws Exception {
-		return Servers.getInstance().query(this.serverId);
+		return AppInitializer.getServers().query(this.serverId);
 	}
 
 	public String getServerName() throws Exception {
-		Server server = Servers.getInstance().query(this.serverId);
+		Server server = AppInitializer.getServers().query(this.serverId);
 		return server != null ? server.toString() : "";
 	}
 

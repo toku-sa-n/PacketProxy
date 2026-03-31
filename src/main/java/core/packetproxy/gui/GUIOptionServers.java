@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.AppInitializer;
 import packetproxy.model.Server;
 import packetproxy.model.Servers;
 
@@ -35,7 +36,7 @@ public class GUIOptionServers extends GUIOptionComponentBase<Server> {
 
 	public GUIOptionServers(JFrame owner) throws Exception {
 		super(owner);
-		servers = Servers.getInstance();
+		servers = AppInitializer.getServers();
 		servers.addPropertyChangeListener(this);
 		server_list = new ArrayList<Server>();
 		String[] menu = {"Host", "Port", "Use SSL", "Encode Module", "Spoof DNS(A)", "Spoof DNS(AAAA)", "HttpProxy",
@@ -108,7 +109,7 @@ public class GUIOptionServers extends GUIOptionComponentBase<Server> {
 					Server old_server = getSelectedTableContent();
 					dlg = new GUIOptionServerDialog(owner);
 					Server new_server = dlg.showDialog(old_server);
-					Servers.getInstance().update(new_server);
+					AppInitializer.getServers().update(new_server);
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);

@@ -25,6 +25,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.common.ClientKeyManager;
 import packetproxy.model.Database.DatabaseMessage;
 
@@ -38,7 +39,7 @@ public class ClientCertificates implements PropertyChangeListener {
 
 	public ClientCertificates() throws Exception {
 		database = Database.getInstance();
-		servers = Servers.getInstance();
+		servers = AppInitializer.getServers();
 		dao = database.createTable(ClientCertificate.class, this);
 		if (!isLatestVersion()) {
 

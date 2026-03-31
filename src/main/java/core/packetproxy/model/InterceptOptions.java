@@ -26,6 +26,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 import packetproxy.model.InterceptOption.Direction;
 
@@ -65,7 +66,7 @@ public class InterceptOptions implements PropertyChangeListener {
 
 	public InterceptOptions() throws Exception {
 		database = Database.getInstance();
-		servers = Servers.getInstance();
+		servers = AppInitializer.getServers();
 		dao = database.createTable(InterceptOption.class, this);
 		cache = new DaoQueryCache<InterceptOption>();
 		enabled = new ConfigBoolean("InterceptOptions");
