@@ -22,7 +22,6 @@ import packetproxy.cli.DecodeModeHandler
 import packetproxy.cli.EncodeModeHandler
 import packetproxy.common.ConfigIO
 import packetproxy.common.Utils
-import packetproxy.gulp.input.ChainedSource
 import packetproxy.gulp.input.ScriptSource
 import packetproxy.gulp.input.TerminalFactory
 import packetproxy.util.Logging
@@ -33,16 +32,16 @@ object GulpTerminal {
     val cmdCtx = CommandContext()
     val terminal = TerminalFactory.create(cmdCtx)
 
-    ChainedSource.push(terminal)
-    ChainedSource.push(ScriptSource(scriptFilePath))
-    ChainedSource.open()
+    cmdCtx.chainedSource.push(terminal)
+    cmdCtx.chainedSource.push(ScriptSource(scriptFilePath))
+    cmdCtx.chainedSource.open()
 
     runBlocking {
       while (isActive) {
         /** コマンド入力受付。Ctrl+C: continue 改行して次の入力受付を開始する Ctrl+D: break Terminalを閉じる */
         val line =
           try {
-            withContext(Dispatchers.IO) { ChainedSource.readLine() } ?: break
+            withContext(Dispatchers.IO) { cmdCtx.chainedSource.readLine() } ?: break
           } catch (e: Exception) {
             when (e) {
               is UserInterruptException -> {} // Ctrl+C

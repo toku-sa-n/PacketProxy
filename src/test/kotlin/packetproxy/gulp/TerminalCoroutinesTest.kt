@@ -31,10 +31,11 @@ import packetproxy.gulp.output.BufferedOutput
 
 class TerminalCoroutinesTest {
   @TempDir lateinit var tempDir: Path
+  private lateinit var chainedSource: ChainedSource
 
   @BeforeEach
   fun setUp() {
-    // ChainedSourceの状態をクリア
+    chainedSource = ChainedSource()
   }
 
   @AfterEach
@@ -56,8 +57,8 @@ class TerminalCoroutinesTest {
   fun コマンド実行中にcancelJobを実行することでコマンドの中断ができること() = runBlocking {
     val mockTerminal = createMockTerminal()
 
-    ChainedSource.push(mockTerminal)
-    ChainedSource.open()
+    chainedSource.push(mockTerminal)
+    chainedSource.open()
 
     val cmdCtx = CommandContext(BufferedOutput())
 

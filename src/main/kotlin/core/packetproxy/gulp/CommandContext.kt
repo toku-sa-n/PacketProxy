@@ -18,6 +18,7 @@ package packetproxy.gulp
 import kotlinx.coroutines.Job
 import packetproxy.cli.CLIModeHandler
 import packetproxy.cli.EncodeModeHandler
+import packetproxy.gulp.input.ChainedSource
 import packetproxy.gulp.output.CommandOutput
 import packetproxy.gulp.output.ConsoleOutput
 import packetproxy.gulp.output.OutputStyle
@@ -30,6 +31,7 @@ import packetproxy.gulp.output.OutputStyle
 class CommandContext(val output: CommandOutput = ConsoleOutput) {
   var currentHandler: CLIModeHandler = EncodeModeHandler
   var executionJob: Job? = null
+  val chainedSource = ChainedSource()
 
   fun cancelJob() {
     executionJob?.cancel()

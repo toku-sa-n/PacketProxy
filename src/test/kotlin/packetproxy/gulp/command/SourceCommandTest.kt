@@ -29,18 +29,14 @@ import packetproxy.gulp.output.BufferedOutput
 
 class SourceCommandTest {
   @TempDir lateinit var tempDir: Path
+  private lateinit var chainedSource: ChainedSource
 
   @BeforeEach
   fun setUp() {
-    // ChainedSourceの状態をクリア
-    clearChainedSource()
+    chainedSource = ChainedSource()
   }
 
-  @AfterEach
-  fun tearDown() {
-    // テスト後にChainedSourceの状態をクリア
-    clearChainedSource()
-  }
+  @AfterEach fun tearDown() {}
 
   private fun createMockTerminal(): LineSource {
     return object : LineSource() {
@@ -49,19 +45,6 @@ class SourceCommandTest {
       override fun readLine(): String? = null
 
       override fun close() {}
-    }
-  }
-
-  /** ChainedSourceの内部状態をクリアするヘルパーメソッド すべてのソースを読み取ってクリーンアップすることで状態をリセット */
-  private fun clearChainedSource() {
-    try {
-      // すべてのソースを読み取ってクリーンアップ
-      while (true) {
-        val line = ChainedSource.readLine() ?: break
-        // 読み取った行は無視（クリーンアップのため）
-      }
-    } catch (e: Exception) {
-      // エラーが発生した場合は無視（クリーンアップのため）
     }
   }
 
@@ -123,14 +106,14 @@ class SourceCommandTest {
 
     val scriptSource = ScriptSource(scriptFile.absolutePath)
 
-    ChainedSource.push(mockTerminal)
-    ChainedSource.push(scriptSource)
-    ChainedSource.open()
+    chainedSource.push(mockTerminal)
+    chainedSource.push(scriptSource)
+    chainedSource.open()
 
     // コマンドを1つずつ読み取って実行をシミュレート
     val commands = mutableListOf<String>()
     while (true) {
-      val line = ChainedSource.readLine() ?: break
+      val line = chainedSource.readLine() ?: break
       val parsed = CommandParser.parse(line)
       if (parsed != null && parsed.cmd.isNotEmpty()) {
         commands.add(parsed.cmd)
@@ -170,16 +153,16 @@ class SourceCommandTest {
     val mockTerminal = createMockTerminal()
 
     val outerScriptSource = ScriptSource(outerScriptFile.absolutePath)
-
-    ChainedSource.push(mockTerminal)
-    ChainedSource.push(outerScriptSource)
-    ChainedSource.open()
-
-    val commands = mutableListOf<String>()
     val ctx = CommandContext(BufferedOutput())
 
+    ctx.chainedSource.push(mockTerminal)
+    ctx.chainedSource.push(outerScriptSource)
+    ctx.chainedSource.open()
+
+    val commands = mutableListOf<String>()
+
     while (true) {
-      val line = ChainedSource.readLine() ?: break
+      val line = ctx.chainedSource.readLine() ?: break
       val parsed = CommandParser.parse(line) ?: continue
 
       when (parsed.cmd) {
@@ -238,16 +221,16 @@ class SourceCommandTest {
 
     // モックのLineSourceを作成（ターミナルをシミュレート）
     val mockTerminal = createMockTerminal()
-
-    ChainedSource.push(mockTerminal)
-    ChainedSource.push(layer0ScriptSource)
-    ChainedSource.open()
-
-    val commands = mutableListOf<String>()
     val ctx = CommandContext(BufferedOutput())
 
+    ctx.chainedSource.push(mockTerminal)
+    ctx.chainedSource.push(layer0ScriptSource)
+    ctx.chainedSource.open()
+
+    val commands = mutableListOf<String>()
+
     while (true) {
-      val line = ChainedSource.readLine() ?: break
+      val line = ctx.chainedSource.readLine() ?: break
       val parsed = CommandParser.parse(line) ?: continue
 
       when (parsed.cmd) {
