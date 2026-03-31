@@ -33,9 +33,9 @@ import packetproxy.util.errWithStackTrace
 import packetproxy.util.init
 import packetproxy.util.log
 
-object AppInitializer {
-  private var isGulp = false // Gulp modeか否か
-  private var settingsPath = "" // 設定用JSONのファイルpath
+class AppInitializer {
+  private var isGulp = false
+  private var settingsPath = ""
   private var certCacheManager: CertCacheManager? = null
   private var clientCertificates: ClientCertificates? = null
   private var charSets: CharSets? = null
@@ -67,92 +67,56 @@ object AppInitializer {
   private var isGulpNotReady = true
   private var isComponentsNotReady = true
 
-  @JvmStatic
-  fun setArgs(isGulp: Boolean, settingsPath: String?) {
+  private fun setArgsInternal(isGulp: Boolean, settingsPath: String?) {
     this.isGulp = isGulp
     this.settingsPath = settingsPath ?: ""
   }
 
-  /** GUI / CLI(Gulp) に関連なく最初に実行するべき初期化を一度のみ実行する */
-  @JvmStatic
-  fun initCore() {
+  private fun initCoreInternal() {
     check(isCoreNotReady) { "initCore() has already been done !" }
 
-    // ログ機能のエラーについては標準エラー出力への出力を行い終了する
     try {
       init(isGulp)
     } catch (e: Exception) {
       System.err.println("[FATAL ERROR]: Logging.init(), exit 1")
       System.err.println(e.message)
       e.printStackTrace(System.err)
-
       exitProcess(1)
     }
 
     log("Launching PacketProxy !")
-
     isCoreNotReady = false
   }
 
-  /** CLI(Gulp) 専用の初期化を実行 GUI ではGUIMainなどで実行されている処理 */
-  @JvmStatic
-  fun initGulp() {
+  private fun initGulpInternal() {
     check(isGulp) { "initGulp() is for gulp mode only !" }
     check(isGulpNotReady) { "initGulp() has already been done !" }
 
     initDatabase()
     initPackets()
-
     isGulpNotReady = false
   }
 
   private fun initDatabase() {
     val dbPath =
       Paths.get(System.getProperty("user.home"), ".packetproxy", "db", "resources.sqlite3")
-    getDatabase().openAt(dbPath.toString())
+    getDatabaseInternal().openAt(dbPath.toString())
     log("Databaseを初期化しました: $dbPath")
   }
 
   private fun initPackets() {
-    getPackets(false) // CLIモードでは履歴を復元しない
+    getPacketsInternal(false)
     log("Packetsを初期化しました")
   }
 
-  /**
-   * GUI / CLI(Gulp) に共通の初期化を GUI の表示よりも後回しして良い初期化を一度のみ実行する
-   *
-   * 並列処理による高速化:
-   * - EncoderManagerとVulCheckerManagerは完全に独立しているため、並列実行可能
-   * - ClientKeyManagerとListenPortManagerはDatabaseに依存しているが、
-   *   Databaseは既に初期化済み（GUIモードではstartGUI()で、CLIモードではinitGulp()で初期化）
-   *   かつ、それぞれ異なるテーブル（ClientCertificates/Servers/ListenPorts）にアクセスするため、 読み取り操作のみであれば並列実行可能
-   *
-   * 依存関係の整理:
-   * 1. ClientKeyManager: ClientCertificates → Database (読み取りのみ)
-   * 2. ListenPortManager: ListenPorts + Servers → Database (読み取りのみ)
-   * 3. EncoderManager: クラスパス/JARファイルのスキャン（Database非依存）
-   * 4. VulCheckerManager: クラスパスのスキャン（Database非依存）
-   */
-  @JvmStatic
-  fun initComponents() {
+  private fun initComponentsInternal() {
     check(isComponentsNotReady) { "initComponents() has already been done !" }
 
-    // Database依存のコンポーネントを並列実行
-    // 注意: Databaseは既に初期化済みであることを前提とする
     val dbDependentFuture1 = CompletableFuture.runAsync { initClientKeyManager() }
-
     val dbDependentFuture2 = CompletableFuture.runAsync { initListenPortManager() }
-
-    // Database非依存のコンポーネントを並列実行
-    val independentFuture1 =
-      CompletableFuture.runAsync {
-        // encoderのロードに1,2秒かかるのでここでロードをしておく（ここでしておかないと通信がacceptされたタイミングでロードする）
-        initEncoderManager()
-      }
-
+    val independentFuture1 = CompletableFuture.runAsync { initEncoderManager() }
     val independentFuture2 = CompletableFuture.runAsync { initVulCheckerManager() }
 
-    // 全ての初期化が完了するまで待機
     try {
       CompletableFuture.allOf(
           dbDependentFuture1,
@@ -161,19 +125,15 @@ object AppInitializer {
           independentFuture2,
         )
         .get()
-
       log("全てのコンポーネントの初期化が完了しました")
     } catch (e: ExecutionException) {
-      // ExecutionExceptionは、CompletableFuture内で発生した例外をラップした例外
-      // e.causeで実際の例外を取得できる
       val cause = e.cause
       if (cause is Exception) {
         errWithStackTrace(cause)
         throw cause
-      } else {
-        errWithStackTrace(e)
-        throw e
       }
+      errWithStackTrace(e)
+      throw e
     } catch (e: InterruptedException) {
       errWithStackTrace(e)
       Thread.currentThread().interrupt()
@@ -181,7 +141,6 @@ object AppInitializer {
     }
 
     loadSettingsFromJson()
-
     isComponentsNotReady = false
   }
 
@@ -191,132 +150,218 @@ object AppInitializer {
   }
 
   private fun initListenPortManager() {
-    getListenPortManager()
+    getListenPortManagerInternal()
     log("ListenPortManagerを初期化しました")
   }
 
-  @JvmStatic
-  fun getCertCacheManager(): CertCacheManager =
+  private fun getCertCacheManagerInternal(): CertCacheManager =
     certCacheManager ?: CertCacheManager().also { certCacheManager = it }
 
-  @JvmStatic
-  fun clearCertCache() {
+  private fun clearCertCacheInternal() {
     certCacheManager?.clearCacheEntries()
   }
 
-  @JvmStatic
-  fun getClientCertificates(): ClientCertificates =
+  private fun getClientCertificatesInternal(): ClientCertificates =
     clientCertificates ?: ClientCertificates().also { clientCertificates = it }
 
-  @JvmStatic fun getConfigs(): Configs = configs ?: Configs().also { configs = it }
+  private fun getConfigsInternal(): Configs = configs ?: Configs().also { configs = it }
 
-  @JvmStatic
-  fun clearConfigs() {
+  private fun clearConfigsInternal() {
     configs = null
   }
 
-  @JvmStatic fun getCharSets(): CharSets = charSets ?: CharSets().also { charSets = it }
+  private fun getCharSetsInternal(): CharSets = charSets ?: CharSets().also { charSets = it }
 
-  @JvmStatic
-  fun getCharSetUtility(): CharSetUtility =
+  private fun getCharSetUtilityInternal(): CharSetUtility =
     charSetUtility ?: CharSetUtility().also { charSetUtility = it }
 
-  @JvmStatic fun getDiff(): Diff = diff ?: Diff().also { diff = it }
+  private fun getDiffInternal(): Diff = diff ?: Diff().also { diff = it }
 
-  @JvmStatic fun getDiffBinary(): DiffBinary = diffBinary ?: DiffBinary().also { diffBinary = it }
+  private fun getDiffBinaryInternal(): DiffBinary =
+    diffBinary ?: DiffBinary().also { diffBinary = it }
 
-  @JvmStatic fun getDiffJson(): DiffJson = diffJson ?: DiffJson().also { diffJson = it }
+  private fun getDiffJsonInternal(): DiffJson = diffJson ?: DiffJson().also { diffJson = it }
 
-  @JvmStatic fun getDatabase(): Database = database ?: Database().also { database = it }
+  private fun getDatabaseInternal(): Database = database ?: Database().also { database = it }
 
-  @JvmStatic fun getExtensions(): Extensions = extensions ?: Extensions().also { extensions = it }
+  private fun getExtensionsInternal(): Extensions =
+    extensions ?: Extensions().also { extensions = it }
 
-  @JvmStatic fun getFilters(): Filters = filters ?: Filters().also { filters = it }
+  private fun getFiltersInternal(): Filters = filters ?: Filters().also { filters = it }
 
-  @JvmStatic
-  fun getInterceptOptions(): InterceptOptions =
+  private fun getInterceptOptionsInternal(): InterceptOptions =
     interceptOptions ?: InterceptOptions().also { interceptOptions = it }
 
-  @JvmStatic
-  fun getFontManager(): FontManager = fontManager ?: FontManager().also { fontManager = it }
+  private fun getFontManagerInternal(): FontManager =
+    fontManager ?: FontManager().also { fontManager = it }
 
-  @JvmStatic
-  fun setGuiMain(guiMain: GUIMain) {
+  private fun setGuiMainInternal(guiMain: GUIMain) {
     this.guiMain = guiMain
   }
 
-  @JvmStatic fun getGuiMain(): GUIMain = guiMain ?: throw Exception("GUIMain instance not found.")
+  private fun getGuiMainInternal(): GUIMain =
+    guiMain ?: throw Exception("GUIMain instance not found.")
 
-  @JvmStatic
-  fun getDuplexManager(): DuplexManager =
+  private fun getDuplexManagerInternal(): DuplexManager =
     duplexManager ?: DuplexManager().also { duplexManager = it }
 
-  @JvmStatic
-  fun getInterceptController(): InterceptController =
+  private fun getInterceptControllerInternal(): InterceptController =
     interceptController ?: InterceptController().also { interceptController = it }
 
-  @JvmStatic
-  fun getListenPortManager(): ListenPortManager =
+  private fun getListenPortManagerInternal(): ListenPortManager =
     listenPortManager ?: ListenPortManager().also { listenPortManager = it }
 
-  @JvmStatic
-  fun getListenPorts(): ListenPorts = listenPorts ?: ListenPorts().also { listenPorts = it }
+  private fun getListenPortsInternal(): ListenPorts =
+    listenPorts ?: ListenPorts().also { listenPorts = it }
 
-  @JvmStatic
-  fun getModifications(): Modifications =
+  private fun getModificationsInternal(): Modifications =
     modifications ?: Modifications().also { modifications = it }
 
-  @JvmStatic
-  fun getPackets(restore: Boolean): Packets = packets ?: Packets(restore).also { packets = it }
+  private fun getPacketsInternal(restore: Boolean): Packets =
+    packets ?: Packets(restore).also { packets = it }
 
-  @JvmStatic fun getPackets(): Packets = packets ?: throw Exception("Packets インスタンスが作成されていません。")
+  private fun getPacketsInternal(): Packets =
+    packets ?: throw Exception("Packets インスタンスが作成されていません。")
 
-  @JvmStatic
-  fun getResenderPackets(): ResenderPackets =
+  private fun getResenderPacketsInternal(): ResenderPackets =
     resenderPackets ?: ResenderPackets().also { resenderPackets = it }
 
-  @JvmStatic
-  fun getResolutions(): Resolutions = resolutions ?: Resolutions().also { resolutions = it }
+  private fun getResolutionsInternal(): Resolutions =
+    resolutions ?: Resolutions().also { resolutions = it }
 
-  @JvmStatic fun getServers(): Servers = servers ?: Servers().also { servers = it }
+  private fun getServersInternal(): Servers = servers ?: Servers().also { servers = it }
 
-  @JvmStatic
-  fun getSSLPassThroughs(): SSLPassThroughs =
+  private fun getSSLPassThroughsInternal(): SSLPassThroughs =
     sslPassThroughs ?: SSLPassThroughs().also { sslPassThroughs = it }
 
   private fun initEncoderManager() {
-    getEncoderManager()
+    getEncoderManagerInternal()
     log("EncoderManagerを初期化しました")
   }
 
-  @JvmStatic
-  fun getEncoderManager(): EncoderManager =
+  private fun getEncoderManagerInternal(): EncoderManager =
     encoderManager ?: EncoderManager().also { encoderManager = it }
 
   private fun initVulCheckerManager() {
-    getVulCheckerManager()
+    getVulCheckerManagerInternal()
     log("VulCheckerManagerを初期化しました")
   }
 
-  @JvmStatic
-  fun getVulCheckerManager(): VulCheckerManager =
+  private fun getVulCheckerManagerInternal(): VulCheckerManager =
     vulCheckerManager ?: VulCheckerManager().also { vulCheckerManager = it }
 
-  /** JSON設定ファイルを読み込んで適用 ListenPortManager初期化後に呼び出すことで、設定ファイル内の有効なプロキシが自動的に開始される */
   private fun loadSettingsFromJson() {
     if (settingsPath.isEmpty()) return
 
     try {
       val jsonBytes = Utils.readfile(settingsPath)
       val json = String(jsonBytes, Charsets.UTF_8)
-
       val configIO = ConfigIO()
       configIO.setOptions(json)
-
       log("設定ファイルを正常に読み込みました: $settingsPath")
     } catch (e: Exception) {
       err("設定ファイルの読み込みに失敗しました: ${e.message}", e)
       errWithStackTrace(e)
     }
+  }
+
+  companion object {
+    private lateinit var current: AppInitializer
+
+    @JvmStatic
+    fun bootstrap(appInitializer: AppInitializer = AppInitializer()): AppInitializer {
+      current = appInitializer
+      return current
+    }
+
+    @JvmStatic fun bootstrap(): AppInitializer = bootstrap(AppInitializer())
+
+    private fun currentInstance(): AppInitializer {
+      check(::current.isInitialized) { "AppInitializer has not been bootstrapped." }
+      return current
+    }
+
+    @JvmStatic
+    fun setArgs(isGulp: Boolean, settingsPath: String?) =
+      currentInstance().setArgsInternal(isGulp, settingsPath)
+
+    @JvmStatic fun initCore() = currentInstance().initCoreInternal()
+
+    @JvmStatic fun initGulp() = currentInstance().initGulpInternal()
+
+    @JvmStatic fun initComponents() = currentInstance().initComponentsInternal()
+
+    @JvmStatic
+    fun getCertCacheManager(): CertCacheManager = currentInstance().getCertCacheManagerInternal()
+
+    @JvmStatic fun clearCertCache() = currentInstance().clearCertCacheInternal()
+
+    @JvmStatic
+    fun getClientCertificates(): ClientCertificates =
+      currentInstance().getClientCertificatesInternal()
+
+    @JvmStatic fun getConfigs(): Configs = currentInstance().getConfigsInternal()
+
+    @JvmStatic fun clearConfigs() = currentInstance().clearConfigsInternal()
+
+    @JvmStatic fun getCharSets(): CharSets = currentInstance().getCharSetsInternal()
+
+    @JvmStatic
+    fun getCharSetUtility(): CharSetUtility = currentInstance().getCharSetUtilityInternal()
+
+    @JvmStatic fun getDiff(): Diff = currentInstance().getDiffInternal()
+
+    @JvmStatic fun getDiffBinary(): DiffBinary = currentInstance().getDiffBinaryInternal()
+
+    @JvmStatic fun getDiffJson(): DiffJson = currentInstance().getDiffJsonInternal()
+
+    @JvmStatic fun getDatabase(): Database = currentInstance().getDatabaseInternal()
+
+    @JvmStatic fun getExtensions(): Extensions = currentInstance().getExtensionsInternal()
+
+    @JvmStatic fun getFilters(): Filters = currentInstance().getFiltersInternal()
+
+    @JvmStatic
+    fun getInterceptOptions(): InterceptOptions = currentInstance().getInterceptOptionsInternal()
+
+    @JvmStatic fun getFontManager(): FontManager = currentInstance().getFontManagerInternal()
+
+    @JvmStatic fun setGuiMain(guiMain: GUIMain) = currentInstance().setGuiMainInternal(guiMain)
+
+    @JvmStatic fun getGuiMain(): GUIMain = currentInstance().getGuiMainInternal()
+
+    @JvmStatic fun getDuplexManager(): DuplexManager = currentInstance().getDuplexManagerInternal()
+
+    @JvmStatic
+    fun getInterceptController(): InterceptController =
+      currentInstance().getInterceptControllerInternal()
+
+    @JvmStatic
+    fun getListenPortManager(): ListenPortManager = currentInstance().getListenPortManagerInternal()
+
+    @JvmStatic fun getListenPorts(): ListenPorts = currentInstance().getListenPortsInternal()
+
+    @JvmStatic fun getModifications(): Modifications = currentInstance().getModificationsInternal()
+
+    @JvmStatic
+    fun getPackets(restore: Boolean): Packets = currentInstance().getPacketsInternal(restore)
+
+    @JvmStatic fun getPackets(): Packets = currentInstance().getPacketsInternal()
+
+    @JvmStatic
+    fun getResenderPackets(): ResenderPackets = currentInstance().getResenderPacketsInternal()
+
+    @JvmStatic fun getResolutions(): Resolutions = currentInstance().getResolutionsInternal()
+
+    @JvmStatic fun getServers(): Servers = currentInstance().getServersInternal()
+
+    @JvmStatic
+    fun getSSLPassThroughs(): SSLPassThroughs = currentInstance().getSSLPassThroughsInternal()
+
+    @JvmStatic
+    fun getEncoderManager(): EncoderManager = currentInstance().getEncoderManagerInternal()
+
+    @JvmStatic
+    fun getVulCheckerManager(): VulCheckerManager = currentInstance().getVulCheckerManagerInternal()
   }
 }

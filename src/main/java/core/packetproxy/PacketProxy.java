@@ -38,6 +38,7 @@ public class PacketProxy {
 		// バイナリへの引数の解釈とセット
 		String gulpMode = getOption("--gulp", args);
 		String settingsJson = getOption("--settings-json", args);
+		AppInitializer.bootstrap();
 		AppInitializer.setArgs(gulpMode != null, settingsJson);
 		AppInitializer.initCore();
 
