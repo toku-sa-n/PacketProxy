@@ -30,17 +30,7 @@ import packetproxy.model.Database.DatabaseMessage;
 import packetproxy.model.InterceptOption.Direction;
 
 public class InterceptOptions implements PropertyChangeListener {
-
-	private static InterceptOptions instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
-
-	public static InterceptOptions getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new InterceptOptions();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<InterceptOption, Integer> dao;
@@ -73,7 +63,7 @@ public class InterceptOptions implements PropertyChangeListener {
 		}
 	}
 
-	private InterceptOptions() throws Exception {
+	public InterceptOptions() throws Exception {
 		database = Database.getInstance();
 		servers = Servers.getInstance();
 		dao = database.createTable(InterceptOption.class, this);

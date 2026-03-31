@@ -132,7 +132,7 @@ public class Database {
 		createTable(Config.class, AppInitializer.getConfigs());
 		createTable(Server.class, Servers.getInstance());
 		createTable(ClientCertificate.class, AppInitializer.getClientCertificates());
-		createTable(InterceptOption.class, InterceptOptions.getInstance());
+		createTable(InterceptOption.class, AppInitializer.getInterceptOptions());
 		createTable(Modification.class, Modifications.getInstance());
 		createTable(SSLPassThrough.class, AppInitializer.getSSLPassThroughs());
 		createTable(CharSet.class, AppInitializer.getCharSets());

@@ -38,7 +38,6 @@ import packetproxy.common.I18nString;
 import packetproxy.model.CAFactory;
 import packetproxy.model.CAs.CA;
 import packetproxy.model.CAs.PacketProxyCAPerUser;
-import packetproxy.model.InterceptOptions;
 
 public class GUIOption {
 
@@ -126,7 +125,7 @@ public class GUIOption {
 		JComponent interceptPanel = intercepts.createPanel();
 
 		JCheckBox interceptRule = new JCheckBox(I18nString.get("Use these intercept rules"));
-		interceptRule.setSelected(InterceptOptions.getInstance().isEnabled());
+		interceptRule.setSelected(AppInitializer.getInterceptOptions().isEnabled());
 		interceptRule.addActionListener(new ActionListener() {
 
 			@Override
@@ -135,10 +134,10 @@ public class GUIOption {
 
 					if (interceptRule.isSelected()) {
 
-						InterceptOptions.getInstance().setEnabled(true);
+						AppInitializer.getInterceptOptions().setEnabled(true);
 					} else {
 
-						InterceptOptions.getInstance().setEnabled(false);
+						AppInitializer.getInterceptOptions().setEnabled(false);
 					}
 				} catch (Exception e) {
 

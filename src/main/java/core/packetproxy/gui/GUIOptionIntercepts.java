@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.InterceptOption;
 import packetproxy.model.InterceptOption.Direction;
@@ -37,7 +38,7 @@ public class GUIOptionIntercepts extends GUIOptionComponentBase<InterceptOption>
 
 	public GUIOptionIntercepts(JFrame owner) throws Exception {
 		super(owner);
-		intercept_options = InterceptOptions.getInstance();
+		intercept_options = AppInitializer.getInterceptOptions();
 		intercept_options.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<InterceptOption>();
 

@@ -22,8 +22,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import packetproxy.AppInitializer
 import packetproxy.model.InterceptModel
-import packetproxy.model.InterceptOptions
 import packetproxy.model.Packet
 import packetproxy.model.Server
 
@@ -143,11 +143,11 @@ class InterceptController(
   ): Boolean {
     if (!interceptModel.isInterceptEnabled) return false
 
-    if (InterceptOptions.getInstance().isEnabled) {
+    if (AppInitializer.getInterceptOptions().isEnabled) {
       return if (serverPacket == null) {
-        InterceptOptions.getInstance().interceptOnRequest(server, clientPacket)
+        AppInitializer.getInterceptOptions().interceptOnRequest(server, clientPacket)
       } else {
-        InterceptOptions.getInstance().interceptOnResponse(server, clientPacket, serverPacket)
+        AppInitializer.getInterceptOptions().interceptOnResponse(server, clientPacket, serverPacket)
       }
     }
 

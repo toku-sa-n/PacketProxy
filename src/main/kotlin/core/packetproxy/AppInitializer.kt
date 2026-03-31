@@ -17,6 +17,7 @@ import packetproxy.model.Diff
 import packetproxy.model.DiffBinary
 import packetproxy.model.DiffJson
 import packetproxy.model.Filters
+import packetproxy.model.InterceptOptions
 import packetproxy.model.ListenPorts
 import packetproxy.model.Packets
 import packetproxy.model.ResenderPackets
@@ -40,6 +41,7 @@ object AppInitializer {
   private var duplexManager: DuplexManager? = null
   private var encoderManager: EncoderManager? = null
   private var fontManager: FontManager? = null
+  private var interceptOptions: InterceptOptions? = null
   private var interceptController: InterceptController? = null
   private var listenPortManager: ListenPortManager? = null
   private var listenPorts: ListenPorts? = null
@@ -213,6 +215,10 @@ object AppInitializer {
   @JvmStatic fun getDiffJson(): DiffJson = diffJson ?: DiffJson().also { diffJson = it }
 
   @JvmStatic fun getFilters(): Filters = filters ?: Filters().also { filters = it }
+
+  @JvmStatic
+  fun getInterceptOptions(): InterceptOptions =
+    interceptOptions ?: InterceptOptions().also { interceptOptions = it }
 
   @JvmStatic
   fun getFontManager(): FontManager = fontManager ?: FontManager().also { fontManager = it }
