@@ -28,7 +28,10 @@ import packetproxy.model.Resolutions
 import packetproxy.model.SSLPassThroughs
 import packetproxy.model.Servers
 import packetproxy.util.CharSetUtility
-import packetproxy.util.Logging
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.init
+import packetproxy.util.log
 
 object AppInitializer {
   private var isGulp = false // Gulp modeか否か
@@ -77,7 +80,7 @@ object AppInitializer {
 
     // ログ機能のエラーについては標準エラー出力への出力を行い終了する
     try {
-      Logging.init(isGulp)
+      init(isGulp)
     } catch (e: Exception) {
       System.err.println("[FATAL ERROR]: Logging.init(), exit 1")
       System.err.println(e.message)
@@ -86,7 +89,7 @@ object AppInitializer {
       exitProcess(1)
     }
 
-    Logging.log("Launching PacketProxy !")
+    log("Launching PacketProxy !")
 
     isCoreNotReady = false
   }
@@ -107,12 +110,12 @@ object AppInitializer {
     val dbPath =
       Paths.get(System.getProperty("user.home"), ".packetproxy", "db", "resources.sqlite3")
     getDatabase().openAt(dbPath.toString())
-    Logging.log("Databaseを初期化しました: $dbPath")
+    log("Databaseを初期化しました: $dbPath")
   }
 
   private fun initPackets() {
     getPackets(false) // CLIモードでは履歴を復元しない
-    Logging.log("Packetsを初期化しました")
+    log("Packetsを初期化しました")
   }
 
   /**
@@ -159,20 +162,20 @@ object AppInitializer {
         )
         .get()
 
-      Logging.log("全てのコンポーネントの初期化が完了しました")
+      log("全てのコンポーネントの初期化が完了しました")
     } catch (e: ExecutionException) {
       // ExecutionExceptionは、CompletableFuture内で発生した例外をラップした例外
       // e.causeで実際の例外を取得できる
       val cause = e.cause
       if (cause is Exception) {
-        Logging.errWithStackTrace(cause)
+        errWithStackTrace(cause)
         throw cause
       } else {
-        Logging.errWithStackTrace(e)
+        errWithStackTrace(e)
         throw e
       }
     } catch (e: InterruptedException) {
-      Logging.errWithStackTrace(e)
+      errWithStackTrace(e)
       Thread.currentThread().interrupt()
       throw RuntimeException("初期化が中断されました", e)
     }
@@ -184,12 +187,12 @@ object AppInitializer {
 
   private fun initClientKeyManager() {
     ClientKeyManager.initialize()
-    Logging.log("ClientKeyManagerを初期化しました")
+    log("ClientKeyManagerを初期化しました")
   }
 
   private fun initListenPortManager() {
     getListenPortManager()
-    Logging.log("ListenPortManagerを初期化しました")
+    log("ListenPortManagerを初期化しました")
   }
 
   @JvmStatic
@@ -283,7 +286,7 @@ object AppInitializer {
 
   private fun initEncoderManager() {
     getEncoderManager()
-    Logging.log("EncoderManagerを初期化しました")
+    log("EncoderManagerを初期化しました")
   }
 
   @JvmStatic
@@ -292,7 +295,7 @@ object AppInitializer {
 
   private fun initVulCheckerManager() {
     getVulCheckerManager()
-    Logging.log("VulCheckerManagerを初期化しました")
+    log("VulCheckerManagerを初期化しました")
   }
 
   @JvmStatic
@@ -310,10 +313,10 @@ object AppInitializer {
       val configIO = ConfigIO()
       configIO.setOptions(json)
 
-      Logging.log("設定ファイルを正常に読み込みました: $settingsPath")
+      log("設定ファイルを正常に読み込みました: $settingsPath")
     } catch (e: Exception) {
-      Logging.err("設定ファイルの読み込みに失敗しました: ${e.message}", e)
-      Logging.errWithStackTrace(e)
+      err("設定ファイルの読み込みに失敗しました: ${e.message}", e)
+      errWithStackTrace(e)
     }
   }
 }

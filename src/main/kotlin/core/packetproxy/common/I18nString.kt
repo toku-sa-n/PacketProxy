@@ -17,7 +17,7 @@ package packetproxy.common
 
 import java.util.*
 import java.util.regex.Pattern
-import packetproxy.util.Logging
+import packetproxy.util.err
 
 object I18nString {
   @JvmField val locale: Locale = Locale.getDefault()
@@ -53,7 +53,7 @@ object I18nString {
       } catch (e: MissingResourceException) {
         null
       } catch (e: Exception) {
-        Logging.err("[Error] can't read resource: %s", message)
+        err("[Error] can't read resource: %s", message)
         null
       }
 

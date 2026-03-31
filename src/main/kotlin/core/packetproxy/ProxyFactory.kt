@@ -18,7 +18,7 @@ package packetproxy
 import java.net.ServerSocket
 import packetproxy.common.I18nString
 import packetproxy.model.ListenPort
-import packetproxy.util.Logging
+import packetproxy.util.log
 
 object ProxyFactory {
   @JvmStatic
@@ -27,8 +27,8 @@ object ProxyFactory {
     val type = listenInfo.getType()
     val port = listenInfo.getPort()
 
-    Logging.log("type is $type")
-    Logging.log(I18nString.get("Start listening port %d.", port))
+    log("type is $type")
+    log(I18nString.get("Start listening port %d.", port))
 
     return when (type) {
       ListenPort.TYPE.UDP_FORWARDER -> ProxyUDPForward(listenInfo)

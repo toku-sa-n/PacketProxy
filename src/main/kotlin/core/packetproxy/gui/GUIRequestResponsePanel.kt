@@ -39,7 +39,7 @@ import javax.swing.border.TitledBorder
 import javax.swing.event.ChangeListener
 import packetproxy.common.I18nString
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 /**
  * リクエストとレスポンスを左右に並べて表示するパネル 各パネルにReceived Packet, Decoded, Modified, Encoded, Allのタブを持つ

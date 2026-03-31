@@ -24,7 +24,9 @@ import packetproxy.common.ConfigIO
 import packetproxy.common.Utils
 import packetproxy.gulp.input.ScriptSource
 import packetproxy.gulp.input.TerminalFactory
-import packetproxy.util.Logging
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 object GulpTerminal {
   @JvmStatic
@@ -49,7 +51,7 @@ object GulpTerminal {
                 cmdCtx.println("${cmdCtx.currentHandler.prompts}exit")
                 break
               } // Ctrl+D
-              else -> Logging.errWithStackTrace(e)
+              else -> errWithStackTrace(e)
             }
             continue
           }
@@ -78,7 +80,7 @@ object GulpTerminal {
                 when (e) {
                   is CancellationException ->
                     cmdCtx.println() // Ctrl+Cによってcancel()が実行された結果throwされるもの
-                  else -> Logging.errWithStackTrace(e)
+                  else -> errWithStackTrace(e)
                 }
               }
             }
@@ -95,18 +97,18 @@ object GulpTerminal {
     if (jsonPath?.isEmpty() ?: true) return
 
     try {
-      Logging.log("設定ファイルを読み込みます: $jsonPath")
+      log("設定ファイルを読み込みます: $jsonPath")
       val jsonBytes = Utils.readfile(jsonPath)
       val json = String(jsonBytes, Charsets.UTF_8)
 
       val configIO = ConfigIO()
       configIO.setOptions(json)
 
-      Logging.log("設定ファイルを正常に読み込みました: $jsonPath")
-      Logging.log("設定ファイル内の有効なプロキシは自動的に開始されます")
+      log("設定ファイルを正常に読み込みました: $jsonPath")
+      log("設定ファイル内の有効なプロキシは自動的に開始されます")
     } catch (e: Exception) {
-      Logging.err("設定ファイルの読み込みに失敗しました: ${e.message}", e)
-      Logging.errWithStackTrace(e)
+      err("設定ファイルの読み込みに失敗しました: ${e.message}", e)
+      errWithStackTrace(e)
     }
   }
 }

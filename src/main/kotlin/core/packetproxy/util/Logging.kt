@@ -1,3 +1,5 @@
+@file:JvmName("Logging")
+
 /*
  * Copyright 2025 DeNA Co., Ltd.
  *
@@ -35,140 +37,134 @@ import org.jline.jansi.Ansi.Color.RED
 import org.slf4j.LoggerFactory
 import packetproxy.gui.GUILog
 
-object Logging {
-  private val dtf: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
-  private val guiLog: GUILog = GUILog()
-  private val logger = LoggerFactory.getLogger("")
-  private var isGulp: Boolean = false
+private val dtf: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
+private val guiLog: GUILog = GUILog()
+private val logger = LoggerFactory.getLogger("")
+private var isGulp: Boolean = false
 
-  // log出力先のファイルの絶対PATH
-  private val logFilePath by lazy {
-    val projectRoot = System.getProperty("app.home") ?: "."
-    val logDir = File(projectRoot, "logs")
-    if (!logDir.exists()) logDir.mkdirs()
-    "${logDir.absolutePath}/gulp.log"
-  }
+// log出力先のファイルの絶対PATH
+private val logFilePath by lazy {
+  val projectRoot = System.getProperty("app.home") ?: "."
+  val logDir = File(projectRoot, "logs")
+  if (!logDir.exists()) logDir.mkdirs()
+  "${logDir.absolutePath}/gulp.log"
+}
 
-  private val logFile by lazy {
-    val logFile = File(logFilePath)
-    if (!logFile.exists()) throw IOException("not found: ${logFile.absolutePath}")
-    logFile
-  }
+private val logFile by lazy {
+  val currentLogFile = File(logFilePath)
+  if (!currentLogFile.exists()) throw IOException("not found: ${currentLogFile.absolutePath}")
+  currentLogFile
+}
 
-  @JvmStatic fun getGuiLog(): GUILog = guiLog
+fun getGuiLog(): GUILog = guiLog
 
-  @JvmStatic
-  fun init(isGulp: Boolean) {
-    this.isGulp = isGulp
-    val context = LoggerFactory.getILoggerFactory() as LoggerContext
+fun init(isGulp: Boolean) {
+  packetproxy.util.isGulp = isGulp
+  val context = LoggerFactory.getILoggerFactory() as LoggerContext
 
-    context.reset()
+  context.reset()
 
-    val encoder =
-      PatternLayoutEncoder().apply {
+  val encoder =
+    PatternLayoutEncoder().apply {
+      this.context = context
+      pattern = "%msg%n"
+      start()
+    }
+
+  val appender =
+    if (isGulp) {
+      FileAppender<ILoggingEvent>().apply {
         this.context = context
-        pattern = "%msg%n"
+        name = "FILE"
+        file = logFilePath
+        isAppend = false
+        this.encoder = encoder
         start()
       }
-
-    val appender =
-      if (isGulp) {
-        FileAppender<ILoggingEvent>().apply {
-          this.context = context
-          name = "FILE"
-          file = logFilePath
-          isAppend = false
-          this.encoder = encoder
-          start()
-        }
-      } else {
-        ConsoleAppender<ILoggingEvent>().apply {
-          this.context = context
-          name = "CONSOLE"
-          this.encoder = encoder
-          start()
-        }
-      }
-
-    val rootLogger = context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
-    rootLogger.addAppender(appender)
-    // ormliteなどのdebugログを抑制するため、WARN未満は出力しない
-    rootLogger.level = Level.WARN
-  }
-
-  @JvmStatic
-  @Throws(IllegalFormatException::class)
-  fun log(format: Any, vararg args: Any?) {
-    val fs = formatString(format, *args)
-
-    // WARN未満は出力されないためwarnで出力する
-    logger.warn(fs)
-    if (isGulp) return
-    guiLog.append(fs)
-  }
-
-  @JvmStatic
-  @Throws(IllegalFormatException::class)
-  fun err(format: Any, vararg args: Any?) {
-    val fs = formatString(format, *args)
-
-    logger.error(Ansi.ansi().fg(RED).a(fs).reset().toString())
-    if (isGulp) return
-    guiLog.appendErr(fs)
-  }
-
-  /** 別のログが挟まらないように一塊にした上で１度に出力する */
-  @JvmStatic
-  @Throws(IllegalFormatException::class)
-  fun errWithStackTrace(e: Throwable) {
-    val sb = StringBuilder()
-    sb.append(e.toString())
-
-    for (element in e.stackTrace) {
-      sb.append("\n$element")
-    }
-    err(sb.toString())
-  }
-
-  /** logの継続出力を行う */
-  suspend fun tailLog() {
-    RandomAccessFile(logFile, "r").use { raf ->
-      // ブロッキング実行される場合は先頭、そうでない場合は末尾30行目から出力を開始する
-      raf.seek(0)
-
-      // 新しい追加分を追跡する
-      while (true) {
-        yield()
-        printRemaining(raf)
-        delay(100)
+    } else {
+      ConsoleAppender<ILoggingEvent>().apply {
+        this.context = context
+        name = "CONSOLE"
+        this.encoder = encoder
+        start()
       }
     }
-  }
 
-  /** raf.seekされた箇所から末尾までを出力する */
-  private fun printRemaining(raf: RandomAccessFile) {
-    val initialLength = logFile.length()
-    while (raf.filePointer < initialLength) {
-      println(raf.readUtf8Line())
+  val rootLogger = context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+  rootLogger.addAppender(appender)
+  // ormliteなどのdebugログを抑制するため、WARN未満は出力しない
+  rootLogger.level = Level.WARN
+}
+
+@Throws(IllegalFormatException::class)
+fun log(format: Any, vararg args: Any?) {
+  val fs = formatString(format, *args)
+
+  // WARN未満は出力されないためwarnで出力する
+  logger.warn(fs)
+  if (isGulp) return
+  guiLog.append(fs)
+}
+
+@Throws(IllegalFormatException::class)
+fun err(format: Any, vararg args: Any?) {
+  val fs = formatString(format, *args)
+
+  logger.error(Ansi.ansi().fg(RED).a(fs).reset().toString())
+  if (isGulp) return
+  guiLog.appendErr(fs)
+}
+
+/** 別のログが挟まらないように一塊にした上で１度に出力する */
+@Throws(IllegalFormatException::class)
+fun errWithStackTrace(e: Throwable) {
+  val sb = StringBuilder()
+  sb.append(e.toString())
+
+  for (element in e.stackTrace) {
+    sb.append("\n$element")
+  }
+  err(sb.toString())
+}
+
+/** logの継続出力を行う */
+suspend fun tailLog() {
+  RandomAccessFile(logFile, "r").use { raf ->
+    // ブロッキング実行される場合は先頭、そうでない場合は末尾30行目から出力を開始する
+    raf.seek(0)
+
+    // 新しい追加分を追跡する
+    while (true) {
+      yield()
+      printRemaining(raf)
+      delay(100)
     }
   }
+}
 
-  /** 第１引数が文字列でないなどの場合はtoString()を実行する 第１引数が文字列かつ第２引数移行が正しく指定されている場合のみフォーマット指定子としての解釈を行う */
-  private fun formatString(format: Any, vararg args: Any?): String {
-    val dateTime = dtf.format(LocalDateTime.now()) + "     "
-    val indent = " ".repeat(dateTime.length)
-
-    val msg =
-      if (format is String && args.isNotEmpty()) {
-        try {
-          format.format(*args)
-        } catch (e: Exception) {
-          format
-        }
-      } else {
-        format.toString()
-      }
-
-    return dateTime + msg.replace("\n", "\n$indent")
+/** raf.seekされた箇所から末尾までを出力する */
+private fun printRemaining(raf: RandomAccessFile) {
+  val initialLength = logFile.length()
+  while (raf.filePointer < initialLength) {
+    println(raf.readUtf8Line())
   }
+}
+
+/** 第１引数が文字列でないなどの場合はtoString()を実行する 第１引数が文字列かつ第２引数移行が正しく指定されている場合のみフォーマット指定子としての解釈を行う */
+private fun formatString(format: Any, vararg args: Any?): String {
+  val dateTime = dtf.format(LocalDateTime.now()) + "     "
+  val indent = " ".repeat(dateTime.length)
+
+  val msg =
+    if (format is String && args.isNotEmpty()) {
+      try {
+        format.format(*args)
+      } catch (e: Exception) {
+        format
+      }
+    } else {
+      format.toString()
+    }
+
+  return dateTime + msg.replace("\n", "\n$indent")
 }
