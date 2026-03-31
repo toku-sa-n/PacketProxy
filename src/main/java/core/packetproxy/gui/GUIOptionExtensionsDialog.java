@@ -29,9 +29,9 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.Extension;
-import packetproxy.model.Extensions;
 
 public class GUIOptionExtensionsDialog extends JDialog {
 
@@ -110,7 +110,7 @@ public class GUIOptionExtensionsDialog extends JDialog {
 					String path = pathField.getText();
 					if (name != "") {
 
-						extension = Extensions.getInstance().loadExtension(name, path);
+						extension = AppInitializer.getExtensions().loadExtension(name, path);
 					}
 					dispose();
 				} catch (Exception e1) {

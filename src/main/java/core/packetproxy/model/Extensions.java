@@ -40,17 +40,7 @@ import packetproxy.extensions.securityheaders.SecurityHeadersExtension;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Extensions implements PropertyChangeListener {
-
-	private static Extensions instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
-
-	public static Extensions getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Extensions();
-		}
-		return instance;
-	}
 
 	private static Map<String, Class<?>> presetExtensions = new HashMap<>() {
 
@@ -68,7 +58,7 @@ public class Extensions implements PropertyChangeListener {
 	private Dao<Extension, String> dao;
 	private DaoQueryCache<Extension> cache;
 
-	private Extensions() throws Exception {
+	public Extensions() throws Exception {
 		ext_instances = new HashMap<>();
 		database = Database.getInstance();
 		dao = database.createTable(Extension.class, this);

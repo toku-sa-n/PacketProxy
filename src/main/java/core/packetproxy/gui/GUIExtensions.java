@@ -38,7 +38,6 @@ import javax.swing.event.ChangeListener;
 import packetproxy.AppInitializer;
 import packetproxy.encode.Encoder;
 import packetproxy.model.Extension;
-import packetproxy.model.Extensions;
 
 public class GUIExtensions {
 
@@ -114,7 +113,7 @@ public class GUIExtensions {
 
 						ext.setPath(jarFile.toPath().toString());
 					}
-					Extensions.getInstance().create(ext);
+					AppInitializer.getExtensions().create(ext);
 				} catch (Exception e) {
 
 					errWithStackTrace(e);
@@ -124,7 +123,7 @@ public class GUIExtensions {
 		}
 		urlClassLoader.close();
 
-		for (Extension extension : Extensions.getInstance().queryAll()) {
+		for (Extension extension : AppInitializer.getExtensions().queryAll()) {
 
 			if (extension.isEnabled()) {
 

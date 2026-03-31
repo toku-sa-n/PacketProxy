@@ -26,6 +26,7 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.AppInitializer;
 import packetproxy.model.Extension;
 import packetproxy.model.Extensions;
 
@@ -36,7 +37,7 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 
 	public GUIOptionExtensions(JFrame owner) throws Exception {
 		super(owner);
-		extensions = Extensions.getInstance();
+		extensions = AppInitializer.getExtensions();
 		extensions.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<Extension>();
 
@@ -82,7 +83,7 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 					Extension ext = dlg.showDialog();
 					if (ext != null) {
 
-						Extensions.getInstance().create(ext);
+						AppInitializer.getExtensions().create(ext);
 					}
 				} catch (Exception e1) {
 
@@ -102,8 +103,8 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 					if (ext != null && (ext.getName() != old_ext.getName() || ext.getPath() != old_ext.getPath())) {
 
 						GUIMain.getInstance().getGuiExtensions().removeExtension(old_ext);
-						Extensions.getInstance().delete(old_ext);
-						Extensions.getInstance().create(ext);
+						AppInitializer.getExtensions().delete(old_ext);
+						AppInitializer.getExtensions().create(ext);
 					}
 				} catch (Exception e1) {
 
@@ -118,7 +119,7 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 				try {
 
 					GUIMain.getInstance().getGuiExtensions().removeExtension(getSelectedTableContent());
-					Extensions.getInstance().delete(getSelectedTableContent());
+					AppInitializer.getExtensions().delete(getSelectedTableContent());
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);
