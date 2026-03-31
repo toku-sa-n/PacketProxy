@@ -27,24 +27,14 @@ import javax.swing.JOptionPane;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Modifications implements PropertyChangeListener {
-
-	private static Modifications instance;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
-
-	public static Modifications getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Modifications();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<Modification, Integer> dao;
 	private Servers servers;
 	private DaoQueryCache<Modification> cache;
 
-	private Modifications() throws Exception {
+	public Modifications() throws Exception {
 		database = Database.getInstance();
 		servers = Servers.getInstance();
 		dao = database.createTable(Modification.class, this);

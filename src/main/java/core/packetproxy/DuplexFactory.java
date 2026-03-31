@@ -69,7 +69,7 @@ public class DuplexFactory {
 		duplex.addDuplexEventListener(new Duplex.DuplexEventListener() {
 			private Packets packets = Packets.getInstance();
 			private Encoder encoder = AppInitializer.getEncoderManager().createInstance(encoder_name, ALPN);
-			private Modifications mods = Modifications.getInstance();
+			private Modifications mods = AppInitializer.getModifications();
 			private Packet client_packet;
 			private Packet server_packet;
 

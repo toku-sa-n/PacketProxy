@@ -112,7 +112,7 @@ public class ConfigHttpServer extends NanoHTTPD {
 
 				daoHub.listenPortList = AppInitializer.getListenPorts().queryAll();
 				daoHub.serverList = Servers.getInstance().queryAll();
-				daoHub.modificationList = Modifications.getInstance().queryAll();
+				daoHub.modificationList = AppInitializer.getModifications().queryAll();
 				daoHub.sslPassThroughList = AppInitializer.getSSLPassThroughs().queryAll();
 
 				fixUp(daoHub);
@@ -168,7 +168,7 @@ public class ConfigHttpServer extends NanoHTTPD {
 				}
 				for (Modification mod : daoHub.modificationList) {
 
-					Modifications.getInstance().create(mod);
+					AppInitializer.getModifications().create(mod);
 				}
 				for (SSLPassThrough passThrough : daoHub.sslPassThroughList) {
 

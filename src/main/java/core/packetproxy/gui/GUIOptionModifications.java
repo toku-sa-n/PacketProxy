@@ -25,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.AppInitializer;
 import packetproxy.model.Modification;
 import packetproxy.model.Modifications;
 
@@ -36,7 +37,7 @@ public class GUIOptionModifications extends GUIOptionComponentBase<Modification>
 
 	public GUIOptionModifications(JFrame owner) throws Exception {
 		super(owner);
-		modifications = Modifications.getInstance();
+		modifications = AppInitializer.getModifications();
 		modifications.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<Modification>();
 		String[] menu = {"Enabled", "Type", "Method", "Pattern", "Replaced", "Applied Server"};
