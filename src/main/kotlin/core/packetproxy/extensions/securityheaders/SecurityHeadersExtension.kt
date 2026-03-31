@@ -75,7 +75,7 @@ class SecurityHeadersExtension : Extension() {
   private val packetMap = mutableMapOf<String, Packet>()
   private val resultsMap = mutableMapOf<String, Map<String, SecurityCheckResult>>()
   private var contextMenu: JPopupMenu? = null
-  private val exclusionRuleManager = ExclusionRuleManager
+  private val exclusionRuleManager = ExclusionRuleManager()
   private var toolbar: SecurityHeadersToolbar? = null
   private var detailPanel: SecurityHeadersDetailPanel? = null
 

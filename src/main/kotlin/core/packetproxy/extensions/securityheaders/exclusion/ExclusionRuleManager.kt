@@ -18,8 +18,8 @@ package packetproxy.extensions.securityheaders.exclusion
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
 
-/** Manages exclusion rules for security header checks. Thread-safe singleton implementation. */
-object ExclusionRuleManager {
+/** Manages exclusion rules for security header checks. */
+class ExclusionRuleManager {
   private val rules = CopyOnWriteArrayList<ExclusionRule>()
   private val listeners = CopyOnWriteArrayList<Consumer<List<ExclusionRule>>>()
 
