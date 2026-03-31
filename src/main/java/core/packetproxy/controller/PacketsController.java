@@ -15,6 +15,7 @@
  */
 package packetproxy.controller;
 
+import packetproxy.AppInitializer;
 import packetproxy.model.Packet;
 import packetproxy.model.Packets;
 
@@ -23,7 +24,7 @@ public class PacketsController {
 	private Packets packets;
 
 	public PacketsController() throws Exception {
-		packets = Packets.getInstance();
+		packets = AppInitializer.getPackets();
 	}
 
 	public void add(Packet packet) throws Exception {

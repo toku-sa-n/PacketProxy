@@ -120,7 +120,7 @@ public class GUIHistory implements PropertyChangeListener {
 
 	public GUIHistory(JFrame frame, boolean restore) throws Exception {
 		owner = frame;
-		packets = Packets.getInstance(restore);
+		packets = AppInitializer.getPackets(restore);
 		packets.addPropertyChangeListener(this);
 		AppInitializer.getResenderPackets().initTable(restore);
 		AppInitializer.getFilters().addPropertyChangeListener(this);

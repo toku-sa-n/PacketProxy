@@ -49,6 +49,7 @@ object AppInitializer {
   private var listenPortManager: ListenPortManager? = null
   private var listenPorts: ListenPorts? = null
   private var modifications: Modifications? = null
+  private var packets: Packets? = null
   private var resenderPackets: ResenderPackets? = null
   private var resolutions: Resolutions? = null
   private var sslPassThroughs: SSLPassThroughs? = null
@@ -105,7 +106,7 @@ object AppInitializer {
   }
 
   private fun initPackets() {
-    Packets.getInstance(false) // CLIモードでは履歴を復元しない
+    getPackets(false) // CLIモードでは履歴を復元しない
     Logging.log("Packetsを初期化しました")
   }
 
@@ -247,6 +248,11 @@ object AppInitializer {
   @JvmStatic
   fun getModifications(): Modifications =
     modifications ?: Modifications().also { modifications = it }
+
+  @JvmStatic
+  fun getPackets(restore: Boolean): Packets = packets ?: Packets(restore).also { packets = it }
+
+  @JvmStatic fun getPackets(): Packets = packets ?: throw Exception("Packets インスタンスが作成されていません。")
 
   @JvmStatic
   fun getResenderPackets(): ResenderPackets =

@@ -67,7 +67,7 @@ public class DuplexFactory {
 		}
 
 		duplex.addDuplexEventListener(new Duplex.DuplexEventListener() {
-			private Packets packets = Packets.getInstance();
+			private Packets packets = AppInitializer.getPackets();
 			private Encoder encoder = AppInitializer.getEncoderManager().createInstance(encoder_name, ALPN);
 			private Modifications mods = AppInitializer.getModifications();
 			private Packet client_packet;
@@ -342,7 +342,7 @@ public class DuplexFactory {
 		DuplexSync duplex = new DuplexSync(EndpointFactory.createFromOneShotPacket(oneshot));
 		duplex.addDuplexEventListener(new Duplex.DuplexEventListener() {
 
-			private Packets packets = Packets.getInstance();
+			private Packets packets = AppInitializer.getPackets();
 			private Encoder encoder = AppInitializer.getEncoderManager().createInstance(oneshot.getEncoder(),
 					oneshot.getAlpn());
 			private Packet client_packet;
@@ -531,7 +531,7 @@ public class DuplexFactory {
 		DuplexSync duplex = new DuplexSync(EndpointFactory.createFromOneShotPacket(oneshot));
 		duplex.addDuplexEventListener(new Duplex.DuplexEventListener() {
 
-			private Packets packets = Packets.getInstance();
+			private Packets packets = AppInitializer.getPackets();
 			private Encoder encoder = AppInitializer.getEncoderManager().createInstance(oneshot.getEncoder(),
 					oneshot.getAlpn());
 			private Packet client_packet;
@@ -690,7 +690,7 @@ public class DuplexFactory {
 		Duplex duplex = original_duplex.createSameConnectionDuplex();
 		duplex.addDuplexEventListener(new Duplex.DuplexEventListener() {
 
-			private Packets packets = Packets.getInstance();
+			private Packets packets = AppInitializer.getPackets();
 			private Encoder encoder = AppInitializer.getEncoderManager().createInstance(oneshot.getEncoder(),
 					oneshot.getAlpn());
 			private Packet client_packet;

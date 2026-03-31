@@ -20,10 +20,10 @@ import static packetproxy.util.Logging.errWithStackTrace;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
+import packetproxy.AppInitializer;
 import packetproxy.common.StringUtils;
 import packetproxy.http.Http;
 import packetproxy.model.Packet;
-import packetproxy.model.Packets;
 
 public class Http1StreamingResponse {
 
@@ -108,14 +108,14 @@ public class Http1StreamingResponse {
 
 						if (http.getBody() != null && http.getBody().length > 0) {
 
-							List<Packet> packets = Packets.getInstance()
+							List<Packet> packets = AppInitializer.getPackets()
 									.queryFullText(http.getFirstHeader("X-PacketProxy-HTTP1-UUID"));
 							for (Packet packet : packets) {
 
-								Packet p = Packets.getInstance().query(packet.getId());
+								Packet p = AppInitializer.getPackets().query(packet.getId());
 								p.setDecodedData(http.toByteArray());
 								p.setModifiedData(http.toByteArray());
-								Packets.getInstance().update(p);
+								AppInitializer.getPackets().update(p);
 							}
 						}
 					} catch (Exception e) {

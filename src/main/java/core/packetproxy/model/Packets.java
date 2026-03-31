@@ -32,26 +32,7 @@ import packetproxy.common.Logger;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Packets implements PropertyChangeListener {
-
-	private static Packets instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static Packets getInstance(boolean restore) throws Exception {
-		if (instance == null) {
-
-			instance = new Packets(restore);
-		}
-		return instance;
-	}
-
-	public static Packets getInstance() throws Exception {
-		if (instance == null) {
-
-			// 初期化前に通信が走り実行されるとDrop Tableされるので例外を投げる
-			throw new Exception("Packets インスタンスが作成されていません。");
-		}
-		return instance;
-	}
 
 	public void addPropertyChangeListener(PropertyChangeListener listener) {
 		changes.addPropertyChangeListener(listener);
@@ -65,7 +46,7 @@ public class Packets implements PropertyChangeListener {
 	private Dao<Packet, Integer> dao;
 	private ExecutorService executor;
 
-	private Packets(boolean restore) throws Exception {
+	public Packets(boolean restore) throws Exception {
 		database = Database.getInstance();
 		database.addPropertyChangeListener(this);
 		dao = database.createTable(Packet.class);

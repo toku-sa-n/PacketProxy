@@ -29,9 +29,9 @@ import javax.swing.RowFilter;
 import javax.swing.RowFilter.ComparisonType;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.collections4.map.HashedMap;
+import packetproxy.AppInitializer;
 import packetproxy.gui.GUIMain;
 import packetproxy.model.Packet;
-import packetproxy.model.Packets;
 
 /**
  * Filterのパーサー 文法は以下の通り <Expr> ::= <OrExpr> <OrExpr> ::= <AndExpr> | <AndExpr>
@@ -332,7 +332,7 @@ public class FilterTextParser {
 	// case sensitive full text search
 	private static RowFilter<Object, Object> generateFullTextRowFilter(String searchWord) throws Exception {
 		FullTextRowFilter fullTextRowFilter = new FullTextRowFilter(searchWord, new int[]{columnMapper.get("group")});
-		List<Packet> packets = Packets.getInstance().queryFullText(searchWord);
+		List<Packet> packets = AppInitializer.getPackets().queryFullText(searchWord);
 		packets.stream().forEach(p -> fullTextRowFilter.groupIds.add(p.getGroup()));
 		return fullTextRowFilter;
 	}
@@ -340,7 +340,7 @@ public class FilterTextParser {
 	// case insensitive full text search
 	private static RowFilter<Object, Object> generateFullTextRowFilter_i(String searchWord) throws Exception {
 		FullTextRowFilter fullTextRowFilter = new FullTextRowFilter(searchWord, new int[]{columnMapper.get("group")});
-		List<Packet> packets = Packets.getInstance().queryFullText_i(searchWord);
+		List<Packet> packets = AppInitializer.getPackets().queryFullText_i(searchWord);
 		packets.stream().forEach(p -> fullTextRowFilter.groupIds.add(p.getGroup()));
 		return fullTextRowFilter;
 	}

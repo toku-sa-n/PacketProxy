@@ -49,7 +49,6 @@ import packetproxy.AppInitializer;
 import packetproxy.controller.SinglePacketAttackController;
 import packetproxy.http.Http;
 import packetproxy.model.Packet;
-import packetproxy.model.Packets;
 import packetproxy.util.CharSetUtility;
 
 public class GUIData {
@@ -198,7 +197,7 @@ public class GUIData {
 					if (data == null || data.length == 0)
 						return;
 					int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
-					Packet packet = Packets.getInstance().query(id);
+					Packet packet = AppInitializer.getPackets().query(id);
 					Http http = Http.create(data);
 					String copyData = http.getMethod() + "\t" + http.getURL(packet.getServerPort(), packet.getUseSSL())
 							+ "\t" + new String(http.getBody(), "UTF-8");
@@ -246,7 +245,7 @@ public class GUIData {
 					if (data == null || data.length == 0)
 						return;
 					int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
-					Packet packet = Packets.getInstance().query(id);
+					Packet packet = AppInitializer.getPackets().query(id);
 					Http http = Http.create(data);
 					String url = http.getURL(packet.getServerPort(), packet.getUseSSL());
 					Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -272,11 +271,11 @@ public class GUIData {
 					if (data != null && data.length > 0) {
 
 						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
-						Packet packet = Packets.getInstance().query(id);
+						Packet packet = AppInitializer.getPackets().query(id);
 						AppInitializer.getInterceptController().getResendController()
 								.resend(packet.getOneShotPacket(data));
 						packet.setResend();
-						Packets.getInstance().update(packet);
+						AppInitializer.getPackets().update(packet);
 						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
@@ -299,11 +298,11 @@ public class GUIData {
 					if (data != null && data.length > 0) {
 
 						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
-						Packet packet = Packets.getInstance().query(id);
+						Packet packet = AppInitializer.getPackets().query(id);
 						AppInitializer.getInterceptController().getResendController()
 								.resend(packet.getOneShotPacket(data), 20);
 						packet.setResend();
-						Packets.getInstance().update(packet);
+						AppInitializer.getPackets().update(packet);
 						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
@@ -322,10 +321,10 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
 						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
-						Packet packet = Packets.getInstance().query(id);
+						Packet packet = AppInitializer.getPackets().query(id);
 						new SinglePacketAttackController(packet.getOneShotPacket(data)).attack(20);
 						packet.setResend();
-						Packets.getInstance().update(packet);
+						AppInitializer.getPackets().update(packet);
 						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
@@ -346,9 +345,9 @@ public class GUIData {
 					if (data != null && data.length > 0) {
 
 						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
-						Packet packet = Packets.getInstance().query(id);
+						Packet packet = AppInitializer.getPackets().query(id);
 						packet.setResend();
-						Packets.getInstance().update(packet);
+						AppInitializer.getPackets().update(packet);
 						GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotPacket(data));
 						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
 					}

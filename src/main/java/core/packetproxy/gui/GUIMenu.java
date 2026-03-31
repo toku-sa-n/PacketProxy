@@ -26,12 +26,12 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.common.ConfigIO;
 import packetproxy.common.I18nString;
 import packetproxy.common.RecentProjectsStore;
 import packetproxy.common.Utils;
 import packetproxy.model.Database;
-import packetproxy.model.Packets;
 import packetproxy.util.PacketProxyUtility;
 
 @SuppressWarnings("serial")
@@ -99,7 +99,7 @@ public class GUIMenu extends JMenuBar {
 					public void onApproved(File file, String extension) {
 						try {
 
-							Packets.getInstance().outputAllPackets(file.getAbsolutePath());
+							AppInitializer.getPackets().outputAllPackets(file.getAbsolutePath());
 							JOptionPane.showMessageDialog(null, I18nString.get("Data saved successfully"));
 						} catch (Exception e1) {
 

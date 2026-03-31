@@ -31,6 +31,7 @@ import javax.swing.SortOrder
 import javax.swing.SwingUtilities
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableRowSorter
+import packetproxy.AppInitializer
 import packetproxy.extensions.securityheaders.checks.*
 import packetproxy.extensions.securityheaders.exclusion.ExclusionRule
 import packetproxy.extensions.securityheaders.exclusion.ExclusionRuleManager
@@ -42,7 +43,6 @@ import packetproxy.http.Http
 import packetproxy.http.HttpHeader
 import packetproxy.model.Extension
 import packetproxy.model.Packet
-import packetproxy.model.Packets
 
 /**
  * Security Headers Extension for PacketProxy. Analyzes HTTP responses for security header
@@ -300,7 +300,7 @@ class SecurityHeadersExtension : Extension() {
     Thread {
         try {
           clearTable()
-          val packets = Packets.getInstance().queryAll()
+          val packets = AppInitializer.getPackets().queryAll()
           val requestMap = buildRequestMap(packets)
 
           for (p in packets) {

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import org.eclipse.jetty.http2.hpack.HpackEncoder;
+import packetproxy.AppInitializer;
 import packetproxy.common.UniqueID;
 import packetproxy.http.Http;
 import packetproxy.http2.frames.DataFrame;
@@ -31,7 +32,6 @@ import packetproxy.http2.frames.Frame;
 import packetproxy.http2.frames.FrameUtils;
 import packetproxy.http2.frames.HeadersFrame;
 import packetproxy.model.Packet;
-import packetproxy.model.Packets;
 
 public class Http2StreamingResponse extends FramesBase {
 
@@ -97,14 +97,14 @@ public class Http2StreamingResponse extends FramesBase {
 
 							if (http.getBody().length > 0) {
 
-								List<Packet> packets = Packets.getInstance()
+								List<Packet> packets = AppInitializer.getPackets()
 										.queryFullText(http.getFirstHeader("X-PacketProxy-HTTP2-UUID"));
 								for (Packet packet : packets) {
 
-									Packet p = Packets.getInstance().query(packet.getId());
+									Packet p = AppInitializer.getPackets().query(packet.getId());
 									p.setDecodedData(http.toByteArray());
 									p.setModifiedData(http.toByteArray());
-									Packets.getInstance().update(p);
+									AppInitializer.getPackets().update(p);
 								}
 							}
 						} catch (Exception e) {

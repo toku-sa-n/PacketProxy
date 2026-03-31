@@ -39,7 +39,6 @@ import packetproxy.AppInitializer;
 import packetproxy.controller.InterceptController;
 import packetproxy.model.InterceptModel;
 import packetproxy.model.Packet;
-import packetproxy.model.Packets;
 import packetproxy.util.PacketProxyUtility;
 
 public class GUIIntercept implements PropertyChangeListener {
@@ -140,7 +139,7 @@ public class GUIIntercept implements PropertyChangeListener {
 
 					Packet packet = interceptModel.getClientPacket();
 					packet.setResend();
-					Packets.getInstance().update(packet);
+					AppInitializer.getPackets().update(packet);
 					GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotPacket(getInterceptData()));
 				} catch (Exception e1) {
 

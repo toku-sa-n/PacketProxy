@@ -34,7 +34,6 @@ import packetproxy.AppInitializer;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
-import packetproxy.model.Packets;
 import packetproxy.model.RegexParam;
 
 public class GUIBulkSender {
@@ -117,10 +116,10 @@ public class GUIBulkSender {
 
 												recvPackets.put(oneshot.getId(), oneshot);
 												recvTable.add(oneshot);
-												Packet packet = Packets.getInstance()
+												Packet packet = AppInitializer.getPackets()
 														.query(sendPacketIds.get(oneshot.getId()));
 												packet.setResend();
-												Packets.getInstance().update(packet);
+												AppInitializer.getPackets().update(packet);
 											}
 										} catch (Exception e) {
 
@@ -160,10 +159,10 @@ public class GUIBulkSender {
 
 																recvPackets.put(oneshot.getId(), oneshot);
 																recvTable.add(oneshot);
-																Packet packet = Packets.getInstance()
+																Packet packet = AppInitializer.getPackets()
 																		.query(sendPacketIds.get(oneshot.getId()));
 																packet.setResend();
-																Packets.getInstance().update(packet);
+																AppInitializer.getPackets().update(packet);
 																// pickup regex value
 																regexParams.stream().filter(v -> {
 																	return v.getPacketId() == idx;
