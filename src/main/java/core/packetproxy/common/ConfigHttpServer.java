@@ -134,16 +134,16 @@ public class ConfigHttpServer extends NanoHTTPD {
 
 			try {
 
-				GUIMain.getInstance().setAlwaysOnTop(true);
-				GUIMain.getInstance().setVisible(true);
+				AppInitializer.getGuiMain().setAlwaysOnTop(true);
+				AppInitializer.getGuiMain().setVisible(true);
 
-				GUIMain.getInstance().getTabbedPane().setSelectedIndex(GUIMain.Panes.OPTIONS.ordinal());
+				AppInitializer.getGuiMain().getTabbedPane().setSelectedIndex(GUIMain.Panes.OPTIONS.ordinal());
 
-				int option = JOptionPane.showConfirmDialog(GUIMain.getInstance(),
+				int option = JOptionPane.showConfirmDialog(AppInitializer.getGuiMain(),
 						I18nString.get("Do you want to overwrite config?"), I18nString.get("Loading config"),
 						JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-				GUIMain.getInstance().setAlwaysOnTop(false);
+				AppInitializer.getGuiMain().setAlwaysOnTop(false);
 
 				if (option == JOptionPane.NO_OPTION) {
 

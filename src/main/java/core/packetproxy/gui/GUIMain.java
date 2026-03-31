@@ -39,7 +39,6 @@ import packetproxy.util.PacketProxyUtility;
 public class GUIMain extends JFrame implements PropertyChangeListener {
 
 	private static final long serialVersionUID = 1L;
-	private static GUIMain instance;
 	private GUIMenu menu_bar;
 	private JTabbedPane tabbedpane;
 	private GUIOption gui_option;
@@ -55,22 +54,6 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 	public enum Panes {
 		HISTORY, INTERCEPT, RESENDER, VULCHECKHELPER, BULKSENDER, EXTENSIONS, OPTIONS, LOG
 	};
-
-	public static GUIMain getInstance(String title) throws Exception {
-		if (instance == null) {
-
-			instance = new GUIMain(title);
-		}
-		return instance;
-	}
-
-	public static GUIMain getInstance() throws Exception {
-		if (instance == null) {
-
-			throw new Exception("GUIMain instance not found.");
-		}
-		return instance;
-	}
 
 	public JTabbedPane getTabbedPane() {
 		return this.tabbedpane;
@@ -118,7 +101,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 		return null;
 	}
 
-	private GUIMain(String title) {
+	public GUIMain(String title) {
 		try {
 
 			setIcon();

@@ -9,6 +9,7 @@ import packetproxy.common.ConfigIO
 import packetproxy.common.FontManager
 import packetproxy.common.Utils
 import packetproxy.controller.InterceptController
+import packetproxy.gui.GUIMain
 import packetproxy.model.CharSets
 import packetproxy.model.ClientCertificates
 import packetproxy.model.Configs
@@ -46,6 +47,7 @@ object AppInitializer {
   private var duplexManager: DuplexManager? = null
   private var encoderManager: EncoderManager? = null
   private var fontManager: FontManager? = null
+  private var guiMain: GUIMain? = null
   private var interceptOptions: InterceptOptions? = null
   private var interceptController: InterceptController? = null
   private var listenPortManager: ListenPortManager? = null
@@ -234,6 +236,13 @@ object AppInitializer {
 
   @JvmStatic
   fun getFontManager(): FontManager = fontManager ?: FontManager().also { fontManager = it }
+
+  @JvmStatic
+  fun setGuiMain(guiMain: GUIMain) {
+    this.guiMain = guiMain
+  }
+
+  @JvmStatic fun getGuiMain(): GUIMain = guiMain ?: throw Exception("GUIMain instance not found.")
 
   @JvmStatic
   fun getDuplexManager(): DuplexManager =

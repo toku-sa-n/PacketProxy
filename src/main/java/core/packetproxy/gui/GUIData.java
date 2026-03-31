@@ -196,7 +196,7 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data == null || data.length == 0)
 						return;
-					int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
+					int id = AppInitializer.getGuiMain().getGuiHistory().getSelectedPacketId();
 					Packet packet = AppInitializer.getPackets().query(id);
 					Http http = Http.create(data);
 					String copyData = http.getMethod() + "\t" + http.getURL(packet.getServerPort(), packet.getUseSSL())
@@ -244,7 +244,7 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data == null || data.length == 0)
 						return;
-					int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
+					int id = AppInitializer.getGuiMain().getGuiHistory().getSelectedPacketId();
 					Packet packet = AppInitializer.getPackets().query(id);
 					Http http = Http.create(data);
 					String url = http.getURL(packet.getServerPort(), packet.getUseSSL());
@@ -270,13 +270,13 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
 
-						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
+						int id = AppInitializer.getGuiMain().getGuiHistory().getSelectedPacketId();
 						Packet packet = AppInitializer.getPackets().query(id);
 						AppInitializer.getInterceptController().getResendController()
 								.resend(packet.getOneShotPacket(data));
 						packet.setResend();
 						AppInitializer.getPackets().update(packet);
-						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
+						AppInitializer.getGuiMain().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 
@@ -297,13 +297,13 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
 
-						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
+						int id = AppInitializer.getGuiMain().getGuiHistory().getSelectedPacketId();
 						Packet packet = AppInitializer.getPackets().query(id);
 						AppInitializer.getInterceptController().getResendController()
 								.resend(packet.getOneShotPacket(data), 20);
 						packet.setResend();
 						AppInitializer.getPackets().update(packet);
-						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
+						AppInitializer.getGuiMain().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 
@@ -320,12 +320,12 @@ public class GUIData {
 				try {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
-						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
+						int id = AppInitializer.getGuiMain().getGuiHistory().getSelectedPacketId();
 						Packet packet = AppInitializer.getPackets().query(id);
 						new SinglePacketAttackController(packet.getOneShotPacket(data)).attack(20);
 						packet.setResend();
 						AppInitializer.getPackets().update(packet);
-						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
+						AppInitializer.getGuiMain().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 					errWithStackTrace(e1);
@@ -344,12 +344,12 @@ public class GUIData {
 					byte[] data = getActiveData();
 					if (data != null && data.length > 0) {
 
-						int id = GUIMain.getInstance().getGuiHistory().getSelectedPacketId();
+						int id = AppInitializer.getGuiMain().getGuiHistory().getSelectedPacketId();
 						Packet packet = AppInitializer.getPackets().query(id);
 						packet.setResend();
 						AppInitializer.getPackets().update(packet);
-						GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotPacket(data));
-						GUIMain.getInstance().getGuiHistory().updateRequestOne(id);
+						AppInitializer.getGuiMain().getGuiResender().addResends(packet.getOneShotPacket(data));
+						AppInitializer.getGuiMain().getGuiHistory().updateRequestOne(id);
 					}
 				} catch (Exception e1) {
 
@@ -374,11 +374,11 @@ public class GUIData {
 						if (isOrigColorExists) {
 
 							isOrigColorExists = false;
-							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex,
+							AppInitializer.getGuiMain().getGuiHistory().addCustomColoring(origIndex,
 									new Color(0xb0, 0xb0, 0xb0)); // Gray
 						} else {
 
-							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex, Color.WHITE);
+							AppInitializer.getGuiMain().getGuiHistory().addCustomColoring(origIndex, Color.WHITE);
 						}
 						isDiff = false;
 					}
@@ -431,23 +431,24 @@ public class GUIData {
 						if (isOrigColorExists) {
 
 							isOrigColorExists = false;
-							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex, origColor);
+							AppInitializer.getGuiMain().getGuiHistory().addCustomColoring(origIndex, origColor);
 						} else {
 
-							GUIMain.getInstance().getGuiHistory().addCustomColoring(origIndex, Color.WHITE);
+							AppInitializer.getGuiMain().getGuiHistory().addCustomColoring(origIndex, Color.WHITE);
 						}
 					}
 					isDiff = true;
 					AppInitializer.getDiff().markAsOriginal(data);
 					AppInitializer.getDiffBinary().markAsOriginal(data);
 					AppInitializer.getDiffJson().markAsOriginal(data);
-					if (GUIMain.getInstance().getGuiHistory().containsColor()) {
+					if (AppInitializer.getGuiMain().getGuiHistory().containsColor()) {
 
-						origColor = GUIMain.getInstance().getGuiHistory().getColor();
+						origColor = AppInitializer.getGuiMain().getGuiHistory().getColor();
 						isOrigColorExists = true;
 					}
-					origIndex = GUIMain.getInstance().getGuiHistory().getSelectedIndex();
-					GUIMain.getInstance().getGuiHistory().addCustomColoringToCursorPos(new Color(0xb0, 0xb0, 0xb0)); // Gray
+					origIndex = AppInitializer.getGuiMain().getGuiHistory().getSelectedIndex();
+					AppInitializer.getGuiMain().getGuiHistory()
+							.addCustomColoringToCursorPos(new Color(0xb0, 0xb0, 0xb0)); // Gray
 					log("Diff: original text was saved!");
 				} catch (Exception e1) {
 
@@ -463,7 +464,7 @@ public class GUIData {
 				charSetUtility.setCharSet((String) charSetCombo.getSelectedItem());
 				try {
 
-					GUIMain.getInstance().getGuiHistory().getGuiPacket().update();
+					AppInitializer.getGuiMain().getGuiHistory().getGuiPacket().update();
 				} catch (Exception e2) {
 					errWithStackTrace(e2);
 				}
@@ -549,7 +550,7 @@ public class GUIData {
 	 * ユーザに選択させる。単一パケット行の場合はRequestデータをそのまま返す。 ダイアログでキャンセルされた場合は null を返す。
 	 */
 	private byte[] resolveDataForCopyBody() throws Exception {
-		if (!GUIMain.getInstance().getGuiHistory().isSelectedRowMerged()) {
+		if (!AppInitializer.getGuiMain().getGuiHistory().isSelectedRowMerged()) {
 			return bodyDataProvider != null ? bodyDataProvider.get() : getActiveData();
 		}
 		// macOS の JOptionPane はボタンを右から左に描画するため、
@@ -569,7 +570,7 @@ public class GUIData {
 	 * ユーザに選択させる。単一パケット行の場合はRequestデータをそのまま返す。 ダイアログでキャンセルされた場合は null を返す。
 	 */
 	private byte[] resolveDataForDiff() throws Exception {
-		if (!GUIMain.getInstance().getGuiHistory().isSelectedRowMerged()) {
+		if (!AppInitializer.getGuiMain().getGuiHistory().isSelectedRowMerged()) {
 			return tabs.getRaw().getData();
 		}
 		// macOS の JOptionPane はボタンを右から左に描画するため、
@@ -580,7 +581,7 @@ public class GUIData {
 		if (choice == JOptionPane.CLOSED_OPTION)
 			return null;
 		if (choice == 0)
-			return GUIMain.getInstance().getGuiHistory().getGuiPacket().getResponsePacket().getReceivedData();
+			return AppInitializer.getGuiMain().getGuiHistory().getGuiPacket().getResponsePacket().getReceivedData();
 		return tabs.getRaw().getData();
 	}
 }

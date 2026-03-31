@@ -60,10 +60,10 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 						ext = extensions.update(ext);
 						if (!enable_checkbox && ext != null) {
 
-							GUIMain.getInstance().getGuiExtensions().addExtension(ext);
+							AppInitializer.getGuiMain().getGuiExtensions().addExtension(ext);
 						} else if (enable_checkbox) {
 
-							GUIMain.getInstance().getGuiExtensions().removeExtension(ext);
+							AppInitializer.getGuiMain().getGuiExtensions().removeExtension(ext);
 						}
 					}
 					table.setRowSelectionInterval(rowIndex, columnIndex);
@@ -102,7 +102,7 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 					Extension ext = dlg.showDialog(old_ext);
 					if (ext != null && (ext.getName() != old_ext.getName() || ext.getPath() != old_ext.getPath())) {
 
-						GUIMain.getInstance().getGuiExtensions().removeExtension(old_ext);
+						AppInitializer.getGuiMain().getGuiExtensions().removeExtension(old_ext);
 						AppInitializer.getExtensions().delete(old_ext);
 						AppInitializer.getExtensions().create(ext);
 					}
@@ -118,7 +118,7 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					GUIMain.getInstance().getGuiExtensions().removeExtension(getSelectedTableContent());
+					AppInitializer.getGuiMain().getGuiExtensions().removeExtension(getSelectedTableContent());
 					AppInitializer.getExtensions().delete(getSelectedTableContent());
 				} catch (Exception e1) {
 

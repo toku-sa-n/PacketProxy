@@ -21,7 +21,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.*;
 import org.apache.commons.codec.binary.Hex;
-import packetproxy.gui.GUIMain;
+import packetproxy.AppInitializer;
 
 public class JWTHeaderAddSpecifiedJKUGenerator extends Generator {
 
@@ -41,9 +41,9 @@ public class JWTHeaderAddSpecifiedJKUGenerator extends Generator {
 	public String generate(String inputData) throws Exception {
 
 		cancelClicked = false;
-		JDialog dlg = new JDialog(GUIMain.getInstance());
+		JDialog dlg = new JDialog(AppInitializer.getGuiMain());
 
-		Rectangle rect = GUIMain.getInstance().getBounds();
+		Rectangle rect = AppInitializer.getGuiMain().getBounds();
 		int width = 400;
 		int height = 300;
 		dlg.setBounds(rect.x + rect.width / 2 - width / 2, rect.y + rect.height / 2 - height / 2, width,

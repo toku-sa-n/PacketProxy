@@ -38,6 +38,7 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableCellRenderer;
+import packetproxy.AppInitializer;
 import packetproxy.common.Utils;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.OptionTableModel;
@@ -166,7 +167,7 @@ public class GUIBulkSenderTable {
 					try {
 
 						log("TODO");
-						JFrame owner = GUIMain.getInstance();
+						JFrame owner = AppInitializer.getGuiMain();
 						int packetId = getSelectedPacketId();
 						GUIRegexParamsTableDialog dlg = new GUIRegexParamsTableDialog(owner, regexParams, packetId);
 						regexParams = dlg.showDialog();

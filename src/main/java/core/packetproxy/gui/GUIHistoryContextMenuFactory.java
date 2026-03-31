@@ -116,9 +116,10 @@ public class GUIHistoryContextMenuFactory {
 						packet.setResend();
 						packets.update(packet);
 						if (packet.getModifiedData().length == 0) {
-							GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotFromDecodedData());
+							AppInitializer.getGuiMain().getGuiResender().addResends(packet.getOneShotFromDecodedData());
 						} else {
-							GUIMain.getInstance().getGuiResender().addResends(packet.getOneShotFromModifiedData());
+							AppInitializer.getGuiMain().getGuiResender()
+									.addResends(packet.getOneShotFromModifiedData());
 						}
 						context.updateRequestOne(context.getSelectedPacketId());
 					} catch (Exception ex) {
@@ -165,9 +166,11 @@ public class GUIHistoryContextMenuFactory {
 			try {
 				Packet packet = gui_packet.getPacket();
 				if (packet.getModifiedData().length == 0) {
-					GUIMain.getInstance().getGuiBulkSender().add(packet.getOneShotFromDecodedData(), packet.getId());
+					AppInitializer.getGuiMain().getGuiBulkSender().add(packet.getOneShotFromDecodedData(),
+							packet.getId());
 				} else {
-					GUIMain.getInstance().getGuiBulkSender().add(packet.getOneShotFromModifiedData(), packet.getId());
+					AppInitializer.getGuiMain().getGuiBulkSender().add(packet.getOneShotFromModifiedData(),
+							packet.getId());
 				}
 			} catch (Exception ex) {
 				errWithStackTrace(ex);

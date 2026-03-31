@@ -159,7 +159,7 @@ public class GUIExtensions {
 		JMenuItem extensionItem = ext.historyClickHandler();
 		if (extensionItem != null) {
 
-			GUIMain.getInstance().getGuiHistory().addMenu(extensionItem);
+			AppInitializer.getGuiMain().getGuiHistory().addMenu(extensionItem);
 			extensionMenus.put(ext.getName(), extensionItem);
 		}
 	}
@@ -183,7 +183,7 @@ public class GUIExtensions {
 		JMenuItem extensionItem = extensionMenus.get(ext.getName());
 		if (extensionItem != null) {
 
-			GUIMain.getInstance().getGuiHistory().removeMenu(extensionItem);
+			AppInitializer.getGuiMain().getGuiHistory().removeMenu(extensionItem);
 			extensionMenus.remove(ext.getName());
 		}
 

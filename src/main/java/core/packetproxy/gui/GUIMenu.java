@@ -161,7 +161,7 @@ public class GUIMenu extends JMenuBar {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					GUIMain.getInstance().getTabbedPane().setSelectedIndex(Panes.HISTORY.ordinal());
+					AppInitializer.getGuiMain().getTabbedPane().setSelectedIndex(Panes.HISTORY.ordinal());
 
 				} catch (Exception e1) {
 
@@ -177,7 +177,7 @@ public class GUIMenu extends JMenuBar {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					GUIMain.getInstance().getTabbedPane().setSelectedIndex(Panes.INTERCEPT.ordinal());
+					AppInitializer.getGuiMain().getTabbedPane().setSelectedIndex(Panes.INTERCEPT.ordinal());
 
 				} catch (Exception e1) {
 
@@ -193,7 +193,7 @@ public class GUIMenu extends JMenuBar {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					GUIMain.getInstance().getTabbedPane().setSelectedIndex(Panes.RESENDER.ordinal());
+					AppInitializer.getGuiMain().getTabbedPane().setSelectedIndex(Panes.RESENDER.ordinal());
 
 				} catch (Exception e1) {
 
@@ -209,7 +209,7 @@ public class GUIMenu extends JMenuBar {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					GUIMain.getInstance().getTabbedPane().setSelectedIndex(Panes.BULKSENDER.ordinal());
+					AppInitializer.getGuiMain().getTabbedPane().setSelectedIndex(Panes.BULKSENDER.ordinal());
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);
@@ -224,7 +224,7 @@ public class GUIMenu extends JMenuBar {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					GUIMain.getInstance().getTabbedPane().setSelectedIndex(Panes.OPTIONS.ordinal());
+					AppInitializer.getGuiMain().getTabbedPane().setSelectedIndex(Panes.OPTIONS.ordinal());
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);
@@ -239,7 +239,7 @@ public class GUIMenu extends JMenuBar {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					GUIMain.getInstance().getTabbedPane().setSelectedIndex(Panes.LOG.ordinal());
+					AppInitializer.getGuiMain().getTabbedPane().setSelectedIndex(Panes.LOG.ordinal());
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);

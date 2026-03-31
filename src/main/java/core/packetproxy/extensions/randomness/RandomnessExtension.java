@@ -65,7 +65,6 @@ import packetproxy.AppInitializer;
 import packetproxy.controller.ResendController;
 import packetproxy.extensions.randomness.test.RandomnessTestManager;
 import packetproxy.gui.GUIBulkSenderData;
-import packetproxy.gui.GUIMain;
 import packetproxy.model.Extension;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
@@ -465,7 +464,7 @@ public class RandomnessExtension extends Extension {
 			public void actionPerformed(ActionEvent actionEvent) {
 				try {
 
-					Packet packet = GUIMain.getInstance().getGuiHistory().getGuiPacket().getPacket();
+					Packet packet = AppInitializer.getGuiMain().getGuiHistory().getGuiPacket().getPacket();
 					add(packet.getOneShotFromModifiedData(), packet.getId());
 				} catch (Exception e) {
 

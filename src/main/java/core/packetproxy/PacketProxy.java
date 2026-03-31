@@ -123,7 +123,8 @@ public class PacketProxy {
 		if (versionStream != null) {
 			version = IOUtils.toString(versionStream);
 		}
-		gui = GUIMain.getInstance(String.format("PacketProxy %s", version));
+		gui = new GUIMain(String.format("PacketProxy %s", version));
+		AppInitializer.setGuiMain(gui);
 		gui.setVisible(true);
 	}
 }

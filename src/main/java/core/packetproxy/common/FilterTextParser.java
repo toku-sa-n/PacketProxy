@@ -30,7 +30,6 @@ import javax.swing.RowFilter.ComparisonType;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.collections4.map.HashedMap;
 import packetproxy.AppInitializer;
-import packetproxy.gui.GUIMain;
 import packetproxy.model.Packet;
 
 /**
@@ -299,7 +298,7 @@ public class FilterTextParser {
 				// 検索に必要なGroupIdを得る
 				try {
 
-					DefaultTableModel table = GUIMain.getInstance().getGuiHistory().getTableModel();
+					DefaultTableModel table = AppInitializer.getGuiMain().getGuiHistory().getTableModel();
 					if (already_analyzed_row_num < table.getRowCount()) {
 
 						for (int i = already_analyzed_row_num; i < table.getRowCount(); i++) {
