@@ -25,6 +25,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Filters implements PropertyChangeListener {
@@ -34,7 +35,7 @@ public class Filters implements PropertyChangeListener {
 	private Dao<Filter, Integer> dao;
 
 	public Filters() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(Filter.class, this);
 		if (!isLatestVersion()) {
 
@@ -110,12 +111,12 @@ public class Filters implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Filter.class, this);
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Filter.class, this);
 					break;
 				default :

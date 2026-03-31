@@ -25,6 +25,7 @@ import java.beans.PropertyChangeSupport;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 import packetproxy.util.PacketProxyUtility;
 
@@ -36,7 +37,7 @@ public class Resolutions implements PropertyChangeListener {
 	private DaoQueryCache<Resolution> cache;
 
 	public Resolutions() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(Resolution.class, this);
 		cache = new DaoQueryCache();
 		if (dao.countOf() == 0) {
@@ -188,13 +189,13 @@ public class Resolutions implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Resolution.class, this);
 					cache.clear();
 					firePropertyChange();
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Resolution.class, this);
 					cache.clear();
 					break;

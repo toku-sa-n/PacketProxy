@@ -73,7 +73,6 @@ import packetproxy.AppInitializer;
 import packetproxy.common.FilterTextParser;
 import packetproxy.common.I18nString;
 import packetproxy.common.Utils;
-import packetproxy.model.Database;
 import packetproxy.model.Database.DatabaseMessage;
 import packetproxy.model.OptionTableModel;
 import packetproxy.model.Packet;
@@ -602,7 +601,7 @@ public class GUIHistory implements PropertyChangeListener {
 			public void onApproved(File file, String extension) {
 				try {
 
-					Database.getInstance().Save(file.getAbsolutePath());
+					AppInitializer.getDatabase().Save(file.getAbsolutePath());
 					JOptionPane.showMessageDialog(null, "データを保存しました。");
 					updateRequest(true);
 				} catch (Exception e1) {

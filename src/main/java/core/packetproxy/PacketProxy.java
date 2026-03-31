@@ -25,7 +25,6 @@ import packetproxy.common.Utils;
 import packetproxy.gui.GUIMain;
 import packetproxy.gui.Splash;
 import packetproxy.gulp.GulpTerminal;
-import packetproxy.model.Database;
 import packetproxy.util.Logging;
 
 public class PacketProxy {
@@ -75,7 +74,7 @@ public class PacketProxy {
 						I18nString.get("Database error"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				if (option == JOptionPane.YES_OPTION) {
 					try {
-						File resource = new File((Database.getInstance()).getDatabasePath().toString());
+						File resource = new File((AppInitializer.getDatabase()).getDatabasePath().toString());
 						if (resource.exists()) {
 							resource.delete();
 						}

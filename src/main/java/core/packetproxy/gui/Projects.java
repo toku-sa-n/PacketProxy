@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.apache.commons.io.FilenameUtils;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.common.RecentProjectsStore;
-import packetproxy.model.Database;
 
 public class Projects {
 
@@ -110,7 +110,7 @@ public class Projects {
 	}
 
 	public void openProject(String path) throws Exception {
-		Database.getInstance().openAt(path);
+		AppInitializer.getDatabase().openAt(path);
 		RecentProjectsStore.add(Paths.get(path));
 	}
 
@@ -119,7 +119,7 @@ public class Projects {
 		Files.createDirectories(tmpDir);
 		var ts = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
 		var db = tmpDir.resolve("packetproxy-" + ts + ".sqlite3");
-		Database.getInstance().openAt(db.toString());
+		AppInitializer.getDatabase().openAt(db.toString());
 		return db.toString();
 	}
 
@@ -131,7 +131,7 @@ public class Projects {
 		var projectDir = Paths.get(System.getProperty("user.home"), ".packetproxy", "projects");
 		Files.createDirectories(projectDir);
 		var db = projectDir.resolve(name.trim() + ".sqlite3");
-		Database.getInstance().openAt(db.toString());
+		AppInitializer.getDatabase().openAt(db.toString());
 		RecentProjectsStore.add(db);
 		return db.toString();
 	}

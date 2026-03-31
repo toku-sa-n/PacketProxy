@@ -37,7 +37,7 @@ public class SSLPassThroughs implements PropertyChangeListener {
 	private ListenPorts listenPorts;
 
 	public SSLPassThroughs() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		listenPorts = AppInitializer.getListenPorts();
 		dao = database.createTable(SSLPassThrough.class, this);
 		cache = new DaoQueryCache<>();
@@ -199,13 +199,13 @@ public class SSLPassThroughs implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(SSLPassThrough.class, this);
 					cache.clear();
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(SSLPassThrough.class, this);
 					cache.clear();
 					break;

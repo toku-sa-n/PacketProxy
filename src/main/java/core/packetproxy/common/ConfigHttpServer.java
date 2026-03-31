@@ -156,7 +156,7 @@ public class ConfigHttpServer extends NanoHTTPD {
 
 				DaoHub daoHub = new Gson().fromJson(json, DaoHub.class);
 
-				Database.getInstance().dropConfigs();
+				AppInitializer.getDatabase().dropConfigs();
 
 				for (ListenPort listenPort : daoHub.listenPortList) {
 

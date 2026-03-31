@@ -95,7 +95,7 @@ public class ConfigIO {
 	public void setOptions(String json) throws Exception {
 		DaoHub daoHub = new Gson().fromJson(json, DaoHub.class);
 
-		Database.getInstance().dropConfigs();
+		AppInitializer.getDatabase().dropConfigs();
 
 		for (ListenPort listenPort : daoHub.listenPortList) {
 

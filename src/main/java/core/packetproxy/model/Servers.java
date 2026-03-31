@@ -26,6 +26,7 @@ import java.beans.PropertyChangeSupport;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Servers implements PropertyChangeListener {
@@ -36,7 +37,7 @@ public class Servers implements PropertyChangeListener {
 	private DaoQueryCache<Server> cache;
 
 	public Servers() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(Server.class, this);
 		cache = new DaoQueryCache();
 	}
@@ -245,13 +246,13 @@ public class Servers implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Server.class, this);
 					cache.clear();
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Server.class, this);
 					cache.clear();
 					break;

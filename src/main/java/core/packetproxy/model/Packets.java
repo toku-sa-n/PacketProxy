@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.common.Logger;
 import packetproxy.model.Database.DatabaseMessage;
 
@@ -47,7 +48,7 @@ public class Packets implements PropertyChangeListener {
 	private ExecutorService executor;
 
 	public Packets(boolean restore) throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		database.addPropertyChangeListener(this);
 		dao = database.createTable(Packet.class);
 		if (restore) {
@@ -200,7 +201,7 @@ public class Packets implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Packet.class);
 					// ファイル読み込み時にpacketsテーブルの中にcolorカラムがなかったら追加する
 					String result = dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='packets'")
@@ -212,7 +213,7 @@ public class Packets implements PropertyChangeListener {
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Packet.class);
 					break;
 				default :

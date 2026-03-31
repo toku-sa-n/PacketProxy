@@ -38,24 +38,14 @@ import java.nio.file.StandardCopyOption;
 import packetproxy.AppInitializer;
 
 public class Database {
-
-	private static Database instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static Database getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Database();
-		}
-		return instance;
-	}
 
 	private static int ALERT_DB_FILE_SIZE_MB = 1536; // 1.5GB (LIMIT = 2GB)
 	private Path databaseDir = Paths.get(System.getProperty("user.home") + "/.packetproxy/db"); // FileSystems.getDefault().getPath("db");
 	private Path databasePath = Paths.get(databaseDir.toString() + "/resources.sqlite3");
 	private ConnectionSource source;
 
-	private Database() throws Exception {
+	public Database() throws Exception {
 	}
 
 	private void createDB() throws Exception {
@@ -119,8 +109,8 @@ public class Database {
 	}
 
 	public void dropPacketTableFaster() throws Exception {
-		Path src = Paths.get(instance.databasePath.getParent().toAbsolutePath().toString() + "/tmp.sqlite3");
-		Path dst = instance.databasePath.toAbsolutePath();
+		Path src = Paths.get(databasePath.getParent().toAbsolutePath().toString() + "/tmp.sqlite3");
+		Path dst = databasePath.toAbsolutePath();
 		firePropertyChange(DatabaseMessage.DISCONNECT_NOW);
 		DatabaseConnection conn = source.getReadWriteConnection();
 		conn.close();

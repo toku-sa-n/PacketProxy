@@ -35,7 +35,7 @@ public class Configs implements PropertyChangeListener {
 	private DaoQueryCache<Config> cache;
 
 	public Configs() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(Config.class, this);
 		cache = new DaoQueryCache();
 	}
@@ -117,13 +117,13 @@ public class Configs implements PropertyChangeListener {
 					AppInitializer.clearConfigs();
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Config.class, this);
 					cache.clear();
 					firePropertyChange(CONFIGS.toString(), null, message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Config.class, this);
 					cache.clear();
 					break;

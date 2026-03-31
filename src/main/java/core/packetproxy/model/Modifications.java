@@ -36,7 +36,7 @@ public class Modifications implements PropertyChangeListener {
 	private DaoQueryCache<Modification> cache;
 
 	public Modifications() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		servers = AppInitializer.getServers();
 		dao = database.createTable(Modification.class, this);
 		cache = new DaoQueryCache<Modification>();
@@ -174,13 +174,13 @@ public class Modifications implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Modification.class, this);
 					cache.clear();
 					firePropertyChange();
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Modification.class, this);
 					cache.clear();
 					break;

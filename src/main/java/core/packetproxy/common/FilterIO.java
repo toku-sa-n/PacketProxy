@@ -39,7 +39,7 @@ public class FilterIO {
 
 			DaoHub daoHub = new Gson().fromJson(json, DaoHub.class);
 
-			Database.getInstance().dropFilters();
+			AppInitializer.getDatabase().dropFilters();
 
 			for (Filter filter : daoHub.filterList) {
 

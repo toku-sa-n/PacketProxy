@@ -65,7 +65,7 @@ public class InterceptOptions implements PropertyChangeListener {
 	}
 
 	public InterceptOptions() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		servers = AppInitializer.getServers();
 		dao = database.createTable(InterceptOption.class, this);
 		cache = new DaoQueryCache<InterceptOption>();
@@ -305,13 +305,13 @@ public class InterceptOptions implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(InterceptOption.class, this);
 					cache.clear();
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(InterceptOption.class, this);
 					cache.clear();
 					break;

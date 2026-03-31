@@ -25,6 +25,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class OpenVPNForwardPorts implements PropertyChangeListener {
@@ -36,7 +37,7 @@ public class OpenVPNForwardPorts implements PropertyChangeListener {
 	private DaoQueryCache<OpenVPNForwardPort> cache;
 
 	public OpenVPNForwardPorts() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(OpenVPNForwardPort.class, this);
 		cache = new DaoQueryCache<>();
 		if (!isLatestVersion()) {
@@ -140,13 +141,13 @@ public class OpenVPNForwardPorts implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(OpenVPNForwardPort.class, this);
 					cache.clear();
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(OpenVPNForwardPort.class, this);
 					cache.clear();
 					break;

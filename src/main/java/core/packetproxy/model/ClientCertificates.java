@@ -38,7 +38,7 @@ public class ClientCertificates implements PropertyChangeListener {
 	private Servers servers;
 
 	public ClientCertificates() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		servers = AppInitializer.getServers();
 		dao = database.createTable(ClientCertificate.class, this);
 		if (!isLatestVersion()) {
@@ -85,12 +85,12 @@ public class ClientCertificates implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(ClientCertificate.class, this);
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(ClientCertificate.class, this);
 					break;
 				default :

@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.extensions.randomness.RandomnessExtension;
 import packetproxy.extensions.samplehttp.SampleEncoders;
 import packetproxy.extensions.securityheaders.SecurityHeadersExtension;
@@ -60,7 +61,7 @@ public class Extensions implements PropertyChangeListener {
 
 	public Extensions() throws Exception {
 		ext_instances = new HashMap<>();
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(Extension.class, this);
 		cache = new DaoQueryCache<>();
 		if (!isLatestVersion()) {
@@ -277,13 +278,13 @@ public class Extensions implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Extension.class, this);
 					cache.clear();
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(Extension.class, this);
 					cache.clear();
 					break;

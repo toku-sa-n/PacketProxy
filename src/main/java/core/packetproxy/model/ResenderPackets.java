@@ -11,6 +11,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import javax.swing.JOptionPane;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class ResenderPackets implements PropertyChangeListener {
@@ -20,7 +21,7 @@ public class ResenderPackets implements PropertyChangeListener {
 	private Dao<ResenderPacket, Integer> dao;
 
 	public ResenderPackets() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(ResenderPacket.class, this);
 	}
 
@@ -90,12 +91,12 @@ public class ResenderPackets implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(ResenderPacket.class, this);
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(ResenderPacket.class, this);
 					break;
 				default :

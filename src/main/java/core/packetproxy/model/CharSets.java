@@ -23,6 +23,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Arrays;
 import java.util.List;
+import packetproxy.AppInitializer;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class CharSets implements PropertyChangeListener {
@@ -48,7 +49,7 @@ public class CharSets implements PropertyChangeListener {
 	private Dao<CharSet, Integer> dao;
 
 	public CharSets() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		dao = database.createTable(CharSet.class, this);
 	}
 
@@ -132,12 +133,12 @@ public class CharSets implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(CharSet.class, this);
 					firePropertyChange();
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(CharSet.class, this);
 					break;
 				default :

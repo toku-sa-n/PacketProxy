@@ -40,6 +40,7 @@ object AppInitializer {
   private var diff: Diff? = null
   private var diffBinary: DiffBinary? = null
   private var diffJson: DiffJson? = null
+  private var database: Database? = null
   private var extensions: Extensions? = null
   private var filters: Filters? = null
   private var duplexManager: DuplexManager? = null
@@ -103,7 +104,7 @@ object AppInitializer {
   private fun initDatabase() {
     val dbPath =
       Paths.get(System.getProperty("user.home"), ".packetproxy", "db", "resources.sqlite3")
-    Database.getInstance().openAt(dbPath.toString())
+    getDatabase().openAt(dbPath.toString())
     Logging.log("Databaseを初期化しました: $dbPath")
   }
 
@@ -220,6 +221,8 @@ object AppInitializer {
   @JvmStatic fun getDiffBinary(): DiffBinary = diffBinary ?: DiffBinary().also { diffBinary = it }
 
   @JvmStatic fun getDiffJson(): DiffJson = diffJson ?: DiffJson().also { diffJson = it }
+
+  @JvmStatic fun getDatabase(): Database = database ?: Database().also { database = it }
 
   @JvmStatic fun getExtensions(): Extensions = extensions ?: Extensions().also { extensions = it }
 

@@ -31,7 +31,6 @@ import packetproxy.common.ConfigIO;
 import packetproxy.common.I18nString;
 import packetproxy.common.RecentProjectsStore;
 import packetproxy.common.Utils;
-import packetproxy.model.Database;
 import packetproxy.util.PacketProxyUtility;
 
 @SuppressWarnings("serial")
@@ -63,7 +62,7 @@ public class GUIMenu extends JMenuBar {
 					public void onApproved(File file, String extension) {
 						try {
 
-							Database.getInstance().Save(file.getAbsolutePath());
+							AppInitializer.getDatabase().Save(file.getAbsolutePath());
 							RecentProjectsStore.add(file.toPath());
 							JOptionPane.showMessageDialog(null, I18nString.get("Data saved successfully"));
 						} catch (Exception e1) {
@@ -136,7 +135,7 @@ public class GUIMenu extends JMenuBar {
 					if (selected == NativeFileChooser.APPROVE_OPTION) {
 
 						File file = filechooser.getSelectedFile();
-						Database.getInstance().Load(file.getAbsolutePath());
+						AppInitializer.getDatabase().Load(file.getAbsolutePath());
 						RecentProjectsStore.add(file.toPath());
 					}
 				} catch (Exception e1) {

@@ -36,7 +36,7 @@ public class ListenPorts implements PropertyChangeListener {
 	private Servers servers;
 
 	public ListenPorts() throws Exception {
-		database = Database.getInstance();
+		database = AppInitializer.getDatabase();
 		servers = AppInitializer.getServers();
 		dao = database.createTable(ListenPort.class, this);
 	}
@@ -151,12 +151,12 @@ public class ListenPorts implements PropertyChangeListener {
 				case DISCONNECT_NOW :
 					break;
 				case RECONNECT :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(ListenPort.class, this);
 					firePropertyChange(message);
 					break;
 				case RECREATE :
-					database = Database.getInstance();
+					database = AppInitializer.getDatabase();
 					dao = database.createTable(ListenPort.class, this);
 					break;
 				default :
