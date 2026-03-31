@@ -32,9 +32,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.Filter;
-import packetproxy.model.Filters;
 
 public class GUIFilterConfigEditDialog extends JDialog {
 
@@ -121,10 +121,10 @@ public class GUIFilterConfigEditDialog extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				try {
 
-					Filter f = Filters.getInstance().query(filter.getId());
+					Filter f = AppInitializer.getFilters().query(filter.getId());
 					f.setName(text_project_name.getText());
 					f.setFilter(text_comment.getText());
-					Filters.getInstance().update(f);
+					AppInitializer.getFilters().update(f);
 					dispose();
 				} catch (Exception e1) {
 

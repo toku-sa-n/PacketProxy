@@ -7,9 +7,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import java.util.Collections;
 import java.util.List;
+import packetproxy.AppInitializer;
 import packetproxy.model.*;
 import packetproxy.model.Filter;
-import packetproxy.model.Filters;
 
 public class FilterIO {
 
@@ -25,7 +25,7 @@ public class FilterIO {
 	public String getOptions() throws Exception {
 		DaoHub daoHub = new DaoHub();
 
-		daoHub.filterList = Filters.getInstance().queryAll();
+		daoHub.filterList = AppInitializer.getFilters().queryAll();
 		Collections.reverse(daoHub.filterList);
 
 		Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
@@ -44,7 +44,7 @@ public class FilterIO {
 			for (Filter filter : daoHub.filterList) {
 
 				Filter f = new Filter(filter.getName(), filter.getFilter());
-				Filters.getInstance().create(f);
+				AppInitializer.getFilters().create(f);
 			}
 		} catch (Exception e) {
 

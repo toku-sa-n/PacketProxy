@@ -35,11 +35,11 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import packetproxy.AppInitializer;
 import packetproxy.common.FilterIO;
 import packetproxy.common.I18nString;
 import packetproxy.common.Utils;
 import packetproxy.model.Filter;
-import packetproxy.model.Filters;
 
 public class GUIFilterConfig {
 
@@ -243,7 +243,7 @@ public class GUIFilterConfig {
 							I18nString.get("Delete filter"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
 					if (option == JOptionPane.YES_OPTION) {
 
-						Filters.getInstance().delete(filter);
+						AppInitializer.getFilters().delete(filter);
 						updateImpl();
 					}
 				} catch (Exception e1) {
@@ -331,7 +331,7 @@ public class GUIFilterConfig {
 
 	private void updateImpl() throws Exception {
 		clearTableContents();
-		Filters.getInstance().queryAll().forEach(filter -> addTableContent(filter));
+		AppInitializer.getFilters().queryAll().forEach(filter -> addTableContent(filter));
 	}
 
 	private void clearTableContents() {
@@ -347,7 +347,7 @@ public class GUIFilterConfig {
 	}
 
 	private Filter getTableContent(int id) throws Exception {
-		return Filters.getInstance().query(id);
+		return AppInitializer.getFilters().query(id);
 	}
 
 	// private void sortByText(String text) {

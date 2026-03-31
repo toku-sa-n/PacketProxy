@@ -97,7 +97,7 @@ public class Database {
 
 		dropTable(Filter.class);
 
-		createTable(Filter.class, Filters.getInstance());
+		createTable(Filter.class, AppInitializer.getFilters());
 
 		firePropertyChange(DatabaseMessage.RECONNECT);
 	}
@@ -127,7 +127,7 @@ public class Database {
 		Files.move(dst, src, StandardCopyOption.REPLACE_EXISTING);
 
 		createDB();
-		createTable(Filter.class, Filters.getInstance());
+		createTable(Filter.class, AppInitializer.getFilters());
 		createTable(ListenPort.class, AppInitializer.getListenPorts());
 		createTable(Config.class, AppInitializer.getConfigs());
 		createTable(Server.class, Servers.getInstance());

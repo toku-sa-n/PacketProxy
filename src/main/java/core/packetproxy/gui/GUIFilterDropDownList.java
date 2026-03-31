@@ -35,9 +35,9 @@ import javax.swing.JTable;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
+import packetproxy.AppInitializer;
 import packetproxy.common.I18nString;
 import packetproxy.model.Filter;
-import packetproxy.model.Filters;
 
 public class GUIFilterDropDownList extends JDialog {
 
@@ -138,12 +138,12 @@ public class GUIFilterDropDownList extends JDialog {
 				}
 			}
 		});
-		if (Filters.getInstance().queryAll().isEmpty() && defaultFilters.isEmpty()) {
+		if (AppInitializer.getFilters().queryAll().isEmpty() && defaultFilters.isEmpty()) {
 
 			tableModel.addRow(new String[]{"--", I18nString.get("No filter")});
 		} else {
 
-			Filters.getInstance().queryAll().stream()
+			AppInitializer.getFilters().queryAll().stream()
 					.forEach(filter -> tableModel.addRow(new String[]{filter.getName(), filter.getFilter()}));
 			defaultFilters.forEach(filter -> tableModel.addRow(new String[]{filter.getName(), filter.getFilter()}));
 		}

@@ -75,7 +75,6 @@ import packetproxy.common.I18nString;
 import packetproxy.common.Utils;
 import packetproxy.model.Database;
 import packetproxy.model.Database.DatabaseMessage;
-import packetproxy.model.Filters;
 import packetproxy.model.OptionTableModel;
 import packetproxy.model.Packet;
 import packetproxy.model.Packets;
@@ -124,7 +123,7 @@ public class GUIHistory implements PropertyChangeListener {
 		packets = Packets.getInstance(restore);
 		packets.addPropertyChangeListener(this);
 		AppInitializer.getResenderPackets().initTable(restore);
-		Filters.getInstance().addPropertyChangeListener(this);
+		AppInitializer.getFilters().addPropertyChangeListener(this);
 		pairingService = new PacketPairingService();
 		gui_packet = new GUIPacket();
 		colorManager = new TableCustomColorManager();

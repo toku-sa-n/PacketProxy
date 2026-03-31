@@ -28,22 +28,12 @@ import javax.swing.JOptionPane;
 import packetproxy.model.Database.DatabaseMessage;
 
 public class Filters implements PropertyChangeListener {
-
-	private static Filters instance;
 	private PropertyChangeSupport changes = new PropertyChangeSupport(this);
-
-	public static Filters getInstance() throws Exception {
-		if (instance == null) {
-
-			instance = new Filters();
-		}
-		return instance;
-	}
 
 	private Database database;
 	private Dao<Filter, Integer> dao;
 
-	private Filters() throws Exception {
+	public Filters() throws Exception {
 		database = Database.getInstance();
 		dao = database.createTable(Filter.class, this);
 		if (!isLatestVersion()) {
