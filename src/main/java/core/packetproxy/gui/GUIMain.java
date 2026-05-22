@@ -33,6 +33,7 @@ import javax.swing.text.Keymap;
 import packetproxy.common.FontManager;
 import packetproxy.common.I18nString;
 import packetproxy.model.InterceptModel;
+import packetproxy.platform.UserPrompts;
 import packetproxy.util.PacketProxyUtility;
 
 public class GUIMain extends JFrame implements PropertyChangeListener {
@@ -100,6 +101,7 @@ public class GUIMain extends JFrame implements PropertyChangeListener {
 	private GUIMain(String title) {
 		try {
 
+			UserPrompts.set(new SwingUserPrompt());
 			setIcon();
 			gui_history = initProjectAndHistory();
 			setLookandFeel();

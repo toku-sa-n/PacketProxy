@@ -25,9 +25,9 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JOptionPane;
 import packetproxy.model.Database.DatabaseMessage;
 import packetproxy.model.InterceptOption.Direction;
+import packetproxy.platform.UserPrompts;
 
 public class InterceptOptions implements PropertyChangeListener {
 
@@ -349,9 +349,8 @@ public class InterceptOptions implements PropertyChangeListener {
 	}
 
 	private void RecreateTable() throws Exception {
-		int option = JOptionPane.showConfirmDialog(null, "InterceptOptionsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-				"テーブルの更新", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-		if (option == JOptionPane.YES_OPTION) {
+		if (UserPrompts.get().confirmTableRecreate("InterceptOptions",
+				"InterceptOptionsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？")) {
 
 			database.dropTable(InterceptOption.class);
 			dao = database.createTable(InterceptOption.class, this);
