@@ -148,6 +148,8 @@ spotless {
   java {
     target spotlessTarget('**/*.java')
 
+    removeUnusedImports('cleanthat-javaparser-unnecessaryimport')
+
     cleanthat()
     googleJavaFormat()
 
