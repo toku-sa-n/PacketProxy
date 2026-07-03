@@ -55,7 +55,7 @@ import packetproxy.model.Packet;
 import packetproxy.model.Packets;
 import packetproxy.util.CharSetUtility;
 
-public class GUIData {
+public class PacketDataTabs {
 
 	private JFrame owner;
 	private JPanel main_panel;
@@ -80,7 +80,7 @@ public class GUIData {
 	private Supplier<byte[]> bodyDataProvider = null;
 	private Supplier<byte[]> responseDataProvider = null;
 
-	public GUIData(JFrame owner) {
+	public PacketDataTabs(JFrame owner) {
 		this.owner = owner;
 	}
 

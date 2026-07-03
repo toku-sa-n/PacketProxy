@@ -170,9 +170,9 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
     val panel: JPanel = JPanel()
     private val tabs = JTabbedPane()
     private val decodedTabs = TabSet(true, false)
-    val receivedPanel = GUIData(owner)
-    private val modifiedPanel = GUIData(owner)
-    private val sentPanel = GUIData(owner)
+    val receivedPanel = PacketDataTabs(owner)
+    private val modifiedPanel = PacketDataTabs(owner)
+    private val sentPanel = PacketDataTabs(owner)
     private lateinit var allReceived: RawTextPane
     private lateinit var allDecoded: RawTextPane
     private lateinit var allModified: RawTextPane
