@@ -65,7 +65,7 @@ public class GUIOptionHubServer implements PropertyChangeListener {
 		panel.setBackground(Color.WHITE);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
 
-		panel.add(new JLabel("AccessToken:"));
+		panel.add(new JLabel(I18nString.get("AccessToken:")));
 
 		accessTokenField = new JTextField();
 		accessTokenField.setEditable(false);

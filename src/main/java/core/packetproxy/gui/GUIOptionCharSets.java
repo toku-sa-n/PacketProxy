@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import packetproxy.common.I18nString;
 import packetproxy.model.CharSet;
 import packetproxy.model.CharSets;
 
@@ -38,7 +39,7 @@ public class GUIOptionCharSets extends GUIOptionComponentBase<CharSet> {
 		charsets = CharSets.getInstance();
 		charsets.addPropertyChangeListener(this);
 		charsets_list = new ArrayList<CharSet>();
-		String[] menu = {"CharSetName"};
+		String[] menu = I18nString.getArray("CharSetName");
 		int[] menuWidth = {200, 80, 50, 160, 60, 60, 100};
 		MouseAdapter tableAction = new MouseAdapter() {
 

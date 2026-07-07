@@ -164,7 +164,9 @@ class GUIOptionGrpcDescriptorDialog(
     try {
       val chooser = NativeFileChooser()
       chooser.setDialogTitle(I18nString.get("Select .proto files"))
-      chooser.addChoosableFileFilter(FileNameExtensionFilter("Protocol Buffers (*.proto)", "proto"))
+      chooser.addChoosableFileFilter(
+        FileNameExtensionFilter(I18nString.get("Protocol Buffers (*.proto)"), "proto")
+      )
       chooser.setAcceptAllFileFilterUsed(false)
       if (chooser.showOpenDialog(this) == NativeFileChooser.APPROVE_OPTION) {
         val f = chooser.selectedFile
@@ -290,7 +292,9 @@ class GUIOptionGrpcDescriptorDialog(
         ?.let { File(it).parentFile }
         ?.takeIf { it.isDirectory }
         ?.let { chooser.setCurrentDirectory(it) }
-      chooser.addChoosableFileFilter(FileNameExtensionFilter("Descriptor set (*.desc)", "desc"))
+      chooser.addChoosableFileFilter(
+        FileNameExtensionFilter(I18nString.get("Descriptor set (*.desc)"), "desc")
+      )
       chooser.setAcceptAllFileFilterUsed(true)
       if (chooser.showOpenDialog(this) == NativeFileChooser.APPROVE_OPTION) {
         val f = chooser.selectedFile

@@ -28,6 +28,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import packetproxy.common.I18nString;
 import packetproxy.common.Range;
 import packetproxy.util.PacketProxyUtility;
 import packetproxy.util.SearchBox;
@@ -64,9 +65,9 @@ public class TabSet {
 		json_text = json_panel.createPanel();
 
 		data_pane = new JTabbedPane();
-		data_pane.addTab("Raw", raw_text);
-		data_pane.addTab("Binary", binary_text);
-		data_pane.addTab("Json", json_text);
+		data_pane.addTab(I18nString.get("Raw"), raw_text);
+		data_pane.addTab(I18nString.get("Binary"), binary_text);
+		data_pane.addTab(I18nString.get("Json"), json_text);
 		data_pane.addChangeListener(new ChangeListener() {
 
 			@Override
@@ -92,7 +93,7 @@ public class TabSet {
 		}
 		if (copy == true) {
 
-			copyButton = new JButton("copy to clipboard");
+			copyButton = new JButton(I18nString.get("copy to clipboard"));
 			basePanel.add(copyButton);
 		}
 	}

@@ -25,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import packetproxy.common.I18nString;
 import packetproxy.model.ClientCertificate;
 import packetproxy.model.ClientCertificates;
 
@@ -40,7 +41,7 @@ public class GUIOptionClientCertificate extends GUIOptionComponentBase<ClientCer
 		clientCertificates.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<>();
 
-		String[] menu = {"Enabled", "Type", "Host", "Subject(CN)", "Issuer"};
+		String[] menu = I18nString.getArray("Enabled", "Type", "Host", "Subject(CN)", "Issuer");
 		int[] menuWidth = {50, 50, 200, 100, 350};
 
 		MouseAdapter tableAction = new MouseAdapter() {

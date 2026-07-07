@@ -33,6 +33,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
+import packetproxy.common.I18nString;
 import packetproxy.controller.ResendController;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.controller.SinglePacketAttackController;
@@ -238,7 +239,7 @@ public class GUIResender implements PropertyChangeListener {
 			split_panel.add(recv_panel.createPanel());
 			split_panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			split_panel.setResizeWeight(0.5);
-			resend_button = new JButton("send");
+			resend_button = new JButton(I18nString.get("send"));
 			resend_button.addActionListener(new ActionListener() {
 
 				@Override
@@ -270,7 +271,7 @@ public class GUIResender implements PropertyChangeListener {
 			});
 			send_panel.setParentSend(resend_button);
 
-			resend_multiple_button = new JButton("send x 20");
+			resend_multiple_button = new JButton(I18nString.get("send x 20"));
 			resend_multiple_button.addActionListener(new ActionListener() {
 
 				@Override
@@ -288,7 +289,7 @@ public class GUIResender implements PropertyChangeListener {
 				}
 			});
 
-			attack_button = new JButton("send x 20 (single-packet attack)");
+			attack_button = new JButton(I18nString.get("send x 20 (single-packet attack)"));
 			attack_button.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {

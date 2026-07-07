@@ -35,6 +35,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
+import packetproxy.common.I18nString;
 import packetproxy.controller.InterceptController;
 import packetproxy.model.InterceptModel;
 import packetproxy.model.Packet;
@@ -84,7 +85,7 @@ public class GUIIntercept implements PropertyChangeListener {
 
 			cmd_key = "Ctrl+";
 		}
-		forward_button = new JButton("forward " + cmd_key + "F");
+		forward_button = new JButton(I18nString.get("forward %sF", cmd_key));
 		forward_button.setEnabled(false);
 		forward_button.addActionListener(new ActionListener() {
 
@@ -99,7 +100,7 @@ public class GUIIntercept implements PropertyChangeListener {
 				}
 			}
 		});
-		forward_multi_button = new JButton("forward x 20");
+		forward_multi_button = new JButton(I18nString.get("forward x 20"));
 		forward_multi_button.setEnabled(false);
 		forward_multi_button.addActionListener(new ActionListener() {
 
@@ -114,7 +115,7 @@ public class GUIIntercept implements PropertyChangeListener {
 				}
 			}
 		});
-		drop_button = new JButton("drop " + cmd_key + "D");
+		drop_button = new JButton(I18nString.get("drop %sD", cmd_key));
 		drop_button.setEnabled(false);
 		drop_button.addActionListener(new ActionListener() {
 
@@ -129,7 +130,7 @@ public class GUIIntercept implements PropertyChangeListener {
 				}
 			}
 		});
-		send_to_resender_button = new JButton("send to Resender");
+		send_to_resender_button = new JButton(I18nString.get("send to Resender"));
 		send_to_resender_button.setEnabled(false);
 		send_to_resender_button.addActionListener(new ActionListener() {
 
@@ -147,7 +148,7 @@ public class GUIIntercept implements PropertyChangeListener {
 				}
 			}
 		});
-		send_to_bulk_sender_button = new JButton("send to Bulk Sender");
+		send_to_bulk_sender_button = new JButton(I18nString.get("send to Bulk Sender"));
 		send_to_bulk_sender_button.setEnabled(false);
 		send_to_bulk_sender_button.addActionListener(new ActionListener() {
 
@@ -254,10 +255,10 @@ public class GUIIntercept implements PropertyChangeListener {
 
 			if (interceptModel.isInterceptEnabled() == true) {
 
-				forward_enable.setText("intercept is on");
+				forward_enable.setText(I18nString.get("intercept is on"));
 			} else {
 
-				forward_enable.setText("intercept is off");
+				forward_enable.setText(I18nString.get("intercept is off"));
 			}
 			byte[] data = interceptModel.getData();
 			Packet client_packet = interceptModel.getClientPacket();

@@ -177,11 +177,11 @@ public class GUIFilterConfig {
 	}
 
 	private JPanel createTableButton() {
-		JButton button_add = new JButton("Add");
-		JButton button_update = new JButton("Edit");
-		JButton button_remove = new JButton("Remove");
-		JButton button_import = new JButton("Import");
-		JButton button_export = new JButton("Export");
+		JButton button_add = new JButton(I18nString.get("Add"));
+		JButton button_update = new JButton(I18nString.get("Edit"));
+		JButton button_remove = new JButton(I18nString.get("Remove"));
+		JButton button_import = new JButton(I18nString.get("Import"));
+		JButton button_export = new JButton(I18nString.get("Export"));
 
 		int height = button_add.getMaximumSize().height;
 

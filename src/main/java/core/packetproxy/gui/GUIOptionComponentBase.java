@@ -186,9 +186,9 @@ public abstract class GUIOptionComponentBase<T> implements PropertyChangeListene
 	private JPanel createTableButton(ActionListener addAction, ActionListener editAction, ActionListener removeAction) {
 		JPanel panel = new JPanel();
 
-		JButton button_add = new JButton("Add");
-		JButton button_edit = new JButton("Edit");
-		JButton button_remove = new JButton("Remove");
+		JButton button_add = new JButton(I18nString.get("Add"));
+		JButton button_edit = new JButton(I18nString.get("Edit"));
+		JButton button_remove = new JButton(I18nString.get("Remove"));
 
 		int height = button_add.getMinimumSize().height;
 

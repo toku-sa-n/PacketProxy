@@ -60,6 +60,9 @@ object I18nString {
     return localized ?: message
   }
 
+  @JvmStatic
+  fun getArray(vararg messages: String): Array<String> = messages.map { get(it) }.toTypedArray()
+
   // "Start listening port %d."のような文字列を"Start_listening_port_%d."に変換する
   private fun normalize(message: String): String {
     return message

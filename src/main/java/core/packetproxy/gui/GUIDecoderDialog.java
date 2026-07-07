@@ -21,6 +21,7 @@ import java.awt.Container;
 import java.awt.Rectangle;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import packetproxy.common.I18nString;
 import packetproxy.model.OneShotPacket;
 
 @SuppressWarnings("serial")
@@ -30,7 +31,7 @@ public class GUIDecoderDialog extends JDialog {
 
 	public GUIDecoderDialog() throws Exception {
 		super(GUIMain.getInstance());
-		setTitle("Decoder");
+		setTitle(I18nString.get("Decoder"));
 
 		Rectangle rect = GUIMain.getInstance().getBounds();
 		int width = rect.width - 100;

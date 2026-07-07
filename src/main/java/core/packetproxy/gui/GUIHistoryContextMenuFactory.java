@@ -36,6 +36,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import org.apache.commons.io.FileUtils;
+import packetproxy.common.I18nString;
 import packetproxy.controller.ResendController;
 import packetproxy.http.HeaderField;
 import packetproxy.http.Http;
@@ -287,10 +288,11 @@ public class GUIHistoryContextMenuFactory {
 					try {
 						byte[] data = dataSupplier.get();
 						FileUtils.writeByteArrayToFile(file, data);
-						JOptionPane.showMessageDialog(owner, String.format("%sに保存しました！", file.getPath()));
+						JOptionPane.showMessageDialog(owner,
+								I18nString.get("Successfully exported to %s", file.getPath()));
 					} catch (Exception ex) {
 						errWithStackTrace(ex);
-						JOptionPane.showMessageDialog(null, "データの保存に失敗しました。");
+						JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"));
 					}
 				}
 
@@ -300,7 +302,7 @@ public class GUIHistoryContextMenuFactory {
 
 				@Override
 				public void onError() {
-					JOptionPane.showMessageDialog(null, "データの保存に失敗しました。");
+					JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"));
 				}
 			});
 			filechooser.showSaveDialog();

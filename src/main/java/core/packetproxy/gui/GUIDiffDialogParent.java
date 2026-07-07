@@ -24,6 +24,7 @@ import java.awt.event.WindowEvent;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import packetproxy.common.I18nString;
 
 public class GUIDiffDialogParent extends JDialog {
 
@@ -71,7 +72,7 @@ public class GUIDiffDialogParent extends JDialog {
 
 	public GUIDiffDialogParent(JFrame owner) throws Exception {
 		super(owner);
-		setTitle("Diff");
+		setTitle(I18nString.get("Diff"));
 
 		Rectangle rect = owner.getBounds();
 		width = rect.width - 100;
@@ -115,9 +116,9 @@ public class GUIDiffDialogParent extends JDialog {
 		JComponent json_text = json_panel.createPanel();
 
 		data_pane = new JTabbedPane();
-		data_pane.addTab("Raw", raw_text);
-		data_pane.addTab("Binary", binary_text);
-		data_pane.addTab("Json", json_text);
+		data_pane.addTab(I18nString.get("Raw"), raw_text);
+		data_pane.addTab(I18nString.get("Binary"), binary_text);
+		data_pane.addTab(I18nString.get("Json"), json_text);
 		data_pane.addChangeListener(new ChangeListener() {
 
 			@Override

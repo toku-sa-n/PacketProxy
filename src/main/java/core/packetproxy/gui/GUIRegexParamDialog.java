@@ -62,16 +62,16 @@ public class GUIRegexParamDialog extends JDialog {
 	}
 
 	private JComponent createNameSetting() {
-		return label_and_object("Param Name:", name);
+		return label_and_object(I18nString.get("Param Name:"), name);
 	}
 
 	private JComponent createRegexString() {
-		return label_and_object("regex to pickup", regex);
+		return label_and_object(I18nString.get("regex to pickup"), regex);
 	}
 
 	public GUIRegexParamDialog(JFrame owner) throws Exception {
 		super(owner);
-		setTitle("RegexParam setting");
+		setTitle(I18nString.get("RegexParam setting"));
 
 		Rectangle rect = owner.getBounds();
 		setBounds(rect.x + rect.width / 2 - width / 2, rect.y + rect.height / 2 - height / 2, width, height);

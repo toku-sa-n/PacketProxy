@@ -116,7 +116,7 @@ public class RawTextPane extends ExtendedTextPane {
 		title_decoders.setEnabled(false);
 		menu.add(title_decoders);
 
-		JMenuItem url_decoder = new JMenuItem("URL Decoder");
+		JMenuItem url_decoder = new JMenuItem(I18nString.get("URL Decoder"));
 		url_decoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -141,7 +141,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 		menu.add(url_decoder);
 
-		JMenuItem base64_decoder = new JMenuItem("Base64 / Base64url Decoder");
+		JMenuItem base64_decoder = new JMenuItem(I18nString.get("Base64 / Base64url Decoder"));
 		base64_decoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -174,7 +174,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 		menu.add(base64_decoder);
 
-		JMenuItem jwt_decoder = new JMenuItem("JWT Decoder");
+		JMenuItem jwt_decoder = new JMenuItem(I18nString.get("JWT Decoder"));
 		jwt_decoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -202,7 +202,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 		menu.add(jwt_decoder);
 
-		JMenuItem unicode_unescaper = new JMenuItem("Unicode Unescaper");
+		JMenuItem unicode_unescaper = new JMenuItem(I18nString.get("Unicode Unescaper"));
 		unicode_unescaper.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -235,7 +235,7 @@ public class RawTextPane extends ExtendedTextPane {
 		title_encoders.setEnabled(false);
 		menu.add(title_encoders);
 
-		JMenuItem url_encoder = new JMenuItem("URL Encoder");
+		JMenuItem url_encoder = new JMenuItem(I18nString.get("URL Encoder"));
 		url_encoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -260,7 +260,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 		menu.add(url_encoder);
 
-		JMenuItem base64_encoder = new JMenuItem("Base64 Encoder");
+		JMenuItem base64_encoder = new JMenuItem(I18nString.get("Base64 Encoder"));
 		base64_encoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -285,7 +285,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 		menu.add(base64_encoder);
 
-		JMenuItem base64url_encoder = new JMenuItem("Base64url Encoder");
+		JMenuItem base64url_encoder = new JMenuItem(I18nString.get("Base64url Encoder"));
 		base64url_encoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -310,7 +310,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 		menu.add(base64url_encoder);
 
-		JMenuItem jwt_encoder = new JMenuItem("JWT Encoder");
+		JMenuItem jwt_encoder = new JMenuItem(I18nString.get("JWT Encoder"));
 		jwt_encoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -349,7 +349,7 @@ public class RawTextPane extends ExtendedTextPane {
 		});
 		menu.add(jwt_encoder);
 
-		JMenuItem unicode_escaper = new JMenuItem("Unicode Escaper");
+		JMenuItem unicode_escaper = new JMenuItem(I18nString.get("Unicode Escaper"));
 		unicode_escaper.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {

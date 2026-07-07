@@ -116,8 +116,8 @@ public class GUIHistory implements PropertyChangeListener {
 		return instance;
 	}
 
-	private String[] columnNames = {"#", "Client Request", "Server Response", "Length", "Client IP", "Client Port",
-			"Server IP", "Server Port", "Time", "Resend", "Modified", "Type", "Encode", "ALPN", "Group"};
+	private String[] columnNames = I18nString.getArray("#", "Client Request", "Server Response", "Length", "Client IP",
+			"Client Port", "Server IP", "Server Port", "Time", "Resend", "Modified", "Type", "Encode", "ALPN", "Group");
 	private int[] columnWidth = {60, 550, 50, 80, 160, 80, 160, 80, 100, 30, 30, 100, 100, 50, 30};
 	private JSplitPane split_panel;
 	private JPanel main_panel;
@@ -610,8 +610,9 @@ public class GUIHistory implements PropertyChangeListener {
 			return;
 		}
 		dialogOnce = true;
-		JOptionPane.showMessageDialog(owner, "データベースのサイズが上限値(2GB)を越えそうです。Historyを保存してください。", "Warning",
-				JOptionPane.WARNING_MESSAGE);
+		JOptionPane.showMessageDialog(owner,
+				I18nString.get("Database size is approaching the limit (2GB). Please save History."),
+				I18nString.get("Warning"), JOptionPane.WARNING_MESSAGE);
 
 		WriteFileChooserWrapper filechooser = new WriteFileChooserWrapper(owner, "sqlite3");
 		filechooser.addFileChooserListener(new WriteFileChooserWrapper.FileChooserListener() {
@@ -621,12 +622,12 @@ public class GUIHistory implements PropertyChangeListener {
 				try {
 
 					Database.getInstance().Save(file.getAbsolutePath());
-					JOptionPane.showMessageDialog(null, "データを保存しました。");
+					JOptionPane.showMessageDialog(null, I18nString.get("Data saved successfully"));
 					updateRequest(true);
 				} catch (Exception e1) {
 
 					errWithStackTrace(e1);
-					JOptionPane.showMessageDialog(null, "データの保存に失敗しました。");
+					JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"));
 				}
 				dialogOnce = false;
 			}
@@ -637,7 +638,7 @@ public class GUIHistory implements PropertyChangeListener {
 
 			@Override
 			public void onError() {
-				JOptionPane.showMessageDialog(null, "データの保存に失敗しました。");
+				JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"));
 			}
 		});
 		filechooser.showSaveDialog();

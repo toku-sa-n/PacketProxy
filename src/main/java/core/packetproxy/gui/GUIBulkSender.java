@@ -30,6 +30,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
+import packetproxy.common.I18nString;
 import packetproxy.controller.ResendController;
 import packetproxy.controller.ResendController.ResendWorker;
 import packetproxy.model.OneShotPacket;
@@ -101,7 +102,7 @@ public class GUIBulkSender {
 				sendData.setData(pkt.getData());
 		});
 
-		JButton sendButton = new JButton("Send all packets");
+		JButton sendButton = new JButton(I18nString.get("Send all packets"));
 		sendButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -199,7 +200,7 @@ public class GUIBulkSender {
 				}
 			}
 		});
-		JButton clearButton = new JButton("clear");
+		JButton clearButton = new JButton(I18nString.get("clear"));
 		clearButton.addActionListener(new ActionListener() {
 
 			@Override

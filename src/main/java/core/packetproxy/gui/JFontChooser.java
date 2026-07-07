@@ -472,7 +472,7 @@ public class JFontChooser extends JComponent {
 			p.add(getFontFamilyTextField(), BorderLayout.NORTH);
 			p.add(scrollPane, BorderLayout.CENTER);
 
-			JLabel label = new JLabel("Font Name"); // Editor.fromConfiguracao.getValor("Inspector.obj.font.nfonte"));
+			JLabel label = new JLabel(I18nString.get("Font Name")); // Editor.fromConfiguracao.getValor("Inspector.obj.font.nfonte"));
 			label.setHorizontalAlignment(JLabel.LEFT);
 			label.setHorizontalTextPosition(JLabel.LEFT);
 			label.setLabelFor(getFontFamilyTextField());
@@ -500,7 +500,7 @@ public class JFontChooser extends JComponent {
 			p.add(getFontSizeTextField(), BorderLayout.NORTH);
 			p.add(scrollPane, BorderLayout.CENTER);
 
-			JLabel label = new JLabel("Font Size");
+			JLabel label = new JLabel(I18nString.get("Font Size"));
 			label.setHorizontalAlignment(JLabel.LEFT);
 			label.setHorizontalTextPosition(JLabel.LEFT);
 			label.setLabelFor(getFontSizeTextField());
@@ -519,7 +519,7 @@ public class JFontChooser extends JComponent {
 			samplePanel.setPreferredSize(new Dimension(200, 50));
 			samplePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-			JLabel label = new JLabel("Sample");
+			JLabel label = new JLabel(I18nString.get("Sample"));
 			label.setHorizontalAlignment(JLabel.LEFT);
 			label.setHorizontalTextPosition(JLabel.LEFT);
 			label.setLabelFor(getSampleTextField());

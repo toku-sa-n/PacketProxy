@@ -92,27 +92,29 @@ public class GUIOption {
 		panel.setBackground(Color.WHITE);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-		panel.add(createElement("Listen Ports",
+		panel.add(createElement(I18nString.get("Listen Ports"),
 				I18nString.get("Set listen port and server that packets are forwarded to.")));
 		GUIOptionListenPorts listenPorts = new GUIOptionListenPorts(owner);
 		panel.add(listenPorts.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(
-				createElement("Servers", I18nString.get("Set server and encode module to be used to encode packets.")));
+		panel.add(createElement(I18nString.get("Servers"),
+				I18nString.get("Set server and encode module to be used to encode packets.")));
 		GUIOptionServers servers = new GUIOptionServers(owner);
 		panel.add(servers.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Hostname Resolutions", I18nString.get("Set ip addr and server for DNS resolution.")));
+		panel.add(createElement(I18nString.get("Hostname Resolutions"),
+				I18nString.get("Set ip addr and server for DNS resolution.")));
 		GUIOptionResolutions resolutions = new GUIOptionResolutions(owner);
 		panel.add(resolutions.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Auto Modifications", I18nString.get("Set pattern for auto packet modification.")));
+		panel.add(createElement(I18nString.get("Auto Modifications"),
+				I18nString.get("Set pattern for auto packet modification.")));
 		GUIOptionModifications mods = new GUIOptionModifications(owner);
 		panel.add(mods.createPanel());
 
@@ -121,7 +123,7 @@ public class GUIOption {
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Intercept Rules", ""));
+		panel.add(createElement(I18nString.get("Intercept Rules"), ""));
 		GUIOptionIntercepts intercepts = new GUIOptionIntercepts(owner);
 		JComponent interceptPanel = intercepts.createPanel();
 
@@ -152,42 +154,42 @@ public class GUIOption {
 
 		panel.add(createSeparator());
 
-		panel.add(
-				createElement("Client Certificates", I18nString.get("Set client certificate to be used on SSL/TLS.")));
+		panel.add(createElement(I18nString.get("Client Certificates"),
+				I18nString.get("Set client certificate to be used on SSL/TLS.")));
 		GUIOptionClientCertificate clientCertificate = new GUIOptionClientCertificate(owner);
 		panel.add(clientCertificate.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("SSL PassThrough", I18nString.get(
+		panel.add(createElement(I18nString.get("SSL PassThrough"), I18nString.get(
 				"Set HTTPS server that packets are forwarded to without analyzing. These settings are enabled only if 'HTTP_PROXY' type is used.")));
 		GUIOptionSSLPassThrough ssl = new GUIOptionSSLPassThrough(owner);
 		panel.add(ssl.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Private DNS server",
+		panel.add(createElement(I18nString.get("Private DNS server"),
 				I18nString.get("Use private DNS server that resolves server name to the IP address of this pc.")));
 		GUIOptionPrivateDNS privateDNS = new GUIOptionPrivateDNS();
 		panel.add(privateDNS.getPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("OpenVPN Server with Docker",
+		panel.add(createElement(I18nString.get("OpenVPN Server with Docker"),
 				I18nString.get("Use OpenVPN Server as Docker Container to proxy HTTP/HTTPS without DNS Spoofing.")));
 		GUIOptionOpenVPN openVPN = new GUIOptionOpenVPN(owner);
 		panel.add(openVPN.getPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Priority Order of HTTP Versions",
+		panel.add(createElement(I18nString.get("Priority Order of HTTP Versions"),
 				I18nString.get("Set order of priority between HTTP1 and HTTP2.")));
 		GUIOptionHttp http = new GUIOptionHttp();
 		panel.add(http.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createTitle("PacketProxy CA Certificates & Private Keys"));
+		panel.add(createTitle(I18nString.get("PacketProxy CA Certificates & Private Keys")));
 
 		JPanel caPanel = new JPanel();
 		caPanel.setBackground(Color.WHITE);
@@ -262,25 +264,25 @@ public class GUIOption {
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Character encodings",
+		panel.add(createElement(I18nString.get("Character encodings"),
 				I18nString.get("Add/Remove character encodings to be used to display contents of packet.")));
 		GUIOptionCharSets charsetsGUI = new GUIOptionCharSets(owner);
 		panel.add(charsetsGUI.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Extensions", I18nString.get("Enable/Disable loaded extensions")));
+		panel.add(createElement(I18nString.get("Extensions"), I18nString.get("Enable/Disable loaded extensions")));
 		GUIOptionExtensions extensionsGUI = new GUIOptionExtensions(owner);
 		panel.add(extensionsGUI.createPanel());
 
 		panel.add(createSeparator());
 
-		panel.add(createElement("Fonts", ""));
+		panel.add(createElement(I18nString.get("Fonts"), ""));
 		GUIOptionFonts fontsGUI = new GUIOptionFonts(owner);
 		panel.add(fontsGUI.createPanel());
 
 		panel.add(createSeparator());
-		panel.add(createElement("Import/Export configs (Experimental)", I18nString.get(
+		panel.add(createElement(I18nString.get("Import/Export configs (Experimental)"), I18nString.get(
 				"Import/Export configs by GET/POST http://localhost:32349/config with 'Authorization: [AccessToken]' header")));
 		panel.add(new GUIOptionHubServer(owner).createPanel());
 

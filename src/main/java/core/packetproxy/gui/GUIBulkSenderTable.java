@@ -38,6 +38,7 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableCellRenderer;
+import packetproxy.common.I18nString;
 import packetproxy.common.Utils;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.OptionTableModel;
@@ -81,9 +82,9 @@ public class GUIBulkSenderTable {
 	public JComponent createPanel() throws Exception {
 
 		if (type == Type.CLIENT)
-			columnNames = new String[]{"#", "Client Request"};
+			columnNames = I18nString.getArray("#", "Client Request");
 		else if (type == Type.SERVER)
-			columnNames = new String[]{"#", "Server Response"};
+			columnNames = I18nString.getArray("#", "Server Response");
 
 		tableModel = new OptionTableModel(columnNames, 0) {
 
@@ -160,7 +161,7 @@ public class GUIBulkSenderTable {
 
 		if (this.type == Type.CLIENT) {
 
-			JMenuItem paramsMenu = createMenuItem("use params", -1, null, new ActionListener() {
+			JMenuItem paramsMenu = createMenuItem(I18nString.get("use params"), -1, null, new ActionListener() {
 
 				public void actionPerformed(ActionEvent actionEvent) {
 					try {

@@ -18,6 +18,7 @@ package packetproxy.gui;
 import java.io.File;
 import java.util.EventListener;
 import javax.swing.*;
+import packetproxy.common.I18nString;
 
 public class WriteFileChooserWrapper {
 
@@ -65,8 +66,9 @@ public class WriteFileChooserWrapper {
 
 				File finalFile = new File(filePath);
 				if (finalFile.exists()) {
-					int result = JOptionPane.showConfirmDialog(owner, "ファイルが既に存在しますが上書きしますか？", "Existing file",
-							JOptionPane.YES_NO_CANCEL_OPTION);
+					int result = JOptionPane.showConfirmDialog(owner,
+							I18nString.get("The file already exists. Do you want to overwrite it?"),
+							I18nString.get("Existing file"), JOptionPane.YES_NO_CANCEL_OPTION);
 					switch (result) {
 						case JOptionPane.YES_OPTION :
 							listener.onApproved(finalFile, fileExtension);

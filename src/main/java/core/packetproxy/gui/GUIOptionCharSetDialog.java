@@ -54,7 +54,7 @@ public class GUIOptionCharSetDialog extends JDialog {
 	private JButton button_cancel = new JButton(I18nString.get("Cancel"));
 	private JButton button_set = new JButton(I18nString.get("Save"));
 	private HintTextField text_charset = new HintTextField("(ex.) Shift_JIS");
-	private String[] columns = new String[]{"", "CharSetName"};
+	private String[] columns = I18nString.getArray("", "CharSetName");
 	private CharSetsTableModel table_model;
 	private TableRowSorter<CharSetsTableModel> sorter;
 	private int height = 500;
@@ -139,12 +139,12 @@ public class GUIOptionCharSetDialog extends JDialog {
 	}
 
 	private JComponent createIpSetting() {
-		return label_and_object("文字コード名:", text_charset);
+		return label_and_object(I18nString.get("CharSet name:"), text_charset);
 	}
 
 	public GUIOptionCharSetDialog(JFrame owner) throws Exception {
 		super(owner);
-		setTitle("設定");
+		setTitle(I18nString.get("Setting"));
 		Rectangle rect = owner.getBounds();
 		setBounds(rect.x + rect.width / 2 - width / 2, rect.y + rect.height / 2 - width / 2, width, height); /* ド真ん中 */
 

@@ -41,7 +41,8 @@ public class GUIOptionIntercepts extends GUIOptionComponentBase<InterceptOption>
 		intercept_options.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<InterceptOption>();
 
-		String[] menu = {"Enabled", "Direction", "Action and Condition", "Type", "Pattern", "Target Server"};
+		String[] menu = I18nString.getArray("Enabled", "Direction", "Action and Condition", "Type", "Pattern",
+				"Target Server");
 		int[] menuWidth = {50, 160, 300, 50, 80, 90};
 		MouseAdapter tableAction = new MouseAdapter() {
 

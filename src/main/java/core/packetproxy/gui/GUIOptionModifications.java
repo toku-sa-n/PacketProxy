@@ -25,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.common.I18nString;
 import packetproxy.model.Modification;
 import packetproxy.model.Modifications;
 
@@ -39,7 +40,7 @@ public class GUIOptionModifications extends GUIOptionComponentBase<Modification>
 		modifications = Modifications.getInstance();
 		modifications.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<Modification>();
-		String[] menu = {"Enabled", "Type", "Method", "Pattern", "Replaced", "Applied Server"};
+		String[] menu = I18nString.getArray("Enabled", "Type", "Method", "Pattern", "Replaced", "Applied Server");
 		int[] menuWidth = {50, 100, 50, 180, 180, 150};
 		MouseAdapter tableAction = new MouseAdapter() {
 

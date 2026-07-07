@@ -136,8 +136,8 @@ public class GUIOptionServerDialog extends JDialog {
 	private JComponent createModuleAlert() throws Exception {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		JLabel label = new JLabel("<html>名前が重複したEncodeモジュールがあります。<br/>" + "重複したEncodeモジュールの名前は<br/>"
-				+ "{モジュール名}-{モジュールのJarファイル名}として扱われます。</html>");
+		JLabel label = new JLabel(I18nString.get(
+				"<html>Duplicate encode module names were found.<br/>Duplicate encode module names are treated as<br/>{module name}-{jar file name of the module}.</html>"));
 		label.setForeground(Color.red);
 		label.setPreferredSize(new Dimension(150, label.getMaximumSize().height));
 		panel.add(label);

@@ -232,11 +232,11 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
         panel.minimumSize = Dimension(MIN_PANEL_SIZE, MIN_PANEL_SIZE)
       }
 
-      tabs.addTab("Received Packet", receivedTabs.tabPanel)
-      tabs.addTab("Decoded", decodedTabs.tabPanel)
-      tabs.addTab("Modified", modifiedTabs.tabPanel)
-      tabs.addTab("Encoded (Sent Packet)", sentTabs.tabPanel)
-      tabs.addTab("All", createAllPanel())
+      tabs.addTab(I18nString.get("Received Packet"), receivedTabs.tabPanel)
+      tabs.addTab(I18nString.get("Decoded"), decodedTabs.tabPanel)
+      tabs.addTab(I18nString.get("Modified"), modifiedTabs.tabPanel)
+      tabs.addTab(I18nString.get("Encoded (Sent Packet)"), sentTabs.tabPanel)
+      tabs.addTab(I18nString.get("All"), createAllPanel())
       tabs.selectedIndex = TabType.DECODED.index
 
       panel.add(tabs, BorderLayout.CENTER)

@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.common.I18nString;
 import packetproxy.model.Resolution;
 import packetproxy.model.Resolutions;
 
@@ -38,7 +39,7 @@ public class GUIOptionResolutions extends GUIOptionComponentBase<Resolution> {
 		this.resolutions = Resolutions.getInstance();
 		this.resolutions.addPropertyChangeListener(this);
 		this.table_ext_list = new ArrayList<Resolution>();
-		String[] menu = {"IP Addr", "Host", "Override", "Comment"};
+		String[] menu = I18nString.getArray("IP Addr", "Host", "Override", "Comment");
 		int[] menuWidth = {200, 200, 50, 100};
 
 		MouseAdapter tableAction = new MouseAdapter() {

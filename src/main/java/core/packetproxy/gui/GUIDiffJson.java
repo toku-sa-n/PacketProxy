@@ -20,6 +20,7 @@ import static packetproxy.util.Logging.errWithStackTrace;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
+import packetproxy.common.I18nString;
 import packetproxy.model.DiffEventAdapter;
 import packetproxy.model.DiffJson;
 import packetproxy.model.DiffSet;
@@ -37,7 +38,7 @@ public class GUIDiffJson extends GUIDiffBase {
 	}
 
 	public GUIDiffJson() throws Exception {
-		jcCh = new JCheckBox("Character based (default: Line based)");
+		jcCh = new JCheckBox(I18nString.get("Character based (default: Line based)"));
 		jcCh.addActionListener(new ActionListener() {
 
 			@Override

@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableCellRenderer;
+import packetproxy.common.I18nString;
 import packetproxy.model.OneShotPacket;
 import packetproxy.model.OptionTableModel;
 
@@ -40,7 +41,7 @@ public class GUIVulCheckRecvTable {
 	}
 
 	public JComponent createPanel() throws Exception {
-		columnNames = new String[]{"#", "Name", "Server Response", "Length", "Time[msec]", "Encode", "ALPN"};
+		columnNames = I18nString.getArray("#", "Name", "Server Response", "Length", "Time[msec]", "Encode", "ALPN");
 		tableModel = new OptionTableModel(columnNames, 0) {
 
 			private static final long serialVersionUID = 1L;

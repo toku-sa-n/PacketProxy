@@ -26,6 +26,7 @@ import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.common.I18nString;
 import packetproxy.model.SSLPassThrough;
 import packetproxy.model.SSLPassThroughs;
 
@@ -41,7 +42,7 @@ public class GUIOptionSSLPassThrough extends GUIOptionComponentBase<SSLPassThrou
 		this.sslPassThroughs.addPropertyChangeListener(this);
 		this.table_ext_list = new ArrayList<SSLPassThrough>();
 
-		String[] menu = {"Enabled", "Server Name", "Applied Listen Port"};
+		String[] menu = I18nString.getArray("Enabled", "Server Name", "Applied Listen Port");
 		int[] menuWidth = {80, 570, 150};
 		MouseAdapter tableAction = new MouseAdapter() {
 

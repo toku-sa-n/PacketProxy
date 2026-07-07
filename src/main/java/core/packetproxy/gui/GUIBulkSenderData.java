@@ -25,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import packetproxy.common.I18nString;
 
 public class GUIBulkSenderData {
 
@@ -61,8 +62,8 @@ public class GUIBulkSenderData {
 		JComponent binary_text = binary_panel.createPanel();
 
 		data_pane = new JTabbedPane();
-		data_pane.addTab("Raw", raw_text);
-		data_pane.addTab("Binary", binary_text);
+		data_pane.addTab(I18nString.get("Raw"), raw_text);
+		data_pane.addTab(I18nString.get("Binary"), binary_text);
 		data_pane.addChangeListener(new ChangeListener() {
 
 			@Override

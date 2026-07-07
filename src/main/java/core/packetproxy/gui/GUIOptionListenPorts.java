@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.common.I18nString;
 import packetproxy.model.ListenPort;
 import packetproxy.model.ListenPort.TYPE;
 import packetproxy.model.ListenPorts;
@@ -42,7 +43,7 @@ public class GUIOptionListenPorts extends GUIOptionComponentBase<ListenPort> {
 		Servers.getInstance().addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<ListenPort>();
 
-		String[] menu = {"Enabled", "Protocol", "Listen Port", "Port Type", "CA", "Forward Server"};
+		String[] menu = I18nString.getArray("Enabled", "Protocol", "Listen Port", "Port Type", "CA", "Forward Server");
 		int[] menuWidth = {50, 50, 80, 120, 250, 300};
 		MouseAdapter tableAction = new MouseAdapter() {
 

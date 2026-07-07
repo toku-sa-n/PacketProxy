@@ -67,7 +67,7 @@ public class GUIFilterDropDownList extends JDialog {
 				"type != image && type != css && type != javascript && type != font");
 		defaultFilters.add(defaultFilter);
 
-		String[] columnNames = {"filter name", "filter"};
+		String[] columnNames = I18nString.getArray("filter name", "filter");
 		int[] columnWidth = {150, width - 150};
 		DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
 

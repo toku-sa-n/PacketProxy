@@ -27,6 +27,7 @@ import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.LineBorder
+import packetproxy.common.I18nString
 import packetproxy.controller.ResendController
 import packetproxy.controller.SinglePacketAttackController
 import packetproxy.model.DiffModels
@@ -65,7 +66,7 @@ class PacketDataButtonBar(
     }
 
   private val copyUrlBodyButton =
-    JButton("copy Method+URL+Body").apply {
+    JButton(I18nString.get("copy Method+URL+Body")).apply {
       addActionListener {
         runCatching {
             val data = getActiveData() ?: return@addActionListener
@@ -80,7 +81,7 @@ class PacketDataButtonBar(
     }
 
   private val copyBodyButton =
-    JButton("copy Body").apply {
+    JButton(I18nString.get("copy Body")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -95,7 +96,7 @@ class PacketDataButtonBar(
     }
 
   private val copyUrlButton =
-    JButton("copy URL").apply {
+    JButton(I18nString.get("copy URL")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -111,7 +112,7 @@ class PacketDataButtonBar(
     }
 
   private val resendButton =
-    JButton("send").apply {
+    JButton(I18nString.get("send")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -125,7 +126,7 @@ class PacketDataButtonBar(
     }
 
   private val resendMultipleButton =
-    JButton("send x 20").apply {
+    JButton(I18nString.get("send x 20")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -139,7 +140,7 @@ class PacketDataButtonBar(
     }
 
   private val attackButton =
-    JButton("send x 20 (single-packet attack)").apply {
+    JButton(I18nString.get("send x 20 (single-packet attack)")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -153,7 +154,7 @@ class PacketDataButtonBar(
     }
 
   private val sendToResenderButton =
-    JButton("send to Resender").apply {
+    JButton(I18nString.get("send to Resender")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -169,7 +170,7 @@ class PacketDataButtonBar(
     }
 
   private val stopDiffButton =
-    JButton("stop diff").apply {
+    JButton(I18nString.get("stop diff")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -184,7 +185,7 @@ class PacketDataButtonBar(
     }
 
   private val diffButton =
-    JButton("diff!!").apply {
+    JButton(I18nString.get("diff!!")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -197,7 +198,7 @@ class PacketDataButtonBar(
     }
 
   private val diffOrigButton =
-    JButton("mark as orig").apply {
+    JButton(I18nString.get("mark as orig")).apply {
       alignmentX = 0.5f
       addActionListener {
         runCatching {
@@ -234,7 +235,7 @@ class PacketDataButtonBar(
         add(resendMultipleButton)
         add(attackButton)
         add(sendToResenderButton)
-        add(JLabel("  diff: "))
+        add(JLabel(I18nString.get("  diff: ")))
         add(diffPanel)
         layout = BoxLayout(this, BoxLayout.LINE_AXIS)
       }

@@ -26,6 +26,7 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.common.I18nString;
 import packetproxy.model.Extension;
 import packetproxy.model.Extensions;
 
@@ -40,7 +41,7 @@ public class GUIOptionExtensions extends GUIOptionComponentBase<Extension> imple
 		extensions.addPropertyChangeListener(this);
 		table_ext_list = new ArrayList<Extension>();
 
-		String[] menu = {"Enabled", "Name", "Path"};
+		String[] menu = I18nString.getArray("Enabled", "Name", "Path");
 		int[] menuWidth = {30, 300, 300};
 		MouseAdapter tableAction = new MouseAdapter() {
 

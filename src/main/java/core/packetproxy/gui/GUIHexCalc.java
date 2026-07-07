@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.apache.commons.codec.binary.Hex;
 import packetproxy.common.Binary;
+import packetproxy.common.I18nString;
 import packetproxy.common.StringUtils;
 
 public class GUIHexCalc {
@@ -83,7 +84,7 @@ public class GUIHexCalc {
 				}
 			}
 		});
-		String[] combodata = {"Little Endian", "Big Endian"};
+		String[] combodata = I18nString.getArray("Little Endian", "Big Endian");
 		endian_box = new JComboBox<String>(combodata);
 		endian_box.addActionListener(new ActionListener() {
 
@@ -97,7 +98,7 @@ public class GUIHexCalc {
 		int_panel.setBackground(Color.WHITE);
 		int_panel.setLayout(new BoxLayout(int_panel, BoxLayout.X_AXIS));
 
-		JLabel label = new JLabel("Integer <-> Hex");
+		JLabel label = new JLabel(I18nString.get("Integer <-> Hex"));
 		label.setHorizontalAlignment(JLabel.CENTER);
 		label.setMaximumSize(new Dimension(100, label.getMaximumSize().height));
 		int_panel.add(label);
@@ -135,7 +136,7 @@ public class GUIHexCalc {
 		str_panel = new JPanel();
 		str_panel.setBackground(Color.WHITE);
 		str_panel.setLayout(new BoxLayout(str_panel, BoxLayout.X_AXIS));
-		JLabel label = new JLabel("String <-> Hex");
+		JLabel label = new JLabel(I18nString.get("String <-> Hex"));
 		label.setHorizontalAlignment(JLabel.CENTER);
 		label.setMaximumSize(new Dimension(100, label.getMaximumSize().height));
 		str_panel.add(label);

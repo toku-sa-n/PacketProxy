@@ -49,7 +49,7 @@ public class BinaryTextPane extends ExtendedTextPane {
 		title_encoders.setEnabled(false);
 		menu.add(title_encoders);
 
-		JMenuItem base64_encoder = new JMenuItem("Base64 Encoder");
+		JMenuItem base64_encoder = new JMenuItem(I18nString.get("Base64 Encoder"));
 		base64_encoder.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent actionEvent) {

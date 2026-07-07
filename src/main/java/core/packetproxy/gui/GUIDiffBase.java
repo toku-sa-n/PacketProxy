@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.text.StyledDocument;
+import packetproxy.common.I18nString;
 import packetproxy.model.DiffSet;
 
 abstract class GUIDiffBase {
@@ -65,7 +66,7 @@ abstract class GUIDiffBase {
 		panelOrig.setLayout(new BoxLayout(panelOrig, BoxLayout.Y_AXIS));
 		textOrig = new RawTextPane();
 		textOrig.setEditable(true);
-		JLabel labelOrig = new JLabel("Original");
+		JLabel labelOrig = new JLabel(I18nString.get("Original"));
 		labelOrig.setAlignmentX(0.5f);
 		panelOrig.add(labelOrig);
 		scrollOrig = new JScrollPane(textOrig);
@@ -77,7 +78,7 @@ abstract class GUIDiffBase {
 		panelTarg.setLayout(new BoxLayout(panelTarg, BoxLayout.Y_AXIS));
 		textTarg = new RawTextPane();
 		textTarg.setEditable(true);
-		JLabel labelTarg = new JLabel("Target");
+		JLabel labelTarg = new JLabel(I18nString.get("Target"));
 		labelTarg.setAlignmentX(0.5f);
 		panelTarg.add(labelTarg);
 		scrollTarg = new JScrollPane(textTarg);
@@ -90,7 +91,7 @@ abstract class GUIDiffBase {
 		main_panel.add(panelOrig);
 		main_panel.add(panelTarg);
 
-		jc = new JCheckBox("Sort & Uniq");
+		jc = new JCheckBox(I18nString.get("Sort & Uniq"));
 		jc.addActionListener(new ActionListener() {
 
 			@Override

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.swing.*;
 import packetproxy.common.FontManager;
+import packetproxy.common.I18nString;
 import packetproxy.common.Range;
 import packetproxy.controller.ResendController;
 import packetproxy.controller.ResendController.ResendWorker;
@@ -147,7 +148,7 @@ public class GUIVulCheckTab {
 			}
 		});
 
-		JButton sendButton = new JButton("send");
+		JButton sendButton = new JButton(I18nString.get("send"));
 		sendButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -197,7 +198,7 @@ public class GUIVulCheckTab {
 			}
 		});
 
-		JButton sendAllButton = new JButton("send all");
+		JButton sendAllButton = new JButton(I18nString.get("send all"));
 		sendAllButton.addActionListener(new ActionListener() {
 
 			@Override

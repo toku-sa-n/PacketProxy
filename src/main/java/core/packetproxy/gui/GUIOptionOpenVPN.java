@@ -69,7 +69,7 @@ public class GUIOptionOpenVPN extends GUIOptionComponentBase<OpenVPNForwardPort>
 		this.openVPNForwardPorts.addPropertyChangeListener(this);
 		this.table_ext_list = new ArrayList<OpenVPNForwardPort>();
 
-		String[] menu = {"Proto", "src port", "dst port"};
+		String[] menu = I18nString.getArray("Proto", "src port", "dst port");
 		int[] menuWidth = {80, 80, 80};
 		MouseAdapter tableAction = new MouseAdapter() {
 

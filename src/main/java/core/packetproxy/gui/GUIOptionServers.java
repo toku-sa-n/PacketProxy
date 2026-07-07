@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import packetproxy.common.I18nString;
 import packetproxy.model.Server;
 import packetproxy.model.Servers;
 
@@ -38,8 +39,8 @@ public class GUIOptionServers extends GUIOptionComponentBase<Server> {
 		servers = Servers.getInstance();
 		servers.addPropertyChangeListener(this);
 		server_list = new ArrayList<Server>();
-		String[] menu = {"Host", "Port", "Use SSL", "Encode Module", "Spoof DNS(A)", "Spoof DNS(AAAA)", "HttpProxy",
-				"Comment"};
+		String[] menu = I18nString.getArray("Host", "Port", "Use SSL", "Encode Module", "Spoof DNS(A)",
+				"Spoof DNS(AAAA)", "HttpProxy", "Comment");
 		int[] menuWidth = {200, 80, 50, 160, 60, 60, 60, 100};
 		MouseAdapter tableAction = new MouseAdapter() {
 

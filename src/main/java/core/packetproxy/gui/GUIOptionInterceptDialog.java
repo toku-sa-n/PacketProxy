@@ -216,7 +216,7 @@ public class GUIOptionInterceptDialog extends JDialog {
 
 	public GUIOptionInterceptDialog(JFrame owner) throws Exception {
 		super(owner);
-		setTitle("設定");
+		setTitle(I18nString.get("Setting"));
 		Rectangle rect = owner.getBounds();
 		setBounds(rect.x + rect.width / 2 - width / 2, rect.y + rect.height / 2 - width / 2, width, height); /* ド真ん中 */
 

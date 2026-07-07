@@ -21,6 +21,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
+import packetproxy.common.I18nString;
 import packetproxy.model.Diff;
 import packetproxy.model.DiffEventAdapter;
 import packetproxy.model.DiffSet;
@@ -37,7 +38,7 @@ public class GUIDiffRaw extends GUIDiffBase {
 	}
 
 	public GUIDiffRaw() throws Exception {
-		jcCh = new JCheckBox("Character based (default: Line based)");
+		jcCh = new JCheckBox(I18nString.get("Character based (default: Line based)"));
 		jcCh.addActionListener(new ActionListener() {
 
 			@Override

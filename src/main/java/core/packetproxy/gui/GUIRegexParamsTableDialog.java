@@ -23,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.table.TableRowSorter;
 import packetproxy.common.FontManager;
+import packetproxy.common.I18nString;
 import packetproxy.model.OptionTableModel;
 import packetproxy.model.RegexParam;
 
@@ -36,7 +37,7 @@ public class GUIRegexParamsTableDialog extends JDialog {
 	private List<RegexParam> regexParams;
 	private int basePacketId;
 	private OptionTableModel option_model;
-	private static String[] menu = {"Base Packet ID", "Param Name", "Regex to pickup"};
+	private static String[] menu = I18nString.getArray("Base Packet ID", "Param Name", "Regex to pickup");
 	private static int[] menuWidth = {100, 50, 200};
 
 	public List<RegexParam> showDialog() {
@@ -67,7 +68,7 @@ public class GUIRegexParamsTableDialog extends JDialog {
 		this.regexParams = regexParams;
 		this.basePacketId = packetId;
 
-		setTitle("regex params");
+		setTitle(I18nString.get("regex params"));
 
 		createPanel();
 		updateTable();
@@ -205,9 +206,9 @@ public class GUIRegexParamsTableDialog extends JDialog {
 	private JPanel createTableButton(ActionListener addAction, ActionListener editAction, ActionListener removeAction) {
 		JPanel panel = new JPanel();
 
-		JButton button_add = new JButton("Add");
-		JButton button_edit = new JButton("Edit");
-		JButton button_remove = new JButton("Remove");
+		JButton button_add = new JButton(I18nString.get("Add"));
+		JButton button_edit = new JButton(I18nString.get("Edit"));
+		JButton button_remove = new JButton(I18nString.get("Remove"));
 
 		int height = button_add.getMinimumSize().height;
 
