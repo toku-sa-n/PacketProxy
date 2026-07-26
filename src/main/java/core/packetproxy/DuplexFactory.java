@@ -381,6 +381,9 @@ public class DuplexFactory {
 				server_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.SERVER,
 						duplex.hashCode(), group_id);
+				// OneShotPacketからjob_idとtemporary_idを引き継ぎ
+				server_packet.setJobId(oneshot.getJobId());
+				server_packet.setTemporaryId(oneshot.getTemporaryId());
 				packets.update(server_packet);
 				server_packet.setReceivedData(data);
 				if (data.length < SKIP_LENGTH) {
@@ -412,6 +415,9 @@ public class DuplexFactory {
 				client_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.CLIENT,
 						duplex.hashCode(), UniqueID.getInstance().createId());
+				// OneShotPacketからjob_idとtemporary_idを引き継ぎ
+				client_packet.setJobId(oneshot.getJobId());
+				client_packet.setTemporaryId(oneshot.getTemporaryId());
 				client_packet.setModified();
 				client_packet.setReceivedData(data);
 				client_packet.setDecodedData(data);
@@ -729,6 +735,9 @@ public class DuplexFactory {
 				server_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.SERVER,
 						original_duplex.hashCode(), group_id);
+				// OneShotPacketからjob_idとtemporary_idを引き継ぎ
+				server_packet.setJobId(oneshot.getJobId());
+				server_packet.setTemporaryId(oneshot.getTemporaryId());
 				packets.update(server_packet);
 				server_packet.setReceivedData(data);
 				if (data.length < SKIP_LENGTH) {
@@ -760,6 +769,9 @@ public class DuplexFactory {
 				client_packet = new Packet(0, oneshot.getClient(), oneshot.getServer(), oneshot.getServerName(),
 						oneshot.getUseSSL(), oneshot.getEncoder(), oneshot.getAlpn(), Packet.Direction.CLIENT,
 						original_duplex.hashCode(), UniqueID.getInstance().createId());
+				// OneShotPacketからjob_idとtemporary_idを引き継ぎ
+				client_packet.setJobId(oneshot.getJobId());
+				client_packet.setTemporaryId(oneshot.getTemporaryId());
 				packets.update(client_packet);
 				client_packet.setModified();
 				client_packet.setDecodedData(data);

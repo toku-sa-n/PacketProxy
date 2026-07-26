@@ -73,4 +73,15 @@ public class GUILog {
 
 		}
 	}
+
+	public String getLogText() {
+		synchronized (thread_lock) {
+			try {
+				StyledDocument doc = text.getStyledDocument();
+				return doc.getText(0, doc.getLength());
+			} catch (BadLocationException ex) {
+				return "";
+			}
+		}
+	}
 }
