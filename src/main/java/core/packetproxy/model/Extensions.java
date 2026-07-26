@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import javax.swing.JOptionPane;
+import packetproxy.extensions.endpointoverview.EndpointOverviewExtension;
 import packetproxy.extensions.mcp.MCPServerExtension;
 import packetproxy.extensions.randomness.RandomnessExtension;
 import packetproxy.extensions.samplehttp.SampleEncoders;
@@ -60,6 +61,7 @@ public class Extensions implements PropertyChangeListener {
 			put((new RandomnessExtension()).getName(), RandomnessExtension.class);
 			put((new SampleEncoders()).getName(), SampleEncoders.class);
 			put((new SecurityHeadersExtension()).getName(), SecurityHeadersExtension.class);
+			put((new EndpointOverviewExtension()).getName(), EndpointOverviewExtension.class);
 		}
 	};
 
