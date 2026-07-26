@@ -17,9 +17,7 @@ import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
 import packetproxy.model.Packets;
 
-/**
- * パケット再送ツール パケットを指定回数再送し、改変オプションもサポート
- */
+/** パケット再送ツール パケットを指定回数再送し、改変オプションもサポート */
 public class ResendPacketTool extends AuthenticatedMCPTool {
 
 	@Override
@@ -242,9 +240,7 @@ public class ResendPacketTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * パケットに改変を適用
-	 */
+	/** パケットに改変を適用 */
 	private OneShotPacket applyModifications(OneShotPacket original, JsonArray modifications, int index,
 			boolean allowDuplicateHeaders, String jobId, String temporaryId) throws Exception {
 		if (modifications.size() == 0) {
@@ -291,9 +287,7 @@ public class ResendPacketTool extends AuthenticatedMCPTool {
 		return modifiedPacket;
 	}
 
-	/**
-	 * 正規表現置換を適用
-	 */
+	/** 正規表現置換を適用 */
 	private String applyRegexReplace(String data, JsonObject modification, int index) {
 		String pattern = modification.get("pattern").getAsString();
 		String replacement = modification.get("replacement").getAsString();
@@ -313,9 +307,7 @@ public class ResendPacketTool extends AuthenticatedMCPTool {
 		}
 	}
 
-	/**
-	 * ヘッダー追加を適用
-	 */
+	/** ヘッダー追加を適用 */
 	private String applyHeaderAdd(String data, JsonObject modification, int index, boolean allowDuplicateHeaders) {
 		String name = modification.get("name").getAsString();
 		String value = modification.get("value").getAsString();
@@ -352,9 +344,7 @@ public class ResendPacketTool extends AuthenticatedMCPTool {
 		return data;
 	}
 
-	/**
-	 * ヘッダー変更を適用
-	 */
+	/** ヘッダー変更を適用 */
 	private String applyHeaderModify(String data, JsonObject modification, int index, boolean allowDuplicateHeaders) {
 		String name = modification.get("name").getAsString();
 		String value = modification.get("value").getAsString();
@@ -391,9 +381,7 @@ public class ResendPacketTool extends AuthenticatedMCPTool {
 		}
 	}
 
-	/**
-	 * 置換変数を処理
-	 */
+	/** 置換変数を処理 */
 	private String processReplacementVariables(String input, int index) {
 		String result = input;
 
@@ -424,9 +412,7 @@ public class ResendPacketTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * ランダム文字列生成
-	 */
+	/** ランダム文字列生成 */
 	private String generateRandomString(int length) {
 		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 		Random random = new Random();

@@ -1,5 +1,6 @@
 package packetproxy.extensions.mcp.tools;
 
+import static packetproxy.util.Logging.getLogText;
 import static packetproxy.util.Logging.log;
 
 import com.google.gson.Gson;
@@ -13,7 +14,6 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-import packetproxy.gui.GUILog;
 
 public class LogTool extends AuthenticatedMCPTool {
 
@@ -146,8 +146,7 @@ public class LogTool extends AuthenticatedMCPTool {
 		List<LogEntry> entries = new ArrayList<>();
 
 		try {
-			GUILog guiLog = GUILog.getInstance();
-			String logText = guiLog.getLogText();
+			String logText = getLogText();
 
 			if (logText != null && !logText.trim().isEmpty()) {
 				// ログテキストを行ごとに分析

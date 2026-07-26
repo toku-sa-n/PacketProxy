@@ -136,5 +136,4 @@ public class ConfigTool extends AuthenticatedMCPTool {
 
 		return filtered;
 	}
-
 }

@@ -24,9 +24,7 @@ import packetproxy.model.OneShotPacket;
 import packetproxy.model.Packet;
 import packetproxy.model.Packets;
 
-/**
- * 複数パケット一括送信ツール フェーズ2: 順次送信モード、modifications適用、regex_params機能
- */
+/** 複数パケット一括送信ツール フェーズ2: 順次送信モード、modifications適用、regex_params機能 */
 public class BulkSendTool extends AuthenticatedMCPTool {
 
 	@Override
@@ -362,9 +360,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * 単一パケットの処理（並列送信）
-	 */
+	/** 単一パケットの処理（並列送信） */
 	private BulkSendResult processSinglePacket(int packetId, int packetIndex, int count, JsonArray modifications,
 			JsonArray regexParams, Map<String, String> extractedValues, boolean allowDuplicateHeaders, String jobId) {
 
@@ -470,9 +466,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * 単一パケットの処理（順次送信）
-	 */
+	/** 単一パケットの処理（順次送信） */
 	private BulkSendResult processSinglePacketSequential(int packetId, int packetIndex, int count,
 			JsonArray modifications, JsonArray regexParams, Map<String, String> extractedValues,
 			boolean allowDuplicateHeaders, int intervalMs, String jobId) {
@@ -557,9 +551,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * OneShotPacketを作成（ResendPacketToolと同じロジック）
-	 */
+	/** OneShotPacketを作成（ResendPacketToolと同じロジック） */
 	private OneShotPacket createOneShotPacket(Packet originalPacket) throws Exception {
 		if (originalPacket.getModifiedData().length > 0) {
 			return originalPacket.getOneShotFromModifiedData();
@@ -570,9 +562,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		}
 	}
 
-	/**
-	 * regex_paramsを適用
-	 */
+	/** regex_paramsを適用 */
 	private OneShotPacket applyRegexParams(OneShotPacket original, JsonArray regexParams, int packetIndex,
 			Map<String, String> extractedValues, List<RegexParamApplied> appliedList) throws Exception {
 
@@ -673,9 +663,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return modifiedPacket;
 	}
 
-	/**
-	 * value_templateを処理（ResendPacketToolのprocessReplacementVariablesを拡張）
-	 */
+	/** value_templateを処理（ResendPacketToolのprocessReplacementVariablesを拡張） */
 	private String processValueTemplate(String template, int packetIndex, Map<String, String> extractedValues) {
 		String result = template;
 
@@ -712,9 +700,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * パケットに改変を適用（ResendPacketToolのロジックを完全実装）
-	 */
+	/** パケットに改変を適用（ResendPacketToolのロジックを完全実装） */
 	private OneShotPacket applyModifications(OneShotPacket original, JsonArray modifications, int index,
 			boolean allowDuplicateHeaders) throws Exception {
 
@@ -762,9 +748,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return modifiedPacket;
 	}
 
-	/**
-	 * 正規表現置換を適用（ResendPacketToolから移植）
-	 */
+	/** 正規表現置換を適用（ResendPacketToolから移植） */
 	private String applyRegexReplace(String data, JsonObject modification, int index) {
 		String pattern = modification.get("pattern").getAsString();
 		String replacement = modification.get("replacement").getAsString();
@@ -784,9 +768,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		}
 	}
 
-	/**
-	 * ヘッダー追加を適用（ResendPacketToolから移植）
-	 */
+	/** ヘッダー追加を適用（ResendPacketToolから移植） */
 	private String applyHeaderAdd(String data, JsonObject modification, int index, boolean allowDuplicateHeaders) {
 		String name = modification.get("name").getAsString();
 		String value = modification.get("value").getAsString();
@@ -823,9 +805,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return data;
 	}
 
-	/**
-	 * ヘッダー変更を適用（ResendPacketToolから移植）
-	 */
+	/** ヘッダー変更を適用（ResendPacketToolから移植） */
 	private String applyHeaderModify(String data, JsonObject modification, int index, boolean allowDuplicateHeaders) {
 		String name = modification.get("name").getAsString();
 		String value = modification.get("value").getAsString();
@@ -862,9 +842,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		}
 	}
 
-	/**
-	 * 置換変数を処理（ResendPacketToolから移植）
-	 */
+	/** 置換変数を処理（ResendPacketToolから移植） */
 	private String processReplacementVariables(String input, int index) {
 		String result = input;
 
@@ -895,9 +873,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * ランダム文字列生成（ResendPacketToolから移植）
-	 */
+	/** ランダム文字列生成（ResendPacketToolから移植） */
 	private String generateRandomString(int length) {
 		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 		Random random = new Random();
@@ -910,9 +886,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		return sb.toString();
 	}
 
-	/**
-	 * 個別パケットの送信結果
-	 */
+	/** 個別パケットの送信結果 */
 	private static class BulkSendResult {
 		int originalPacketId;
 		int packetIndex;
@@ -924,9 +898,7 @@ public class BulkSendTool extends AuthenticatedMCPTool {
 		List<RegexParamApplied> regexParamsApplied;
 	}
 
-	/**
-	 * regex_paramsの適用結果
-	 */
+	/** regex_paramsの適用結果 */
 	private static class RegexParamApplied {
 		int packetIndex;
 		String pattern;

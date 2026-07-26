@@ -5,14 +5,10 @@ import static packetproxy.util.Logging.log;
 import com.google.gson.JsonObject;
 import packetproxy.model.ConfigString;
 
-/**
- * 認証機能付きMCPツールの基底クラス
- */
+/** 認証機能付きMCPツールの基底クラス */
 public abstract class AuthenticatedMCPTool implements MCPTool {
 
-	/**
-	 * AccessTokenの検証を行う
-	 */
+	/** AccessTokenの検証を行う */
 	protected void validateAccessToken(JsonObject arguments) throws Exception {
 		// MCP clientから渡されたAccessTokenを取得
 		if (!arguments.has("access_token")) {
@@ -49,9 +45,7 @@ public abstract class AuthenticatedMCPTool implements MCPTool {
 		log("Access token validation successful");
 	}
 
-	/**
-	 * 設定済みAccessTokenを取得（HTTPリクエスト用）
-	 */
+	/** 設定済みAccessTokenを取得（HTTPリクエスト用） */
 	protected String getConfiguredAccessToken() throws Exception {
 		String accessToken = new ConfigString("SharingConfigsAccessToken").getString();
 		if (accessToken.isEmpty()) {
@@ -60,9 +54,7 @@ public abstract class AuthenticatedMCPTool implements MCPTool {
 		return accessToken;
 	}
 
-	/**
-	 * 入力スキーマにaccess_tokenパラメータを追加
-	 */
+	/** 入力スキーマにaccess_tokenパラメータを追加 */
 	protected JsonObject addAccessTokenToSchema(JsonObject schema) {
 		JsonObject accessTokenProp = new JsonObject();
 		accessTokenProp.addProperty("type", "string");
@@ -72,9 +64,7 @@ public abstract class AuthenticatedMCPTool implements MCPTool {
 		return schema;
 	}
 
-	/**
-	 * access_tokenをマスクした安全なargumentsの文字列表現を返す
-	 */
+	/** access_tokenをマスクした安全なargumentsの文字列表現を返す */
 	protected String getSafeArgumentsString(JsonObject arguments) {
 		JsonObject safeArgs = arguments.deepCopy();
 		if (safeArgs.has("access_token")) {
@@ -83,14 +73,10 @@ public abstract class AuthenticatedMCPTool implements MCPTool {
 		return safeArgs.toString();
 	}
 
-	/**
-	 * サブクラスで実装する認証後の実際の処理
-	 */
+	/** サブクラスで実装する認証後の実際の処理 */
 	protected abstract JsonObject executeAuthenticated(JsonObject arguments) throws Exception;
 
-	/**
-	 * 認証チェック付きでツールを実行
-	 */
+	/** 認証チェック付きでツールを実行 */
 	@Override
 	public final JsonObject call(JsonObject arguments) throws Exception {
 		validateAccessToken(arguments);

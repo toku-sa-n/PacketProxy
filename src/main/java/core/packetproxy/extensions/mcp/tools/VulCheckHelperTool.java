@@ -22,9 +22,7 @@ import packetproxy.model.Packets;
 import packetproxy.vulchecker.VulChecker;
 import packetproxy.vulchecker.generator.Generator;
 
-/**
- * VulCheck脆弱性テストヘルパーツール 指定されたパケットにVulCheckテストケースを適用して連続送信を実行
- */
+/** VulCheck脆弱性テストヘルパーツール 指定されたパケットにVulCheckテストケースを適用して連続送信を実行 */
 public class VulCheckHelperTool extends AuthenticatedMCPTool {
 
 	@Override
@@ -257,9 +255,7 @@ public class VulCheckHelperTool extends AuthenticatedMCPTool {
 		return response;
 	}
 
-	/**
-	 * 利用可能なVulCheckタイプを取得
-	 */
+	/** 利用可能なVulCheckタイプを取得 */
 	private JsonObject getAvailableVulCheckTypes() throws Exception {
 		VulCheckerManager manager = VulCheckerManager.getInstance();
 		String[] vulCheckerNames = manager.getVulCheckerNameList();
@@ -300,9 +296,7 @@ public class VulCheckHelperTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * ターゲット位置を解析してTargetLocationリストに変換
-	 */
+	/** ターゲット位置を解析してTargetLocationリストに変換 */
 	private List<TargetLocation> parseTargetLocations(JsonArray targetLocations, byte[] packetData) throws Exception {
 		List<TargetLocation> locations = new ArrayList<>();
 		String packetStr = new String(packetData);
@@ -374,9 +368,7 @@ public class VulCheckHelperTool extends AuthenticatedMCPTool {
 		return locations;
 	}
 
-	/**
-	 * VulCheckテストを実行
-	 */
+	/** VulCheckテストを実行 */
 	private VulCheckResult executeVulCheckTests(OneShotPacket originalPacket, VulChecker vulChecker,
 			List<TargetLocation> targetLocations, int intervalMs, String mode, int maxPayloads, int timeoutMs,
 			String jobId) throws Exception {
@@ -413,9 +405,7 @@ public class VulCheckHelperTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * 特定のターゲット位置でVulCheckテストを実行
-	 */
+	/** 特定のターゲット位置でVulCheckテストを実行 */
 	private LocationResult processTargetLocation(OneShotPacket originalPacket, VulChecker vulChecker,
 			TargetLocation targetLocation, int intervalMs, String mode, int maxPayloads, String jobId)
 			throws Exception {
@@ -543,9 +533,7 @@ public class VulCheckHelperTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * VulCheckテストの全体結果
-	 */
+	/** VulCheckテストの全体結果 */
 	private static class VulCheckResult {
 		boolean overallSuccess = true;
 		int totalPayloadsGenerated = 0;
@@ -555,9 +543,7 @@ public class VulCheckHelperTool extends AuthenticatedMCPTool {
 		List<LocationResult> locationResults = new ArrayList<>();
 	}
 
-	/**
-	 * ターゲット位置の情報
-	 */
+	/** ターゲット位置の情報 */
 	private static class TargetLocation {
 		Range range;
 		String description;
@@ -566,9 +552,7 @@ public class VulCheckHelperTool extends AuthenticatedMCPTool {
 		String originalMatch; // original matched text
 	}
 
-	/**
-	 * 特定位置でのテスト結果
-	 */
+	/** 特定位置でのテスト結果 */
 	private static class LocationResult {
 		Range range;
 		String description;

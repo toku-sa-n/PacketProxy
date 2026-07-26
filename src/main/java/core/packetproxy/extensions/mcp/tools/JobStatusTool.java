@@ -11,9 +11,7 @@ import java.util.Map;
 import packetproxy.model.Packet;
 import packetproxy.model.Packets;
 
-/**
- * ジョブの状況を取得するツール
- */
+/** ジョブの状況を取得するツール */
 public class JobStatusTool extends AuthenticatedMCPTool {
 
 	@Override
@@ -54,9 +52,7 @@ public class JobStatusTool extends AuthenticatedMCPTool {
 		}
 	}
 
-	/**
-	 * 特定のジョブの詳細情報を取得
-	 */
+	/** 特定のジョブの詳細情報を取得 */
 	private JsonObject getJobDetail(String jobId) throws Exception {
 		log("JobStatusTool: Getting detail for job " + jobId);
 
@@ -166,9 +162,7 @@ public class JobStatusTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * 全ジョブの概要を取得
-	 */
+	/** 全ジョブの概要を取得 */
 	private JsonObject getAllJobsStatus() throws Exception {
 		log("JobStatusTool: Getting status for all jobs");
 
@@ -239,9 +233,7 @@ public class JobStatusTool extends AuthenticatedMCPTool {
 		return result;
 	}
 
-	/**
-	 * ジョブのリクエスト情報
-	 */
+	/** ジョブのリクエスト情報 */
 	private static class JobRequest {
 		String temporaryId;
 		boolean hasRequest = false;
@@ -250,9 +242,7 @@ public class JobStatusTool extends AuthenticatedMCPTool {
 		int responsePacketId = -1;
 	}
 
-	/**
-	 * ジョブの概要情報
-	 */
+	/** ジョブの概要情報 */
 	private static class JobSummary {
 		String jobId;
 		List<String> temporaryIds = new ArrayList<>();

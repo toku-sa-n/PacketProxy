@@ -259,5 +259,4 @@ public class UpdateConfigTool extends AuthenticatedMCPTool {
 
 		return response.toString();
 	}
-
 }

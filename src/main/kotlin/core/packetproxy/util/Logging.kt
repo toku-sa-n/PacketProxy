@@ -58,6 +58,8 @@ object Logging {
 
   @JvmStatic fun createLogPanel(): JComponent = guiLog.createPanel()
 
+  @JvmStatic fun getLogText(): String = guiLog.logText
+
   @JvmStatic
   fun init(isGulp: Boolean) {
     this.isGulp = isGulp
