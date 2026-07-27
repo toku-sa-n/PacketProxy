@@ -6,8 +6,9 @@
 
 # Gradle
 /build/
+**/build/
 /.gradle
-/src/main/resources/version
+/app/src/main/resources/version
 
 # IntelliJ IDEA
 /out/

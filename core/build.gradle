@@ -1,0 +1,10 @@
+dependencies {
+  api project(':protocols')
+  api project(':model')
+  api project(':common')
+
+  api 'com.github.mobius-software-ltd:mqtt-parser:parser-1.0.3'
+  api 'com.github.docker-java:docker-java:3.3.0'
+  api 'com.github.docker-java:docker-java-transport-httpclient5:3.3.0'
+  api files("${rootProject.projectDir}/libs/agent15.jar")
+}

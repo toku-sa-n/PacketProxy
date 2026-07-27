@@ -1,0 +1,9 @@
+dependencies {
+  api project(':model')
+  api project(':common')
+
+  api 'org.eclipse.jetty.http2:http2-hpack:11.0.11'
+  api 'org.eclipse.jetty.http3:http3-qpack:11.0.11'
+  api 'dnsjava:dnsjava:3.6.4'
+  api files("${rootProject.projectDir}/libs/agent15.jar")
+}

@@ -13,7 +13,7 @@ set -e
 #   If no arguments are provided, the tool starts in an interactive shell mode.
 
 readonly PROJECT_ROOT=$(cd $(dirname "$0") && pwd)
-readonly TARGET_BIN="$PROJECT_ROOT/build/install/PacketProxy/bin/PacketProxy"
+readonly TARGET_BIN="$PROJECT_ROOT/app/build/install/PacketProxy/bin/PacketProxy"
 
 PRE_EXEC_SCRIPT="$1"
 case "$1" in
@@ -22,7 +22,7 @@ case "$1" in
 *) PRE_EXEC_SCRIPT="$(find "$PROJECT_ROOT/scripts" -type f -name "$1.pp")" ;;
 esac
 
-"$PROJECT_ROOT/gradlew" -p "$PROJECT_ROOT" installDist --quiet
+"$PROJECT_ROOT/gradlew" -p "$PROJECT_ROOT" :app:installDist --quiet
 
 test -f "$TARGET_BIN"
 if test -n "$PRE_EXEC_SCRIPT"; then

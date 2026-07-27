@@ -1,0 +1,10 @@
+dependencies {
+  api project(':gui')
+  api project(':core')
+  api project(':model')
+  api project(':common')
+
+  api 'org.apache.commons:commons-math3:3.0'
+  api 'org.jfree:jfreechart:1.5.3'
+  api 'org.ejml:ejml-all:0.41'
+}

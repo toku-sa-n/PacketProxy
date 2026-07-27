@@ -1,0 +1,11 @@
+dependencies {
+  api project(':core')
+  api project(':model')
+  api project(':common')
+
+  api 'com.formdev:flatlaf:3.4.1'
+  api 'com.formdev:flatlaf-intellij-themes:3.4.1'
+  api 'org.apache.commons:commons-math3:3.0'
+  api 'org.jfree:jfreechart:1.5.3'
+  api 'org.ejml:ejml-all:0.41'
+}

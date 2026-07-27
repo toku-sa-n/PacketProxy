@@ -8,3 +8,12 @@ plugins {
   id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
 rootProject.name = "PacketProxy"
+
+include 'common'
+include 'model'
+include 'protocols'
+include 'core'
+include 'extensions'
+include 'gui'
+include 'gulp'
+include 'app'
