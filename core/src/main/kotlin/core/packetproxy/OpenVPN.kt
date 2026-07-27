@@ -72,53 +72,67 @@ class OpenVPN private constructor() {
     return DockerClientImpl.getInstance(config, httpClient)
   }
 
-  fun startServer(ip: String, proto: String) {
-    val client = getClient()
-    if (!getImage(client)) {
-      // TODO: disable checkbox
-      return
+  fun startServer(ip: String, proto: String): Boolean {
+    try {
+      val client = getClient()
+      if (!getImage(client)) {
+        return false
+      }
+      createContainer(client, ip, proto)
+      startContainer(client, proto)
+      patchContainer(client, ip, proto)
+      return true
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+      return false
     }
-    createContainer(client, ip, proto)
-    startContainer(client, proto)
-    patchContainer(client, ip, proto)
   }
 
   fun stopServer() {
-    val client = getClient()
-    removeContainer(client)
+    try {
+      val client = getClient()
+      removeContainer(client)
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    }
   }
 
   fun getImage(client: DockerClient): Boolean {
-    val inspect = client.inspectImageCmd(imageName)
     try {
-      inspect.exec()
-    } catch (e: NotFoundException) {
+      client.inspectImageCmd(imageName).exec()
+      return true
+    } catch (_: NotFoundException) {
       if (pulling) {
         log("already pulling image...")
         return false
       }
       log("docker image not found. start pulling...")
       pulling = true
-      client.pullImageCmd(imageName).exec(PullImageResultCallback())
-      return false
+      try {
+        val callback = PullImageResultCallback()
+        client.pullImageCmd(imageName).exec(callback)
+        callback.awaitCompletion()
+        log("docker image pull completed")
+        return true
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+        return false
+      } finally {
+        pulling = false
+      }
     }
-    return true
   }
 
   fun createContainer(client: DockerClient, localIp: String, proto: String) {
-    val inspectVolume = client.inspectVolumeCmd(volumeName)
     try {
-      inspectVolume.exec()
-    } catch (e: NotFoundException) {
-      // create volume
+      client.inspectVolumeCmd(volumeName).exec()
+    } catch (_: NotFoundException) {
       client.createVolumeCmd().withName(volumeName).exec()
     }
 
-    val inspect = client.inspectContainerCmd(containerName)
     try {
-      inspect.exec()
-    } catch (e: NotFoundException) {
-      // create container
+      client.inspectContainerCmd(containerName).exec()
+    } catch (_: NotFoundException) {
       val hostConfig =
         HostConfig()
           .withBinds(Bind(volumeName, Volume("/opt")))
@@ -144,13 +158,11 @@ class OpenVPN private constructor() {
   fun startContainer(client: DockerClient, proto: String) {
     val inspect = client.inspectContainerCmd(containerName).exec()
     if (inspect.getState().running == true) {
-      // running
       log("OpenVPN Server is already running")
       return
     }
 
     try {
-      // start the server
       client.startContainerCmd(containerName).exec()
     } catch (e: NotFoundException) {
       err(e.toString())
@@ -162,16 +174,15 @@ class OpenVPN private constructor() {
   }
 
   fun removeContainer(client: DockerClient) {
-    val remove = client.removeContainerCmd(containerName).withForce(true)
     try {
-      remove.exec()
+      client.removeContainerCmd(containerName).withForce(true).exec()
     } catch (e: NotFoundException) {
       log(e.toString())
     }
   }
 
   @Throws(Exception::class)
-  fun execCommand(client: DockerClient, command: Array<String>) {
+  fun execCommand(client: DockerClient, command: Array<String>, detach: Boolean = false) {
     val resp =
       client
         .execCreateCmd(containerName)
@@ -180,7 +191,12 @@ class OpenVPN private constructor() {
         .withCmd(*command)
         .exec()
 
-    val callback = ExecResultCallback<Frame>()
+    if (detach) {
+      client.execStartCmd(resp.getId()).withDetach(true).exec(ExecResultCallback())
+      return
+    }
+
+    val callback = ExecResultCallback()
     client.execStartCmd(resp.getId()).exec(callback)
     callback.awaitCompletion()
   }
@@ -199,44 +215,46 @@ class OpenVPN private constructor() {
             ":" +
             forwardPort.getToPort()
 
-        val commands = arrayOf("/bin/sh", "-c", command)
-        execCommand(client, commands)
+        execCommand(client, arrayOf("/bin/sh", "-c", command))
       }
 
-      // patch server/client configs
       // change the server config to use inside the volume
-      var commands =
+      execCommand(
+        client,
         arrayOf(
           "/bin/sh",
           "-c",
-          "\"sed -i 's/\\/etc\\/openvpn\\/server\\.conf/\\/opt\\/Dockovpn\\/config\\/server\\.conf/' /opt/Dockovpn/start.sh\"",
-        )
-      execCommand(client, commands)
-      // change server/client config file(udp->tcp-server/tcp-client)
+          "sed -i 's/\\/etc\\/openvpn\\/server\\.conf/\\/opt\\/Dockovpn\\/config\\/server\\.conf/' /opt/Dockovpn/start.sh",
+        ),
+      )
       when (proto) {
         "TCP" -> {
-          commands =
-            arrayOf("/bin/sh", "-c", "sed -i s/udp/tcp-server/ /opt/Dockovpn/config/server.conf")
-          execCommand(client, commands)
-          commands =
+          execCommand(
+            client,
+            arrayOf("/bin/sh", "-c", "sed -i s/udp/tcp-server/ /opt/Dockovpn/config/server.conf"),
+          )
+          execCommand(
+            client,
             arrayOf(
               "/bin/sh",
               "-c",
               "find /opt -name \"client.ovpn\" | xargs sed -i s/udp/tcp-client/",
-            )
-          execCommand(client, commands)
+            ),
+          )
         }
         "UDP" -> {
-          commands =
-            arrayOf("/bin/sh", "-c", "sed -i s/tcp-server/udp/ /opt/Dockovpn/config/server.conf")
-          execCommand(client, commands)
-          commands =
+          execCommand(
+            client,
+            arrayOf("/bin/sh", "-c", "sed -i s/tcp-server/udp/ /opt/Dockovpn/config/server.conf"),
+          )
+          execCommand(
+            client,
             arrayOf(
               "/bin/sh",
               "-c",
               "find /opt -name \"client.ovpn\" | xargs sed -i s/tcp-client/udp/",
-            )
-          execCommand(client, commands)
+            ),
+          )
         }
       }
       /*
@@ -247,17 +265,19 @@ class OpenVPN private constructor() {
        * - after patching, the server should be restarted to reflect the config
        */
       log("OpenVPN Server is restarting...")
-      // kill the process and restart openvpn
-      commands = arrayOf("/bin/sh", "-c", "kill $(pgrep openvpn)")
-      execCommand(client, commands)
-      commands = arrayOf("openvpn", "--config", "/opt/Dockovpn/config/server.conf")
-      execCommand(client, commands)
+      execCommand(client, arrayOf("/bin/sh", "-c", "kill $(pgrep openvpn)"))
+      // detach so the long-lived openvpn process does not block the EDT
+      execCommand(
+        client,
+        arrayOf("openvpn", "--config", "/opt/Dockovpn/config/server.conf"),
+        detach = true,
+      )
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
   }
 
-  private inner class ExecResultCallback<A_RES_T> : ResultCallback<A_RES_T> {
+  private inner class ExecResultCallback : ResultCallback<Frame> {
     private val started = CountDownLatch(1)
     private val completed = CountDownLatch(1)
     private var stream: Closeable? = null
@@ -269,7 +289,7 @@ class OpenVPN private constructor() {
       started.countDown()
     }
 
-    override fun onNext(`object`: A_RES_T) {
+    override fun onNext(`object`: Frame) {
       // nothing to do
     }
 
@@ -299,7 +319,6 @@ class OpenVPN private constructor() {
       }
     }
 
-    // blocks until onComplete was called
     @Throws(Exception::class)
     fun awaitCompletion() {
       try {

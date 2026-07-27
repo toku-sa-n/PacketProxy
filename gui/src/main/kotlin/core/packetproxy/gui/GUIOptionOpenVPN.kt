@@ -1,8 +1,27 @@
 package packetproxy.gui
 
+import java.awt.Color
+import java.awt.Component
+import java.awt.Dimension
 import java.awt.event.MouseAdapter
-import javax.swing.*
+import java.awt.event.MouseEvent
+import java.net.Inet4Address
+import java.net.NetworkInterface
+import javax.swing.BoxLayout
+import javax.swing.ButtonGroup
+import javax.swing.JCheckBox
+import javax.swing.JComboBox
+import javax.swing.JComponent
+import javax.swing.JFrame
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JRadioButton
+import javax.swing.JTextField
+import javax.swing.border.LineBorder
+import javax.swing.border.TitledBorder
 import packetproxy.OpenVPN
+import packetproxy.common.FontManager
+import packetproxy.common.I18nString
 import packetproxy.model.ConfigBoolean
 import packetproxy.model.OpenVPNForwardPort
 import packetproxy.model.OpenVPNForwardPorts
@@ -11,9 +30,17 @@ import packetproxy.util.Logging.errWithStackTrace
 class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPort>(owner) {
   private val forwardPorts = OpenVPNForwardPorts.getInstance()
   private val tableList = mutableListOf<OpenVPNForwardPort>()
-  private val checkBox = JCheckBox("Use OpenVPN")
-  private val base = JPanel()
   private val openVPN = OpenVPN.getInstance()
+  private val checkBox = createCheckBox()
+  private val vpnProtocol = JComboBox<String>()
+  private val textField = createAddressField()
+  private val auto =
+    JRadioButton(
+      I18nString.get("Auto (Replace resolved IP with local IP of suitable NIC automatically)"),
+      true,
+    )
+  private val manual = JRadioButton(I18nString.get("Manual"), false)
+  private val base: JPanel
 
   init {
     forwardPorts.addPropertyChangeListener(this)
@@ -21,37 +48,77 @@ class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPor
       createComponent(
         arrayOf("Proto", "src port", "dst port"),
         intArrayOf(80, 80, 80),
-        object : MouseAdapter() {},
-        { GUIOptionOpenVPNDialog(owner).showDialog()?.let(forwardPorts::create) },
-        {
-          val old = getSelectedTableContent()
-          GUIOptionOpenVPNDialog(owner).showDialog(old)?.let {
-            forwardPorts.delete(old)
-            forwardPorts.create(it)
+        object : MouseAdapter() {
+          override fun mouseClicked(e: MouseEvent) {
+            try {
+              val columnIndex = table.columnAtPoint(e.point)
+              val rowIndex = table.rowAtPoint(e.point)
+              table.setRowSelectionInterval(rowIndex, columnIndex)
+            } catch (ex: Exception) {
+              errWithStackTrace(ex)
+            }
           }
         },
-        { forwardPorts.delete(getSelectedTableContent()) },
+        {
+          try {
+            GUIOptionOpenVPNDialog(owner).showDialog()?.let(forwardPorts::create)
+          } catch (e: Exception) {
+            errWithStackTrace(e)
+          }
+        },
+        {
+          try {
+            val old = getSelectedTableContent()
+            GUIOptionOpenVPNDialog(owner).showDialog(old)?.let {
+              forwardPorts.delete(old)
+              forwardPorts.create(it)
+            }
+          } catch (e: Exception) {
+            errWithStackTrace(e)
+          }
+        },
+        {
+          try {
+            forwardPorts.delete(getSelectedTableContent())
+          } catch (e: Exception) {
+            errWithStackTrace(e)
+          }
+        },
       )
     updateImpl()
-    base.add(checkBox)
-    base.add(createPanel())
-    checkBox.addActionListener {
-      if (checkBox.isSelected) openVPN.startServer(spoofingIP, "UDP") else openVPN.stopServer()
-    }
+    base = buildPanel()
     updateState()
   }
 
   fun getPanel() = base
 
-  fun isAutoSpoofing() = true
+  fun isAutoSpoofing() = auto.isSelected
 
-  val spoofingIP
-    get() = "127.0.0.1"
+  fun getSpoofingIP(): String {
+    if (auto.isSelected) {
+      try {
+        return getLocalIP()
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      }
+    } else {
+      return textField.text
+    }
+    return ""
+  }
 
   fun updateState() {
     try {
       checkBox.isSelected = ConfigBoolean("OpenVPN").getState()
+      if (checkBox.isSelected) {
+        val proto = vpnProtocol.selectedItem.toString()
+        if (!openVPN.startServer(getSpoofingIP(), proto)) {
+          checkBox.isSelected = false
+          ConfigBoolean("OpenVPN").setState(false)
+        }
+      }
     } catch (e: Exception) {
+      checkBox.isSelected = false
       errWithStackTrace(e)
     }
   }
@@ -82,4 +149,124 @@ class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPor
   override fun getSelectedTableContent() = getTableContent(table.selectedRow)
 
   override fun getTableContent(rowIndex: Int) = tableList[rowIndex]
+
+  private fun buildPanel(): JPanel {
+    auto.minimumSize = Dimension(Short.MAX_VALUE.toInt(), auto.maximumSize.height)
+    auto.addActionListener { textField.isEnabled = manual.isSelected }
+    manual.addActionListener { textField.isEnabled = manual.isSelected }
+
+    val rewriteGroup = ButtonGroup()
+    rewriteGroup.add(auto)
+    rewriteGroup.add(manual)
+
+    val manualPanel = JPanel()
+    manualPanel.background = Color.WHITE
+    manualPanel.layout = BoxLayout(manualPanel, BoxLayout.X_AXIS)
+    manualPanel.add(manual)
+    manualPanel.add(textField)
+
+    val rewriteRuleBorder = TitledBorder(I18nString.get("Rewrite Rule"))
+    rewriteRuleBorder.border = LineBorder(Color.BLACK, 1)
+    rewriteRuleBorder.titleFont = FontManager.getInstance().getUIFont()
+    rewriteRuleBorder.titleJustification = TitledBorder.LEFT
+    rewriteRuleBorder.titlePosition = TitledBorder.TOP
+
+    val rewriteRule = JPanel()
+    rewriteRule.layout = BoxLayout(rewriteRule, BoxLayout.Y_AXIS)
+    rewriteRule.background = Color.WHITE
+    rewriteRule.border = rewriteRuleBorder
+    rewriteRule.add(auto)
+    rewriteRule.add(manualPanel)
+    rewriteRule.maximumSize =
+      Dimension(rewriteRule.preferredSize.width, rewriteRule.minimumSize.height)
+
+    val panel = JPanel()
+    panel.background = Color.WHITE
+    panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+    panel.add(checkBox)
+    panel.add(createProtoSetting())
+    panel.add(rewriteRule)
+    panel.add(createPanel())
+    panel.alignmentX = Component.LEFT_ALIGNMENT
+    return panel
+  }
+
+  private fun createCheckBox(): JCheckBox {
+    val box = JCheckBox(I18nString.get("Use OpenVPN"))
+    box.addActionListener {
+      try {
+        if (box.isSelected) {
+          val proto = vpnProtocol.selectedItem.toString()
+          if (openVPN.startServer(getSpoofingIP(), proto)) {
+            ConfigBoolean("OpenVPN").setState(true)
+          } else {
+            box.isSelected = false
+            ConfigBoolean("OpenVPN").setState(false)
+          }
+        } else {
+          openVPN.stopServer()
+          ConfigBoolean("OpenVPN").setState(false)
+        }
+      } catch (e: Exception) {
+        box.isSelected = false
+        try {
+          ConfigBoolean("OpenVPN").setState(false)
+        } catch (ex: Exception) {
+          errWithStackTrace(ex)
+        }
+        errWithStackTrace(e)
+      }
+    }
+    box.minimumSize = Dimension(Short.MAX_VALUE.toInt(), box.maximumSize.height)
+    return box
+  }
+
+  private fun createProtoSetting(): JComponent {
+    val panel = JPanel()
+    panel.background = Color.WHITE
+    panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
+
+    vpnProtocol.prototypeDisplayValue = "xxxxxxx"
+    vpnProtocol.addItem("TCP")
+    vpnProtocol.addItem("UDP")
+    vpnProtocol.maximumRowCount = vpnProtocol.itemCount
+    vpnProtocol.selectedItem = "UDP"
+    vpnProtocol.maximumSize =
+      Dimension(vpnProtocol.minimumSize.width, vpnProtocol.minimumSize.height)
+    panel.add(vpnProtocol)
+    panel.add(JLabel(I18nString.get("will be used for VPN")))
+    panel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), panel.maximumSize.height)
+    return panel
+  }
+
+  private fun createAddressField(): JTextField {
+    val text = JTextField("")
+    try {
+      text.text = getLocalIP()
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    }
+    text.maximumSize = Dimension(300, 30)
+    text.isEnabled = false
+    return text
+  }
+
+  private fun getLocalIP(): String {
+    val ips =
+      NetworkInterface.getNetworkInterfaces()
+        .toList()
+        .flatMap { it.inetAddresses.toList() }
+        .filterIsInstance<Inet4Address>()
+        .map { it.hostAddress }
+
+    var pubIp: String? = null
+    var corpIp: String? = null
+    for (ip in ips) {
+      if (ip.startsWith("172.23")) corpIp = ip
+      if (ip.startsWith("172.25")) pubIp = ip
+    }
+    if (pubIp != null) return pubIp
+    if (corpIp != null) return corpIp
+    return ips.firstOrNull { it != "127.0.0.1" } ?: "127.0.0.1"
+  }
 }
