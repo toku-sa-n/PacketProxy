@@ -322,16 +322,53 @@ class EndpointOverviewExtension : Extension() {
   }
 
   private fun populateTree(summaries: Collection<EndpointSummary>) {
+    val expandedKeys = collectExpandedKeys()
+    val selectedKey = collectSelectedKey()
     val filtered = filterSummaries(summaries, filterField.text.trim())
     treeModel.setRoot(EndpointTreeBuilder.build(filtered))
-    collapseAllNodes()
-  }
-
-  private fun collapseAllNodes() {
     val root = treeModel.root as? DefaultMutableTreeNode ?: return
     tree.expandPath(TreePath(root))
-    for (i in 0 until root.childCount) {
-      tree.collapsePath(TreePath(root.getChildAt(i)))
+    restoreExpandedKeys(expandedKeys)
+    restoreSelection(selectedKey)
+  }
+
+  private fun collectExpandedKeys(): Set<String> {
+    val root = treeModel.root as? DefaultMutableTreeNode ?: return emptySet()
+    val rootPath = TreePath(root)
+    val expanded = tree.getExpandedDescendants(rootPath) ?: return emptySet()
+    val keys = mutableSetOf<String>()
+    while (expanded.hasMoreElements()) {
+      val path = expanded.nextElement()
+      if (path == rootPath) {
+        continue
+      }
+      EndpointTreeKeys.keyForPath(path)?.let { keys.add(it) }
     }
+    return keys
+  }
+
+  private fun collectSelectedKey(): String? {
+    val selected = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return null
+    return EndpointTreeKeys.keyForPath(TreePath(selected.path))
+  }
+
+  private fun restoreExpandedKeys(expandedKeys: Set<String>) {
+    if (expandedKeys.isEmpty()) {
+      return
+    }
+    val root = treeModel.root as? DefaultMutableTreeNode ?: return
+    for (key in expandedKeys) {
+      EndpointTreeKeys.findPathByKey(root, key)?.let { tree.expandPath(it) }
+    }
+  }
+
+  private fun restoreSelection(selectedKey: String?) {
+    if (selectedKey == null) {
+      return
+    }
+    val root = treeModel.root as? DefaultMutableTreeNode ?: return
+    val path = EndpointTreeKeys.findPathByKey(root, selectedKey) ?: return
+    tree.selectionPath = path
+    tree.scrollPathToVisible(path)
   }
 }
