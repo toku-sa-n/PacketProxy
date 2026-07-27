@@ -48,7 +48,7 @@ import packetproxy.http2.frames.SettingsFrame.SettingsFrameType
 import packetproxy.http2.frames.WindowUpdateFrame
 import packetproxy.util.Logging.err
 
-class FrameManager {
+open class FrameManager {
   private var hpackEncoder = HpackEncoder(4096, 65536)
   private var hpackDecoder: HpackDecoder? = null
   private val headersDataFrames: MutableList<Frame> = LinkedList()

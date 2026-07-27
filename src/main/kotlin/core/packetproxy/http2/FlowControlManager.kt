@@ -26,7 +26,7 @@ import packetproxy.http2.frames.SettingsFrame.SettingsFrameType
 import packetproxy.http2.frames.WindowUpdateFrame
 import packetproxy.util.Logging.err
 
-class FlowControlManager {
+open class FlowControlManager {
   private val flows: MutableMap<Int, FlowControl> = HashMap()
   private val PIPE_SIZE = 65535
   private var connectionWindowSize = 65535

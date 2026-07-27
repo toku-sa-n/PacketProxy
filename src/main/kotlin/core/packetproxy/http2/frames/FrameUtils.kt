@@ -33,7 +33,9 @@ object FrameUtils {
     try {
       PREFACE = Hex.decodeHex("505249202a20485454502f322e300d0a0d0a534d0d0a0d0a".toCharArray())
       SETTINGS =
-        Hex.decodeHex("0000180400000000000001000010000003000003e800045fffffff000200000000".toCharArray())
+        Hex.decodeHex(
+          "0000180400000000000001000010000003000003e800045fffffff000200000000".toCharArray()
+        )
       END_SETTINGS = Hex.decodeHex("000000040100000000".toCharArray())
       WINDOW_UPDATE = Hex.decodeHex("0000040800000000005fffffff".toCharArray())
     } catch (e: Exception) {
@@ -53,7 +55,10 @@ object FrameUtils {
     if (isPreface(data)) return PREFACE.size
     val headerSize = 9
     val payloadSize =
-      ((data[0].toInt() and 0xff) shl 16 or ((data[1].toInt() and 0xff) shl 8) or (data[2].toInt() and 0xff))
+      ((data[0].toInt() and 0xff) shl
+        16 or
+        ((data[1].toInt() and 0xff) shl 8) or
+        (data[2].toInt() and 0xff))
     val expectedSize = headerSize + payloadSize
     if (data.size < expectedSize) return -1
     return expectedSize

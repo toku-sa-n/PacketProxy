@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package packetproxy.http2.frames
 
 import java.io.ByteArrayInputStream
@@ -21,16 +20,28 @@ import java.nio.ByteBuffer
 
 open class Frame {
   enum class Type {
-    DATA, HEADERS, PRIORITY, RST_STREAM, SETTINGS, PUSH_PROMISE, PING, GOAWAY, WINDOW_UPDATE, CONTINUATION, ALTSVC, Unassigned, ORIGIN,
+    DATA,
+    HEADERS,
+    PRIORITY,
+    RST_STREAM,
+    SETTINGS,
+    PUSH_PROMISE,
+    PING,
+    GOAWAY,
+    WINDOW_UPDATE,
+    CONTINUATION,
+    ALTSVC,
+    Unassigned,
+    ORIGIN,
   }
 
-  var length: Int = 9
-  var type: Type = Type.Unassigned
-  var flags: Int = 0
-  var streamId: Int = 0
-  var payload: ByteArray = byteArrayOf()
-  var origPayload: ByteArray = byteArrayOf()
-  var extra: ByteArray = byteArrayOf()
+  @JvmField var length: Int = 9
+  @JvmField var type: Type = Type.Unassigned
+  @JvmField var flags: Int = 0
+  @JvmField var streamId: Int = 0
+  @JvmField var payload: ByteArray = byteArrayOf()
+  @JvmField var origPayload: ByteArray = byteArrayOf()
+  @JvmField var extra: ByteArray = byteArrayOf()
 
   @Throws(Exception::class) protected constructor()
 
@@ -60,19 +71,47 @@ open class Frame {
     val bais = ByteArrayInputStream(data)
     val buffer = ByteArray(128)
     bais.read(buffer, 0, 3)
-    length = ((buffer[0].toInt() and 0xff) shl 16 or ((buffer[1].toInt() and 0xff) shl 8) or (buffer[2].toInt() and 0xff))
+    length =
+      ((buffer[0].toInt() and 0xff) shl
+        16 or
+        ((buffer[1].toInt() and 0xff) shl 8) or
+        (buffer[2].toInt() and 0xff))
     bais.read(buffer, 0, 1)
     type = Type.entries[buffer[0].toInt()]
     bais.read(buffer, 0, 1)
     flags = buffer[0].toInt()
     bais.read(buffer, 0, 4)
-    streamId = ((buffer[0].toInt() and 0x7f) shl 24 or ((buffer[1].toInt() and 0xff) shl 16) or ((buffer[2].toInt() and 0xff) shl 8) or (buffer[3].toInt() and 0xff))
+    streamId =
+      ((buffer[0].toInt() and 0x7f) shl
+        24 or
+        ((buffer[1].toInt() and 0xff) shl 16) or
+        ((buffer[2].toInt() and 0xff) shl 8) or
+        (buffer[3].toInt() and 0xff))
     payload = ByteArray(length)
     bais.read(payload)
     splitExtraFromPayload()
   }
 
+  fun getLength(): Int = length
+
+  fun getType(): Type = type
+
+  fun getFlags(): Int = flags
+
+  fun setFlags(flags: Int) {
+    this.flags = flags
+  }
+
+  fun getStreamId(): Int = streamId
+
+  fun setStreamId(streamId: Int) {
+    this.streamId = streamId
+  }
+
+  fun getPayload(): ByteArray = payload
+
   @Throws(Exception::class) fun getOrigPayload(): ByteArray = this.origPayload
+
   @Throws(Exception::class) fun getExtra(): ByteArray = this.extra
 
   @Throws(Exception::class)

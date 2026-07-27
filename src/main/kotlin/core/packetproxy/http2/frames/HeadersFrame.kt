@@ -31,7 +31,7 @@ import packetproxy.common.StringUtils
 import packetproxy.http.Http
 import packetproxy.http.HttpHeader
 
-class HeadersFrame : Frame {
+open class HeadersFrame : Frame {
   private var method: String? = null
   private var path: String? = null
   private var scheme: String? = null
@@ -75,7 +75,8 @@ class HeadersFrame : Frame {
   @Throws(Exception::class) fun getHttp(): ByteArray = getExtra()
 
   @Throws(Exception::class)
-  fun toByteArrayWithoutExtra(encoder: HpackEncoder): ByteArray = toByteArrayWithoutExtra(encoder, false)
+  fun toByteArrayWithoutExtra(encoder: HpackEncoder): ByteArray =
+    toByteArrayWithoutExtra(encoder, false)
 
   @Throws(Exception::class)
   fun toByteArrayWithoutExtra(encoder: HpackEncoder, originalHttpHeader: Boolean): ByteArray =
@@ -121,13 +122,14 @@ class HeadersFrame : Frame {
         }
         field.getName() == "X-PacketProxy-HTTP2-Weight" -> weight = field.getValue().toInt()
         !withContentLength && field.getName() == "content-length" -> {}
-        !field.getName().startsWith("X-PacketProxy") -> mutableFields.add(field.getName(), field.getValue())
+        !field.getName().startsWith("X-PacketProxy") ->
+          mutableFields.add(field.getName(), field.getValue())
       }
     }
     fields = mutableFields
 
     val meta: MetaData =
-      if (http.isRequest()) {
+      if (http.isRequest) {
         val uri = HttpURI.build().uri(uriString)
         if (withContentLength) {
           var contentLength = 0L
@@ -162,7 +164,7 @@ class HeadersFrame : Frame {
       val priorityField = ByteArray(b.position())
       b.flip()
       b.get(priorityField)
-      headersPayload = ArrayUtils.addAll(priorityField, headersPayload)
+      headersPayload = ArrayUtils.addAll(priorityField, *headersPayload)
     }
     saveOrigPayload(headersPayload)
   }
@@ -211,7 +213,9 @@ class HeadersFrame : Frame {
       val queryStr = if (!query.isNullOrEmpty()) "?$query" else ""
       buf.write(String.format("%s %s%s HTTP/2\r\n", method, path, queryStr).toByteArray())
     } else {
-      buf.write(String.format("HTTP/2 %d %s\r\n", status, HttpStatus.getMessage(status)).toByteArray())
+      buf.write(
+        String.format("HTTP/2 %d %s\r\n", status, HttpStatus.getMessage(status)).toByteArray()
+      )
     }
     for (field in fields!!) {
       buf.write(String.format("%s: %s\r\n", field.name, field.value).toByteArray())
@@ -223,12 +227,16 @@ class HeadersFrame : Frame {
       }
       if (priority) {
         buf.write(String.format("X-PacketProxy-HTTP2-Dependency: %d\r\n", dependency).toByteArray())
-        buf.write(String.format("X-PacketProxy-HTTP2-Weight: %d\r\n", weight and 0xff).toByteArray())
+        buf.write(
+          String.format("X-PacketProxy-HTTP2-Weight: %d\r\n", weight and 0xff).toByteArray()
+        )
       }
       buf.write(String.format("X-PacketProxy-HTTP2-Type: %d\r\n", TYPE.ordinal).toByteArray())
       buf.write(String.format("X-PacketProxy-HTTP2-Stream-Id: %d\r\n", streamId).toByteArray())
       buf.write(String.format("X-PacketProxy-HTTP2-Flags: %d\r\n", flags).toByteArray())
-      buf.write(String.format("X-PacketProxy-HTTP2-UUID: %s\r\n", StringUtils.randomUUID()).toByteArray())
+      buf.write(
+        String.format("X-PacketProxy-HTTP2-UUID: %s\r\n", StringUtils.randomUUID()).toByteArray()
+      )
     } else {
       buf.write("X-PacketProxy-HTTP2-GRPC-2nd-Frame-Header: 1\r\n".toByteArray())
     }

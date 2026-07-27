@@ -19,7 +19,7 @@ import java.io.ByteArrayOutputStream
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.http.Http
 
-class DataFrame : Frame {
+open class DataFrame : Frame {
   constructor(flags: Int, streamId: Int, payload: ByteArray) : super(TYPE, flags, streamId, payload)
 
   @Throws(Exception::class)

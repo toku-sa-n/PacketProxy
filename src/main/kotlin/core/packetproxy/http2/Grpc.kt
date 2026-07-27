@@ -28,7 +28,7 @@ import packetproxy.http2.frames.FrameUtils
 import packetproxy.http2.frames.HeadersFrame
 import packetproxy.model.Packet
 
-class Grpc : FramesBase {
+open class Grpc : FramesBase {
   private val clientStreamManager = StreamManager()
   private val serverStreamManager = StreamManager()
   private val groupMap: MutableMap<Long, Long> = HashMap()
@@ -62,10 +62,12 @@ class Grpc : FramesBase {
   }
 
   @Throws(Exception::class)
-  override fun decodeClientRequestFromFrames(frames: ByteArray): ByteArray = decodeFromFrames(frames)
+  override fun decodeClientRequestFromFrames(frames: ByteArray): ByteArray =
+    decodeFromFrames(frames)
 
   @Throws(Exception::class)
-  override fun decodeServerResponseFromFrames(frames: ByteArray): ByteArray = decodeFromFrames(frames)
+  override fun decodeServerResponseFromFrames(frames: ByteArray): ByteArray =
+    decodeFromFrames(frames)
 
   @Throws(Exception::class)
   private fun decodeFromFrames(frames: ByteArray): ByteArray {
@@ -164,7 +166,8 @@ class Grpc : FramesBase {
   @Throws(Exception::class)
   override fun setGroupId(packet: Packet) {
     val data =
-      if (packet.getDecodedData().isNotEmpty()) packet.getDecodedData() else packet.getModifiedData()
+      if (packet.getDecodedData().isNotEmpty()) packet.getDecodedData()
+      else packet.getModifiedData()
     val http = Http.create(data)
     val streamIdStr = http.getFirstHeader("X-PacketProxy-HTTP2-Stream-Id")
     if (streamIdStr.isNotEmpty()) {

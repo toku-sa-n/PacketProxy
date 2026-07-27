@@ -19,7 +19,6 @@ import arrow.core.None
 import arrow.core.Option
 import arrow.core.Some
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import packetproxy.model.InterceptModel
@@ -32,8 +31,7 @@ import packetproxy.model.Server
  *
  * プロキシパイプライン側（received）でパケットを捕捉し、UI側（forward/drop）からの 操作決定を待機する。InterceptModel を介して UI に状態を通知し、
  * InterceptOptions のルールに基づいて対象パケットをフィルタリングする。
- * - suspend fun received(): 新プロキシ向け。コルーチンをサスペンドして UI 操作を待つ。
- * - receivedBlocking(): DuplexFactory.java 向けの暫定ブリッジ（Deprecated）。
+ * - suspend fun received(): プロキシ向け。コルーチンをサスペンドして UI 操作を待つ。
  */
 class InterceptController
 private constructor(
@@ -120,36 +118,14 @@ private constructor(
     }
   }
 
-  /**
-   * Java 互換のブロッキングラッパー。DuplexFactory.java からの呼び出しのために存在する。
-   *
-   * TODO: DuplexFactory が Kotlin 化され suspend fun received() を直接呼べるようになった時点で削除すること。 依存先:
-   *   DuplexFactory.java（2箇所）
-   *     - onClientChunkReceived()
-   *     - onServerChunkReceived()
-   */
-  @JvmOverloads
-  @Deprecated(
-    "Use suspend fun received() instead. Remove when DuplexFactory.java is migrated to Kotlin.",
-    level = DeprecationLevel.WARNING,
-  )
-  fun receivedBlocking(
-    data: ByteArray,
-    server: Server?,
-    clientPacket: Packet,
-    serverPacket: Packet? = null,
-  ): ByteArray = runBlocking {
-    received(data, server, clientPacket, serverPacket).fold({ ByteArray(0) }) { it }
-  }
-
   private fun isInterceptTarget(
     server: Server?,
     clientPacket: Packet,
     serverPacket: Packet?,
   ): Boolean {
-    if (!interceptModel.isInterceptEnabled) return false
+    if (!interceptModel.isInterceptEnabled()) return false
 
-    if (InterceptOptions.getInstance().isEnabled) {
+    if (InterceptOptions.getInstance().isEnabled()) {
       return if (serverPacket == null) {
         InterceptOptions.getInstance().interceptOnRequest(server, clientPacket)
       } else {

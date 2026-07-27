@@ -1,0 +1,51 @@
+/*
+ * Copyright 2019 DeNA Co., Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package packetproxy
+
+class DuplexManager {
+  companion object {
+    @Volatile private var instance: DuplexManager? = null
+
+    @JvmStatic
+    @Throws(Exception::class)
+    fun getInstance(): DuplexManager =
+      instance ?: synchronized(this) { instance ?: DuplexManager().also { instance = it } }
+  }
+
+  private val duplex_list: MutableMap<Int, Duplex> = HashMap()
+
+  @Throws(Exception::class)
+  fun closeAndClearDuplex(listenPort: Int) {
+    val i = duplex_list.keys.iterator()
+    while (i.hasNext()) {
+      val key = i.next()
+      val d = duplex_list[key] ?: continue
+      if (d.isListenPort(listenPort)) {
+        d.close()
+        i.remove()
+      }
+    }
+  }
+
+  fun registerDuplex(duplex: Duplex): Int {
+    duplex_list[duplex.hashCode()] = duplex
+    return duplex.hashCode()
+  }
+
+  fun getDuplex(hash: Int): Duplex? = duplex_list[hash]
+
+  fun has(hash: Int): Boolean = duplex_list[hash] != null
+}

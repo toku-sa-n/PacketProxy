@@ -25,10 +25,10 @@ object EndpointAggregator {
     val requestMap = mutableMapOf<Long, Packet>()
 
     for (packet in packets) {
-      if (packet.direction != Packet.Direction.CLIENT) {
+      if (packet.getDirection() != Packet.Direction.CLIENT) {
         continue
       }
-      requestMap[packet.group] = packet
+      requestMap[packet.getGroup()] = packet
     }
 
     return requestMap
@@ -39,11 +39,11 @@ object EndpointAggregator {
     val endpointMap = mutableMapOf<String, EndpointSummary>()
 
     for (responsePacket in packets) {
-      if (responsePacket.direction != Packet.Direction.SERVER) {
+      if (responsePacket.getDirection() != Packet.Direction.SERVER) {
         continue
       }
 
-      val requestPacket = requestMap[responsePacket.group] ?: continue
+      val requestPacket = requestMap[responsePacket.getGroup()] ?: continue
       mergePacketPair(endpointMap, requestPacket, responsePacket)
     }
 
@@ -56,16 +56,17 @@ object EndpointAggregator {
     responsePacket: Packet,
   ) {
     try {
-      val requestHttp = Http.create(requestPacket.decodedData)
-      val responseHttp = Http.create(responsePacket.decodedData)
+      val requestHttp = Http.create(requestPacket.getDecodedData())
+      val responseHttp = Http.create(responsePacket.getDecodedData())
 
-      val method = requestHttp.method ?: return
-      val host = requestHttp.header.getValue("Host").orElse(requestPacket.serverName) ?: return
+      val method = requestHttp.getMethod().takeIf { it.isNotEmpty() } ?: return
+      val host = requestHttp.header.getValue("Host").orElse(requestPacket.getServerName()) ?: return
       if (!requestHttp.header.getValue("Host").isPresent) {
         requestHttp.updateHeader("Host", host)
       }
-      val url = requestHttp.getURL(requestPacket.serverPort, requestPacket.useSSL) ?: return
-      val statusCode = responseHttp.statusCode ?: return
+      val url =
+        requestHttp.getURL(requestPacket.getServerPort(), requestPacket.getUseSSL()) ?: return
+      val statusCode = responseHttp.getStatusCode().takeIf { it.isNotEmpty() } ?: return
 
       val contentType = responseHttp.header.getValue("Content-Type").orElse("")
       val bodyFingerprint = fingerprintRequestBody(requestHttp)

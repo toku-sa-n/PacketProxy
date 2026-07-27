@@ -266,7 +266,7 @@ class EndpointOverviewExtension : Extension() {
         GUIOptionSessionProfileDialog(GUIHistory.getOwner()) {
           val selectedNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
           val requestData =
-            selectedNode?.let { resolveSummary(it)?.latestRequestPacket?.decodedData }
+            selectedNode?.let { resolveSummary(it)?.latestRequestPacket?.getDecodedData() }
           SessionProfileAuthorizationExtractor.extract(requestData ?: ByteArray(0))
         }
       dlg.showDialog()

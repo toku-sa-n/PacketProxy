@@ -20,7 +20,7 @@ import java.util.HashMap
 import java.util.LinkedList
 import packetproxy.http2.frames.Frame
 
-class StreamManager {
+open class StreamManager {
   private val streamMap: MutableMap<Int, MutableList<Frame>> = HashMap()
 
   fun write(frame: Frame) {

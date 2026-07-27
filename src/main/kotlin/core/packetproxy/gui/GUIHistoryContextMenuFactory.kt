@@ -69,8 +69,8 @@ object GUIHistoryContextMenuFactory {
       createMenuItem("send", KeyEvent.VK_S, KeyStroke.getKeyStroke(KeyEvent.VK_S, maskKey)) {
         try {
           val id = context.selectedPacketId
-          val packet = packets.query(id)
-          val data = guiPacket.data
+          val packet = packets.query(id) ?: return@createMenuItem
+          val data = guiPacket.getData()
           if (packet == null) {
             return@createMenuItem
           }
@@ -90,10 +90,10 @@ object GUIHistoryContextMenuFactory {
         KeyStroke.getKeyStroke(KeyEvent.VK_R, maskKey),
       ) {
         try {
-          val packet = guiPacket.packet
+          val packet = guiPacket.getPacket()
           packet.setResend()
           packets.update(packet)
-          if (packet.modifiedData.isEmpty()) {
+          if (packet.getModifiedData().isEmpty()) {
             GUIResender.getInstance().addResends(packet.getOneShotFromDecodedData())
           } else {
             GUIResender.getInstance().addResends(packet.getOneShotFromModifiedData())
@@ -107,7 +107,7 @@ object GUIHistoryContextMenuFactory {
     val createSessionProfile =
       createMenuItem(I18nString.get("create session profile"), -1, null) {
         try {
-          val data = guiPacket.data
+          val data = guiPacket.getData()
           val authorization = SessionProfileAuthorizationExtractor.extract(data)
           if (authorization == null || authorization.isEmpty()) {
             JOptionPane.showMessageDialog(
@@ -132,8 +132,8 @@ object GUIHistoryContextMenuFactory {
         KeyStroke.getKeyStroke(KeyEvent.VK_M, maskKey),
       ) {
         try {
-          val packet = guiPacket.packet
-          copyMethodUrlBody(packet.decodedData, packet)
+          val packet = guiPacket.getPacket()
+          copyMethodUrlBody(packet.getDecodedData(), packet)
         } catch (ex: Exception) {
           errWithStackTrace(ex)
         }
@@ -143,8 +143,8 @@ object GUIHistoryContextMenuFactory {
       createMenuItem("copy URL", KeyEvent.VK_Y, KeyStroke.getKeyStroke(KeyEvent.VK_Y, maskKey)) {
         try {
           val id = context.selectedPacketId
-          val packet = packets.query(id)
-          copyUrl(packet.decodedData, packet)
+          val packet = packets.query(id) ?: return@createMenuItem
+          copyUrl(packet.getDecodedData(), packet)
         } catch (ex: Exception) {
           errWithStackTrace(ex)
         }
@@ -153,11 +153,11 @@ object GUIHistoryContextMenuFactory {
     val bulkSender =
       createMenuItem("send to Bulk Sender", -1, null) {
         try {
-          val packet = guiPacket.packet
-          if (packet.modifiedData.isEmpty()) {
-            GUIBulkSender.getInstance().add(packet.getOneShotFromDecodedData(), packet.id)
+          val packet = guiPacket.getPacket()
+          if (packet.getModifiedData().isEmpty()) {
+            GUIBulkSender.getInstance().add(packet.getOneShotFromDecodedData(), packet.getId())
           } else {
-            GUIBulkSender.getInstance().add(packet.getOneShotFromModifiedData(), packet.id)
+            GUIBulkSender.getInstance().add(packet.getOneShotFromModifiedData(), packet.getId())
           }
         } catch (ex: Exception) {
           errWithStackTrace(ex)
@@ -166,12 +166,12 @@ object GUIHistoryContextMenuFactory {
 
     val saveAll =
       createSaveMenuItem(owner, "save all data to file", "packet.dat") {
-        guiPacket.packet.receivedData
+        guiPacket.getPacket().getReceivedData()
       }
 
     val saveHttpBody =
       createSaveMenuItem(owner, "save HTTP body to file", "body.dat") {
-        Http.create(guiPacket.packet.decodedData).body
+        Http.create(guiPacket.getPacket().getDecodedData()).getBody()
       }
 
     val addColorG =
@@ -215,10 +215,10 @@ object GUIHistoryContextMenuFactory {
             val responsePacketId = context.getResponsePacketIdForRequest(requestPacketId)
             if (responsePacketId != -1) {
               colorManager.clear(responsePacketId)
-              packets.delete(packets.query(responsePacketId))
+              packets.query(responsePacketId)?.let { packets.delete(it) }
             }
 
-            packets.delete(packets.query(requestPacketId))
+            packets.query(requestPacketId)?.let { packets.delete(it) }
           }
           context.updateAll()
         } catch (ex: Exception) {
@@ -247,17 +247,18 @@ object GUIHistoryContextMenuFactory {
         null,
         ActionListener {
           try {
-            val http = Http.create(guiPacket.packet.decodedData)
+            val http = Http.create(guiPacket.getPacket().getDecodedData())
             val headerFields = http.header.fields
             val commandList = ArrayList<String>()
             commandList.add("curl")
-            val url = http.getURL(guiPacket.packet.serverPort, guiPacket.packet.useSSL)
+            val url =
+              http.getURL(guiPacket.getPacket().getServerPort(), guiPacket.getPacket().getUseSSL())
             commandList.add(String.format("'%s'", url))
             commandList.add("-X")
             commandList.add(http.method)
             for (hf in headerFields) {
               commandList.add("-H")
-              commandList.add(String.format("'%s: %s'", hf.name, hf.value))
+              commandList.add(String.format("'%s: %s'", hf.getName(), hf.getValue()))
             }
             val body = String(http.body)
             if (body.trim().isNotEmpty()) {
@@ -363,8 +364,8 @@ object GUIHistoryContextMenuFactory {
         for (i in selectedRows.indices) {
           val id = table.getValueAt(selectedRows[i], 0) as Int
           colorManager.add(id, awtColor)
-          val packet = packets.query(id)
-          packet.color = dbColorName
+          val packet = packets.query(id) ?: continue
+          packet.setColor(dbColorName)
           packets.update(packet)
         }
       } catch (ex: Exception) {

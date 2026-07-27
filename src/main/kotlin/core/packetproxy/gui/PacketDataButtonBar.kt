@@ -48,9 +48,9 @@ class PacketDataButtonBar(
   private val charSetUtility = CharSetUtility.getInstance()
 
   private val charSetCombo =
-    JComboBox(charSetUtility.availableCharSetList.toTypedArray()).apply {
+    JComboBox(charSetUtility.getAvailableCharSetList().toTypedArray()).apply {
       addActionListener {
-        charSetUtility.charSet = selectedItem as String
+        charSetUtility.setCharSet(selectedItem as String)
         runCatching { GUIPacket.getInstance().update() }.onFailure { errWithStackTrace(it) }
       }
       maximumSize = Dimension(150, maximumSize.height)
@@ -62,7 +62,7 @@ class PacketDataButtonBar(
           }
         }
       )
-      selectedItem = charSetUtility.charSetForGUIComponent
+      selectedItem = charSetUtility.getCharSetForGUIComponent()
     }
 
   private val copyUrlBodyButton =
@@ -252,11 +252,11 @@ class PacketDataButtonBar(
 
   private fun updateCharSetCombo() {
     charSetCombo.removeAllItems()
-    for (charSetName in charSetUtility.availableCharSetList) {
+    for (charSetName in charSetUtility.getAvailableCharSetList()) {
       charSetCombo.addItem(charSetName)
     }
-    val charSetName = CharSetUtility.getInstance().charSetForGUIComponent
-    if (charSetUtility.availableCharSetList.contains(charSetName)) {
+    val charSetName = CharSetUtility.getInstance().getCharSetForGUIComponent()
+    if (charSetUtility.getAvailableCharSetList().contains(charSetName)) {
       charSetCombo.selectedItem = charSetName
     } else {
       charSetCombo.selectedIndex = 0
@@ -269,7 +269,7 @@ class PacketDataButtonBar(
       return
     }
     val packet = getContextPacket() ?: return
-    block(data, packet, packet.id)
+    block(data, packet, packet.getId())
   }
 
   private fun markResent(packet: Packet, packetId: Int) {

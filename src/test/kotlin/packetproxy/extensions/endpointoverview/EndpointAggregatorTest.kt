@@ -272,7 +272,7 @@ class EndpointAggregatorTest {
         serverName,
         true,
         "HTTP",
-        null,
+        "",
         direction,
         1,
         group,

@@ -22,19 +22,25 @@ import packetproxy.http2.frames.Frame
 import packetproxy.http2.frames.FrameFactory
 import packetproxy.util.Logging.err
 
-class FlowControl(val streamId: Int, initialWindowSize: Int) {
+open class FlowControl(val streamId: Int, initialWindowSize: Int) {
   var windowSize: Int = initialWindowSize
     private set
+
   var headersFrame: Frame? = null
     private set
+
   var grpcHeaderFrame: Frame? = null
     private set
+
   var headersFrameSent = false
     private set
+
   var dataFrameSent = false
     private set
+
   var grpcHeadersFrameSent = false
     private set
+
   private val queue = ByteArrayOutputStream()
   private var end_flag = false
   private var empty_data_end_flag = false

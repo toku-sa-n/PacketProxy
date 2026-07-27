@@ -15,16 +15,33 @@
  */
 package packetproxy.http2.frames
 
-class WindowUpdateFrame : Frame {
+open class WindowUpdateFrame : Frame {
   private var window: Int = 0
-  @Throws(Exception::class) constructor(frame: Frame) : super(frame) { parsePayload() }
-  @Throws(Exception::class) constructor(data: ByteArray) : super(data) { parsePayload() }
+
+  @Throws(Exception::class)
+  constructor(frame: Frame) : super(frame) {
+    parsePayload()
+  }
+
+  @Throws(Exception::class)
+  constructor(data: ByteArray) : super(data) {
+    parsePayload()
+  }
+
   @Throws(Exception::class)
   private fun parsePayload() {
-    window = ((payload[0].toInt() and 0x7f) shl 24 or ((payload[1].toInt() and 0xff) shl 16) or ((payload[2].toInt() and 0xff) shl 8) or (payload[3].toInt() and 0xff))
+    window =
+      ((payload[0].toInt() and 0x7f) shl
+        24 or
+        ((payload[1].toInt() and 0xff) shl 16) or
+        ((payload[2].toInt() and 0xff) shl 8) or
+        (payload[3].toInt() and 0xff))
   }
+
   fun getWindowSize(): Int = window
+
   override fun toString(): String = super.toString() + window.toString()
+
   companion object {
     @JvmField val TYPE: Type = Type.WINDOW_UPDATE
   }

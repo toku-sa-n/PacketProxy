@@ -17,10 +17,19 @@ package packetproxy.http2.frames
 
 import java.nio.ByteBuffer
 
-class RstStreamFrame : Frame {
+open class RstStreamFrame : Frame {
   private var errorCode: Int = 0
-  @Throws(Exception::class) constructor(frame: Frame) : super(frame) { parsePayload() }
-  @Throws(Exception::class) constructor(data: ByteArray) : super(data) { parsePayload() }
+
+  @Throws(Exception::class)
+  constructor(frame: Frame) : super(frame) {
+    parsePayload()
+  }
+
+  @Throws(Exception::class)
+  constructor(data: ByteArray) : super(data) {
+    parsePayload()
+  }
+
   @Throws(Exception::class)
   private fun parsePayload() {
     val bb = ByteBuffer.allocate(4096)
@@ -28,8 +37,11 @@ class RstStreamFrame : Frame {
     bb.flip()
     errorCode = bb.getInt()
   }
+
   fun getErrorCode(): Int = errorCode
+
   override fun toString(): String = super.toString() + ", error code=" + errorCode
+
   companion object {
     @JvmField val TYPE: Type = Type.RST_STREAM
   }

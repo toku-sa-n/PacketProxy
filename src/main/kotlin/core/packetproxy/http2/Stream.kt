@@ -19,7 +19,7 @@ import java.io.ByteArrayOutputStream
 import java.util.LinkedList
 import packetproxy.http2.frames.Frame
 
-class Stream {
+open class Stream {
   private val stream: MutableList<Frame> = LinkedList()
 
   fun write(frame: Frame) {

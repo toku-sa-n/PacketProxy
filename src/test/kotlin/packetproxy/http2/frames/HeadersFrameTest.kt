@@ -36,7 +36,9 @@ class HeadersFrameTest {
   @Throws(Exception::class)
   fun test() {
     val frame =
-      Hex.decodeHex("00001B010500000001828487418798E79A82AE43D37A8825B650C3ABB6D2E053032A2F2A".toCharArray())
+      Hex.decodeHex(
+        "00001B010500000001828487418798E79A82AE43D37A8825B650C3ABB6D2E053032A2F2A".toCharArray()
+      )
     val fb = HeadersFrame(frame, decoder)
     Logging.log(fb.toString())
   }
@@ -45,7 +47,9 @@ class HeadersFrameTest {
   @Throws(Exception::class)
   fun toHttp1Test() {
     val frame =
-      Hex.decodeHex("00001B010500000001828487418798E79A82AE43D37A8825B650C3ABB6D2E053032A2F2A".toCharArray())
+      Hex.decodeHex(
+        "00001B010500000001828487418798E79A82AE43D37A8825B650C3ABB6D2E053032A2F2A".toCharArray()
+      )
     val fb = HeadersFrame(frame, decoder)
     Logging.log(String(fb.getHttp()))
   }
@@ -54,7 +58,9 @@ class HeadersFrameTest {
   @Throws(Exception::class)
   fun constructorHttpTest() {
     val frame =
-      Hex.decodeHex("00001B010500000001828487418798E79A82AE43D37A8825B650C3ABB6D2E053032A2F2A".toCharArray())
+      Hex.decodeHex(
+        "00001B010500000001828487418798E79A82AE43D37A8825B650C3ABB6D2E053032A2F2A".toCharArray()
+      )
     val fb = HeadersFrame(frame, decoder)
     val b = fb.getHttp()
     val http = Http.create(b)

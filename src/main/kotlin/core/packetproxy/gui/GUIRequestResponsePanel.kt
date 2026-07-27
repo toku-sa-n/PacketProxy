@@ -445,7 +445,7 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
   fun resendActiveRequest() {
     val packet = showingRequestPacket ?: return
     val requestBytes = getActiveRequestData()
-    val baseBytes = if (requestBytes.isNotEmpty()) requestBytes else packet.decodedData
+    val baseBytes = if (requestBytes.isNotEmpty()) requestBytes else packet.getDecodedData()
     if (baseBytes.isEmpty()) return
     try {
       val modifiedBytes = SessionRequestModifier.apply(baseBytes, sessionProfileProvider?.invoke())

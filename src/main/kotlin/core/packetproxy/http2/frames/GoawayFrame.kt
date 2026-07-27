@@ -17,11 +17,20 @@ package packetproxy.http2.frames
 
 import java.nio.ByteBuffer
 
-class GoawayFrame : Frame {
+open class GoawayFrame : Frame {
   private var lastStreamId: Int = 0
   private var errorCode: Int = 0
-  @Throws(Exception::class) constructor(frame: Frame) : super(frame) { parsePayload() }
-  @Throws(Exception::class) constructor(data: ByteArray) : super(data) { parsePayload() }
+
+  @Throws(Exception::class)
+  constructor(frame: Frame) : super(frame) {
+    parsePayload()
+  }
+
+  @Throws(Exception::class)
+  constructor(data: ByteArray) : super(data) {
+    parsePayload()
+  }
+
   @Throws(Exception::class)
   private fun parsePayload() {
     val bb = ByteBuffer.allocate(4096)
@@ -30,9 +39,14 @@ class GoawayFrame : Frame {
     lastStreamId = bb.getInt()
     errorCode = bb.getInt()
   }
+
   fun getLastStreamId(): Int = lastStreamId
+
   fun getErrorCode(): Int = errorCode
-  override fun toString(): String = super.toString() + ", last stream id=" + lastStreamId + ",error code=" + errorCode
+
+  override fun toString(): String =
+    super.toString() + ", last stream id=" + lastStreamId + ",error code=" + errorCode
+
   companion object {
     @JvmField val TYPE: Type = Type.GOAWAY
   }

@@ -93,7 +93,7 @@ class EndpointVariantExtractorTest {
         "example.com",
         true,
         "HTTP",
-        null,
+        "",
         Packet.Direction.CLIENT,
         1,
         1L,

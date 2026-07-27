@@ -28,7 +28,7 @@ import packetproxy.http2.frames.FrameUtils
 import packetproxy.http2.frames.HeadersFrame
 import packetproxy.model.Packet
 
-class GrpcStreaming : FramesBase {
+open class GrpcStreaming : FramesBase {
   private val clientStreamManager = StreamManager()
   private val serverStreamManager = StreamManager()
   private val clientStreamFirstHeaderMap: MutableMap<Int, HeadersFrame> = HashMap()
@@ -106,7 +106,9 @@ class GrpcStreaming : FramesBase {
       if (!isFirstHeaderFrame) {
         val unusedHeaders: MutableList<String> = ArrayList()
         for (field in httpHeaderSums.header.fields) {
-          if (field.getName().startsWith("X-PacketProxy") || field.getName().startsWith("x-trailer-")) {
+          if (
+            field.getName().startsWith("X-PacketProxy") || field.getName().startsWith("x-trailer-")
+          ) {
             continue
           }
           unusedHeaders.add(field.getName())
@@ -178,7 +180,8 @@ class GrpcStreaming : FramesBase {
   @Throws(Exception::class)
   override fun setGroupId(packet: Packet) {
     val data =
-      if (packet.getDecodedData().isNotEmpty()) packet.getDecodedData() else packet.getModifiedData()
+      if (packet.getDecodedData().isNotEmpty()) packet.getDecodedData()
+      else packet.getModifiedData()
     val http = Http.create(data)
     val streamIdStr = http.getFirstHeader("X-PacketProxy-HTTP2-Stream-Id")
     if (streamIdStr.isNotEmpty()) {

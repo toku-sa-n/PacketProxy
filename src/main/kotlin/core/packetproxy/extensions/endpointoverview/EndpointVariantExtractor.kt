@@ -96,7 +96,7 @@ object EndpointVariantExtractor {
 
   private fun extractJsonBodyFields(summary: EndpointSummary): Map<String, String> {
     val packet = summary.latestRequestPacket ?: return emptyMap()
-    val decodedData = packet.decodedData
+    val decodedData = packet.getDecodedData()
     if (decodedData.isEmpty()) {
       return emptyMap()
     }

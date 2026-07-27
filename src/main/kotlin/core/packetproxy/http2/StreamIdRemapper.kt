@@ -25,9 +25,9 @@ import packetproxy.http2.frames.FrameUtils
  *
  * <p>PacketProxy terminates the two connections independently and forwards each request only after
  * it has been fully buffered (see `Http2#filterFrames`). Concurrent requests can therefore reach
- * the server in a different order than the client opened them, which violates RFC 7540 5.1.1
- * ("The identifier of a newly established stream MUST be numerically greater than all streams that
- * the initiating endpoint has opened") and makes the server abort the connection with
+ * the server in a different order than the client opened them, which violates RFC 7540 5.1.1 ("The
+ * identifier of a newly established stream MUST be numerically greater than all streams that the
+ * initiating endpoint has opened") and makes the server abort the connection with
  * `GOAWAY(PROTOCOL_ERROR)`.
  *
  * <p>This class assigns a fresh, monotonically increasing server stream ID to each client stream in
@@ -36,7 +36,7 @@ import packetproxy.http2.frames.FrameUtils
  * connection-level frames (stream 0) and consumed control frames (WINDOW_UPDATE / RST_STREAM, kept
  * in server-ID space for flow control) are left as-is.
  */
-class StreamIdRemapper {
+open class StreamIdRemapper {
   private val clientToServer: MutableMap<Int, Int> = HashMap()
   private val serverToClient: MutableMap<Int, Int> = HashMap()
   private var nextServerStreamId = 1

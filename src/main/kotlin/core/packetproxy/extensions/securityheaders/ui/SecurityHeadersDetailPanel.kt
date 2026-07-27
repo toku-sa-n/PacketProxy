@@ -59,7 +59,7 @@ class SecurityHeadersDetailPanel(private val securityChecks: List<SecurityCheck>
       val doc = headerPane.styledDocument
       headerPane.text = ""
 
-      doc.insertString(doc.length, "${header.statusline}\n", textStyles.bold)
+      doc.insertString(doc.length, "${header.getStatusline()}\n", textStyles.bold)
 
       val headerBytes = header.toByteArray()
       val rawHeaders = String(headerBytes, Charsets.UTF_8)
@@ -107,7 +107,7 @@ class SecurityHeadersDetailPanel(private val securityChecks: List<SecurityCheck>
       isEditable = false
       background = Color.WHITE
       setEditorKit(WrapEditorKit(byteArrayOf()))
-      font = FontManager.getInstance().font
+      font = FontManager.getInstance().getFont()
     }
   }
 

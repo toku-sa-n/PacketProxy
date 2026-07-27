@@ -275,7 +275,7 @@ class SecurityHeadersExtension : Extension() {
       val results = resultsMap[key] ?: return@addListSelectionListener
 
       try {
-        val http = Http.create(p.decodedData)
+        val http = Http.create(p.getDecodedData())
         val header = http.header
 
         detailPanel!!.populateHeaders(header, results)
@@ -304,11 +304,11 @@ class SecurityHeadersExtension : Extension() {
           val requestMap = buildRequestMap(packets)
 
           for (p in packets) {
-            if (p.direction != Packet.Direction.SERVER) {
+            if (p.getDirection() != Packet.Direction.SERVER) {
               continue
             }
 
-            val req = requestMap[p.group] ?: continue
+            val req = requestMap[p.getGroup()] ?: continue
             analyzePacket(p, req)
           }
         } catch (e: Exception) {
@@ -329,8 +329,8 @@ class SecurityHeadersExtension : Extension() {
     val requestMap = mutableMapOf<Long, Packet>()
 
     for (p in packets) {
-      if (p.direction == Packet.Direction.CLIENT) {
-        requestMap[p.group] = p
+      if (p.getDirection() == Packet.Direction.CLIENT) {
+        requestMap[p.getGroup()] = p
       }
     }
 
@@ -404,11 +404,11 @@ class SecurityHeadersExtension : Extension() {
 
   private fun analyzePacket(resPacket: Packet, reqPacket: Packet) {
     try {
-      val resHttp = Http.create(resPacket.decodedData)
-      val reqHttp = Http.create(reqPacket.decodedData)
+      val resHttp = Http.create(resPacket.getDecodedData())
+      val reqHttp = Http.create(reqPacket.getDecodedData())
 
       val method = reqHttp.method
-      val host = reqHttp.header.getValue("Host").orElse(reqPacket.serverName)
+      val host = reqHttp.header.getValue("Host").orElse(reqPacket.getServerName())
       val path = reqHttp.path
       val statusCode = resHttp.statusCode
 
@@ -416,7 +416,7 @@ class SecurityHeadersExtension : Extension() {
         return
       }
 
-      val url = (if (reqPacket.useSSL) "https://" else "http://") + host + path
+      val url = (if (reqPacket.getUseSSL()) "https://" else "http://") + host + path
 
       // Calculate security check results (pure function)
       val results = calculateSecurityResults(resHttp.header, reqHttp.header)

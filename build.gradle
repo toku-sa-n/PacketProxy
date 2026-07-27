@@ -32,6 +32,7 @@ dependencies {
   testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
 
   testImplementation 'org.junit.jupiter:junit-jupiter:6.0.0'
+  testImplementation "org.jetbrains.kotlin:kotlin-test"
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
   testRuntimeOnly 'org.jetbrains.kotlin:kotlin-reflect:2.2.21'
   testImplementation 'org.assertj:assertj-core:3.23.1'
@@ -268,8 +269,25 @@ sourceSets {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 jmh {
   fork = 2
+}
+
+sourceSets.jmh {
+  java.srcDirs = []
+  kotlin.srcDirs = ['src/jmh/kotlin']
 }
 
 jar {

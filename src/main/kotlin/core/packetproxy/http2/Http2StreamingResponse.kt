@@ -30,7 +30,7 @@ import packetproxy.model.Packet
 import packetproxy.model.Packets
 import packetproxy.util.Logging.errWithStackTrace
 
-class Http2StreamingResponse : FramesBase {
+open class Http2StreamingResponse : FramesBase {
   private val clientStreamManager = StreamManager()
   private val serverStreamManager = StreamManager()
   private val stream = StreamManager()
@@ -74,7 +74,8 @@ class Http2StreamingResponse : FramesBase {
               val http = Http.create(data.toByteArray())
               if (http.body.isNotEmpty()) {
                 val packets =
-                  Packets.getInstance().queryFullText(http.getFirstHeader("X-PacketProxy-HTTP2-UUID"))
+                  Packets.getInstance()
+                    .queryFullText(http.getFirstHeader("X-PacketProxy-HTTP2-UUID"))
                 for (packet in packets) {
                   val p = Packets.getInstance().query(packet.getId())!!
                   p.setDecodedData(http.toByteArray())
@@ -123,10 +124,12 @@ class Http2StreamingResponse : FramesBase {
   }
 
   @Throws(Exception::class)
-  override fun decodeClientRequestFromFrames(frames: ByteArray): ByteArray = decodeFromFrames(frames)
+  override fun decodeClientRequestFromFrames(frames: ByteArray): ByteArray =
+    decodeFromFrames(frames)
 
   @Throws(Exception::class)
-  override fun decodeServerResponseFromFrames(frames: ByteArray): ByteArray = decodeFromFrames(frames)
+  override fun decodeServerResponseFromFrames(frames: ByteArray): ByteArray =
+    decodeFromFrames(frames)
 
   @Throws(Exception::class)
   private fun decodeFromFrames(frames: ByteArray): ByteArray {
@@ -172,7 +175,8 @@ class Http2StreamingResponse : FramesBase {
   @Throws(Exception::class)
   override fun setGroupId(packet: Packet) {
     val data =
-      if (packet.getDecodedData().isNotEmpty()) packet.getDecodedData() else packet.getModifiedData()
+      if (packet.getDecodedData().isNotEmpty()) packet.getDecodedData()
+      else packet.getModifiedData()
     val http = Http.create(data)
     val streamIdStr = http.getFirstHeader("X-PacketProxy-HTTP2-Stream-Id")
     if (streamIdStr.isNotEmpty()) {

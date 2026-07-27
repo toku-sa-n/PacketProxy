@@ -33,24 +33,24 @@ fun copyBody(data: ByteArray) {
 
 fun copyUrl(data: ByteArray, packet: Packet) {
   val http = Http.create(data)
-  copyToClipboard(http.getURL(packet.serverPort, packet.useSSL))
+  copyToClipboard(http.getURL(packet.getServerPort(), packet.getUseSSL()))
 }
 
-internal fun formatMethodUrlBody(data: ByteArray, packet: Packet): String {
+fun formatMethodUrlBody(data: ByteArray, packet: Packet): String {
   val http = Http.create(data)
   return http.method +
     "\t" +
-    http.getURL(packet.serverPort, packet.useSSL) +
+    http.getURL(packet.getServerPort(), packet.getUseSSL()) +
     "\t" +
     decodeHttpBody(http.body)
 }
 
 private fun decodeHttpBody(body: ByteArray): String {
   val charsetUtility = CharSetUtility.getInstance()
-  if (charsetUtility.isAuto) {
+  if (charsetUtility.isAuto()) {
     charsetUtility.setGuessedCharSet(body)
   }
-  return String(body, Charset.forName(charsetUtility.charSet))
+  return String(body, Charset.forName(charsetUtility.getCharSet()))
 }
 
 private fun copyToClipboard(text: String) {

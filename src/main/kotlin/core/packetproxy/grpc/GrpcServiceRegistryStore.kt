@@ -52,7 +52,7 @@ class GrpcServiceRegistryStore private constructor() {
         server = tryResolveServerViaListenPort(port, ListenPorts.getInstance())
       }
       if (server == null) return null
-      val path = server.descriptorPath?.trim().takeUnless { it.isNullOrEmpty() } ?: return null
+      val path = server.getDescriptorPath()?.trim().takeUnless { it.isNullOrEmpty() } ?: return null
       val f = File(path)
       if (!f.isFile()) return null
       get(f)

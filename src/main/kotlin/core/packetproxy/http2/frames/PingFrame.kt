@@ -15,9 +15,11 @@
  */
 package packetproxy.http2.frames
 
-class PingFrame : Frame {
+open class PingFrame : Frame {
   @Throws(Exception::class) constructor(frame: Frame) : super(frame)
+
   @Throws(Exception::class) constructor(data: ByteArray) : super(data)
+
   companion object {
     @JvmField val TYPE: Type = Type.PING
   }

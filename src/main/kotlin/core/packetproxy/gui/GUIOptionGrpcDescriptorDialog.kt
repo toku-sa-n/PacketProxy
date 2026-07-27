@@ -167,7 +167,7 @@ class GUIOptionGrpcDescriptorDialog(
       chooser.addChoosableFileFilter(FileNameExtensionFilter("Protocol Buffers (*.proto)", "proto"))
       chooser.setAcceptAllFileFilterUsed(false)
       if (chooser.showOpenDialog(this) == NativeFileChooser.APPROVE_OPTION) {
-        val f = chooser.selectedFile
+        val f = chooser.getSelectedFile()
         if (f != null && protoSet.addFile(f)) {
           protoTableModel.addRow(arrayOf(f.absolutePath))
         }
@@ -187,7 +187,7 @@ class GUIOptionGrpcDescriptorDialog(
       val chooser = NativeFileChooser()
       chooser.setDialogTitle(I18nString.get("Select directory"))
       if (chooser.showDirectoryDialog(this) == NativeFileChooser.APPROVE_OPTION) {
-        val dir = chooser.selectedFile
+        val dir = chooser.getSelectedFile()
         if (dir != null && dir.isDirectory) {
           val n = protoSet.addDirectoryShallow(dir)
           if (n == 0) {
@@ -293,7 +293,7 @@ class GUIOptionGrpcDescriptorDialog(
       chooser.addChoosableFileFilter(FileNameExtensionFilter("Descriptor set (*.desc)", "desc"))
       chooser.setAcceptAllFileFilterUsed(true)
       if (chooser.showOpenDialog(this) == NativeFileChooser.APPROVE_OPTION) {
-        val f = chooser.selectedFile
+        val f = chooser.getSelectedFile()
         if (f != null && f.isFile) {
           workingPath = f.absolutePath
           updatePathLabel()

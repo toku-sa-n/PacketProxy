@@ -17,7 +17,7 @@ package packetproxy.http2.frames
 
 import java.nio.ByteBuffer
 
-class SettingsFrame : Frame {
+open class SettingsFrame : Frame {
   enum class SettingsFrameType {
     RESERVED,
     SETTINGS_HEADER_TABLE_SIZE,
@@ -30,8 +30,15 @@ class SettingsFrame : Frame {
 
   private val values: MutableMap<SettingsFrameType, Int> = HashMap()
 
-  @Throws(Exception::class) constructor(frame: Frame) : super(frame) { parsePayload() }
-  @Throws(Exception::class) constructor(data: ByteArray) : super(data) { parsePayload() }
+  @Throws(Exception::class)
+  constructor(frame: Frame) : super(frame) {
+    parsePayload()
+  }
+
+  @Throws(Exception::class)
+  constructor(data: ByteArray) : super(data) {
+    parsePayload()
+  }
 
   @Throws(Exception::class)
   private fun parsePayload() {
