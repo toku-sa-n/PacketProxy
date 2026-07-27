@@ -34,7 +34,7 @@ class GUIBulkSender private constructor() {
   private fun createSendPanel(): JComponent {
     sendData =
       GUIBulkSenderData(
-        requireNotNull(owner),
+        owner,
         GUIBulkSenderData.Type.CLIENT,
         Consumer { sendPackets[selectedSendPacketId]?.setData(it) },
       )
@@ -75,7 +75,7 @@ class GUIBulkSender private constructor() {
   private fun createRecvPanel(): JComponent {
     recvData =
       GUIBulkSenderData(
-        requireNotNull(owner),
+        owner,
         GUIBulkSenderData.Type.SERVER,
         Consumer { recvPackets[selectedRecvPacketId]?.setData(it) },
       )

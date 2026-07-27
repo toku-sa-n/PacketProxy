@@ -5,7 +5,7 @@ import javax.swing.*
 import javax.swing.event.ChangeListener
 import packetproxy.util.Logging.errWithStackTrace
 
-class GUIBulkSenderData(owner: JFrame, type: Type, private var onChanged: Consumer<ByteArray>) {
+class GUIBulkSenderData(owner: JFrame?, type: Type, private var onChanged: Consumer<ByteArray>) {
   enum class Type {
     CLIENT,
     SERVER,

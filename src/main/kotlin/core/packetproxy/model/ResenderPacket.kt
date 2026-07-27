@@ -9,34 +9,35 @@ import java.net.InetSocketAddress
 class ResenderPacket {
   @field:DatabaseField(generatedId = true) private var id = 0
 
-  @field:DatabaseField(uniqueCombo = true) private var resendsIndex = 0
+  @field:DatabaseField(columnName = "resends_index", uniqueCombo = true)
+  private var resendsIndex = 0
 
-  @field:DatabaseField(uniqueCombo = true) private var resendIndex = 0
+  @field:DatabaseField(columnName = "resend_index", uniqueCombo = true) private var resendIndex = 0
 
   @field:DatabaseField(dataType = DataType.ENUM_STRING, uniqueCombo = true)
   private var direction: Packet.Direction? = null
 
   @field:DatabaseField(dataType = DataType.BYTE_ARRAY) private var data: ByteArray? = null
 
-  @field:DatabaseField private var listenPort = 0
+  @field:DatabaseField(columnName = "listen_port") private var listenPort = 0
 
-  @field:DatabaseField private var clientIp: String? = null
+  @field:DatabaseField(columnName = "client_ip") private var clientIp: String? = null
 
-  @field:DatabaseField private var clientPort = 0
+  @field:DatabaseField(columnName = "client_port") private var clientPort = 0
 
-  @field:DatabaseField private var serverIp: String? = null
+  @field:DatabaseField(columnName = "server_ip") private var serverIp: String? = null
 
-  @field:DatabaseField private var serverPort = 0
+  @field:DatabaseField(columnName = "server_port") private var serverPort = 0
 
-  @field:DatabaseField private var serverName: String? = null
+  @field:DatabaseField(columnName = "server_name") private var serverName: String? = null
 
-  @field:DatabaseField private var useSsl = false
+  @field:DatabaseField(columnName = "use_ssl") private var useSsl = false
 
-  @field:DatabaseField private var encoderName: String? = null
+  @field:DatabaseField(columnName = "encoder_name") private var encoderName: String? = null
 
   @field:DatabaseField private var alpn: String? = null
 
-  @field:DatabaseField private var autoModified = false
+  @field:DatabaseField(columnName = "auto_modified") private var autoModified = false
 
   @field:DatabaseField private var conn = 0
 
