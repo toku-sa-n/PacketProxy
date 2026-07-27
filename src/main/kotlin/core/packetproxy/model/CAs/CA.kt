@@ -108,7 +108,7 @@ abstract class CA {
   }
 
   @Throws(Exception::class)
-  fun createKeyStore(commonName: String, domainNames: Array<String>): KeyStore {
+  open fun createKeyStore(commonName: String, domainNames: Array<String>): KeyStore {
     /* シリアルナンバーの設定 */
     val digest = MessageDigest.getInstance("MD5")
     val hash = digest.digest(commonName.toByteArray())

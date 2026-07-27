@@ -20,7 +20,7 @@ import net.arnx.jsonic.JSON
 import packetproxy.common.GRPCMessage
 import packetproxy.http.Http
 
-class EncodeGRPCWeb @Throws(Exception::class) constructor(ALPN: String?) : EncodeHTTPBase(ALPN) {
+open class EncodeGRPCWeb @Throws(Exception::class) constructor(ALPN: String?) : EncodeHTTPBase(ALPN) {
   override fun getName(): String = "gRPC-Web"
 
   @Throws(Exception::class)
