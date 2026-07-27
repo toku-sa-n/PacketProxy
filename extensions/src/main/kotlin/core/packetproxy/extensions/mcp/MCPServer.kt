@@ -9,11 +9,10 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.PrintWriter
-import java.util.function.Consumer
 import packetproxy.extensions.mcp.tools.ToolRegistry
 import packetproxy.util.Logging.log
 
-class MCPServer(private val logger: Consumer<String>) {
+class MCPServer(private val logger: (LogLevel, String) -> Unit) {
 
   private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
   private val toolRegistry = ToolRegistry()
@@ -24,7 +23,7 @@ class MCPServer(private val logger: Consumer<String>) {
   @Throws(IOException::class)
   fun run() {
     running = true
-    logger.accept("MCP Server listening on stdin/stdout")
+    logInfo("MCP Server listening on stdin/stdout")
 
     while (running) {
       try {
@@ -38,10 +37,10 @@ class MCPServer(private val logger: Consumer<String>) {
           continue
         }
 
-        logger.accept("Received: $line")
+        logInfo("Received: $line")
         processRequest(line)
       } catch (e: Exception) {
-        logger.accept("Error processing request: " + e.message)
+        logError("Error processing request: " + e.message)
         log("MCP Server error: " + e.message)
         e.printStackTrace()
       }
@@ -79,7 +78,7 @@ class MCPServer(private val logger: Consumer<String>) {
       error.addProperty("message", "Internal error: " + e.message)
       response.add("error", error)
       // Don't throw exception - return error response instead
-      logger.accept("Method error: " + e.message)
+      logError("Method error: " + e.message)
     }
 
     return response
@@ -111,12 +110,12 @@ class MCPServer(private val logger: Consumer<String>) {
         error.addProperty("code", -32603)
         error.addProperty("message", "Internal error: " + e.message)
         response.add("error", error)
-        logger.accept("Method error: " + e.message)
+        logError("Method error: " + e.message)
       }
 
       var responseString = gson.toJson(response)
       writer.println(responseString)
-      logger.accept("Sent: $responseString")
+      logInfo("Sent: $responseString")
     } catch (e: Exception) {
       // Invalid JSON request
       var errorResponse = JsonObject()
@@ -140,7 +139,7 @@ class MCPServer(private val logger: Consumer<String>) {
       errorResponse.add("error", error)
 
       writer.println(gson.toJson(errorResponse))
-      logger.accept("Parse error: " + e.message)
+      logError("Parse error: " + e.message)
     }
   }
 
@@ -172,7 +171,7 @@ class MCPServer(private val logger: Consumer<String>) {
     result.addProperty("protocolVersion", "2024-11-05")
     result.add("serverInfo", serverInfo)
 
-    logger.accept("Client initialized")
+    logInfo("Client initialized")
     return result
   }
 
@@ -214,5 +213,13 @@ class MCPServer(private val logger: Consumer<String>) {
     var prompts = arrayOf<JsonObject>()
     result.add("prompts", gson.toJsonTree(prompts))
     return result
+  }
+
+  private fun logInfo(message: String) {
+    logger(LogLevel.INFO, message)
+  }
+
+  private fun logError(message: String) {
+    logger(LogLevel.ERROR, message)
   }
 }

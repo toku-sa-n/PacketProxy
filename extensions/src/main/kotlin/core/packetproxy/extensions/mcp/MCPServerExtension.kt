@@ -1,9 +1,11 @@
 package packetproxy.extensions.mcp
 
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpHandler
 import com.sun.net.httpserver.HttpServer
+import java.awt.Color
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import java.io.IOException
@@ -19,20 +21,33 @@ import javax.swing.JLabel
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JScrollPane
-import javax.swing.JTextArea
+import javax.swing.JTextPane
 import javax.swing.SwingUtilities
+import javax.swing.text.BadLocationException
+import javax.swing.text.SimpleAttributeSet
+import javax.swing.text.StyleConstants
+import javax.swing.text.StyledDocument
 import packetproxy.model.Extension
 import packetproxy.util.Logging.log
+
+enum class LogLevel {
+  INFO,
+  WARN,
+  ERROR,
+}
 
 class MCPServerExtension : Extension {
   private var server: MCPServer? = null
   private var httpServer: HttpServer? = null
-  private var logArea: JTextArea? = null
+  private var logArea: JTextPane? = null
   private var startButton: JButton? = null
   private var stopButton: JButton? = null
   private var maskTokenCheckBox: JCheckBox? = null
   private var isRunning = false
-  private val logMessages: MutableList<String> = ArrayList()
+  private val logMessages: MutableList<LogEntry> = ArrayList()
+  private val prettyGson = GsonBuilder().setPrettyPrinting().create()
+
+  private data class LogEntry(val timestamp: Date, val level: LogLevel, val message: String)
 
   constructor() : super() {
     this.setName("MCP Server")
@@ -91,9 +106,10 @@ class MCPServerExtension : Extension {
     statusPanel.add(maskTokenCheckBox)
 
     // Log area
-    logArea = JTextArea(20, 80)
+    logArea = JTextPane()
     logArea!!.setEditable(false)
     var scrollPane = JScrollPane(logArea)
+    scrollPane.verticalScrollBar.unitIncrement = 16
 
     panel.add(statusPanel)
     panel.add(JLabel("Server Logs:"))
@@ -112,7 +128,7 @@ class MCPServerExtension : Extension {
     }
 
     try {
-      server = MCPServer { message -> addLog(message) }
+      server = MCPServer { level, message -> addLog(message, level) }
 
       // Start HTTP server for MCP
       httpServer = HttpServer.create(InetSocketAddress(HTTP_PORT), 0)
@@ -124,7 +140,7 @@ class MCPServerExtension : Extension {
         try {
           server!!.run()
         } catch (e: Exception) {
-          addLog("Server error: " + e.message)
+          addLog("Server error: " + e.message, LogLevel.ERROR)
           e.printStackTrace()
         }
       }
@@ -138,7 +154,7 @@ class MCPServerExtension : Extension {
       addLog("HTTP endpoint available at http://localhost:$HTTP_PORT/mcp")
       log("MCP Server started with HTTP endpoint on port $HTTP_PORT")
     } catch (e: Exception) {
-      addLog("Failed to start server: " + e.message)
+      addLog("Failed to start server: " + e.message, LogLevel.ERROR)
       e.printStackTrace()
     }
   }
@@ -165,36 +181,78 @@ class MCPServerExtension : Extension {
       addLog("MCP Server stopped")
       log("MCP Server stopped")
     } catch (e: Exception) {
-      addLog("Failed to stop server: " + e.message)
+      addLog("Failed to stop server: " + e.message, LogLevel.ERROR)
       e.printStackTrace()
     }
   }
 
-  private fun addLog(message: String) {
-    synchronized(logMessages) { logMessages.add(message) }
+  private fun addLog(message: String, level: LogLevel = LogLevel.INFO) {
+    var entry = LogEntry(Date(), level, message)
+    synchronized(logMessages) { logMessages.add(entry) }
     if (logArea != null) {
-      SwingUtilities.invokeLater {
-        var displayMessage =
-          if (maskTokenCheckBox!!.isSelected) maskAccessToken(message) else message
-        logArea!!.append("[" + Date() + "] " + displayMessage + "\n")
-        logArea!!.setCaretPosition(logArea!!.getDocument().getLength())
+      SwingUtilities.invokeLater { appendStyledEntry(entry) }
+    }
+  }
+
+  private fun appendStyledEntry(entry: LogEntry) {
+    var area = logArea ?: return
+    try {
+      var doc: StyledDocument = area.styledDocument
+      var displayMessage =
+        if (maskTokenCheckBox!!.isSelected) maskAccessToken(entry.message) else entry.message
+      var prefix = "[${entry.timestamp}] [${entry.level}] "
+      var body = displayMessage + "\n"
+
+      var prefixAttrs = SimpleAttributeSet()
+      StyleConstants.setForeground(prefixAttrs, PREFIX_COLOR)
+      StyleConstants.setBold(prefixAttrs, true)
+
+      var bodyAttrs = styleForLevel(entry.level)
+
+      doc.insertString(doc.length, prefix, prefixAttrs)
+      doc.insertString(doc.length, body, bodyAttrs)
+      area.setCaretPosition(doc.length)
+    } catch (_: BadLocationException) {}
+  }
+
+  private fun styleForLevel(level: LogLevel): SimpleAttributeSet {
+    var attrs = SimpleAttributeSet()
+    when (level) {
+      LogLevel.ERROR -> {
+        StyleConstants.setBackground(attrs, ERROR_BG)
+        StyleConstants.setBold(attrs, true)
+      }
+      LogLevel.WARN -> {
+        StyleConstants.setForeground(attrs, WARN_FG)
+      }
+      LogLevel.INFO -> {
+        // default foreground
       }
     }
+    return attrs
   }
 
   private fun refreshLogDisplay() {
     if (logArea != null) {
       SwingUtilities.invokeLater {
-        logArea!!.setText("")
-        synchronized(logMessages) {
-          for (message in logMessages) {
-            var displayMessage =
-              if (maskTokenCheckBox!!.isSelected) maskAccessToken(message) else message
-            logArea!!.append("[" + Date() + "] " + displayMessage + "\n")
+        try {
+          var doc: StyledDocument = logArea!!.styledDocument
+          doc.remove(0, doc.length)
+          synchronized(logMessages) {
+            for (entry in logMessages) {
+              appendStyledEntry(entry)
+            }
           }
-        }
-        logArea!!.setCaretPosition(logArea!!.getDocument().getLength())
+        } catch (_: BadLocationException) {}
       }
+    }
+  }
+
+  private fun prettyPrintJson(raw: String): String {
+    return try {
+      prettyGson.toJson(JsonParser.parseString(raw))
+    } catch (_: Exception) {
+      raw
     }
   }
 
@@ -239,7 +297,7 @@ class MCPServerExtension : Extension {
         // Read request body
         var requestBodyStream = exchange.getRequestBody()
         var requestBody = String(requestBodyStream.readBytes(), StandardCharsets.UTF_8)
-        addLog("Request body: $requestBody")
+        addLog("Request body:\n" + prettyPrintJson(requestBody))
 
         // Process MCP request if server is available
         var responseBody: String
@@ -248,9 +306,9 @@ class MCPServerExtension : Extension {
             var request = JsonParser.parseString(requestBody).getAsJsonObject()
             var result = server!!.processTestRequest(request)
             responseBody = result.toString()
-            addLog("Response: $responseBody")
+            addLog("Response:\n" + prettyPrintJson(responseBody))
           } catch (e: Exception) {
-            addLog("Error processing request: " + e.message)
+            addLog("Error processing request: " + e.message, LogLevel.ERROR)
             responseBody =
               "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32603,\"message\":\"Internal error: " +
                 e.message +
@@ -271,7 +329,7 @@ class MCPServerExtension : Extension {
         os.write(responseBody.toByteArray(StandardCharsets.UTF_8))
         os.close()
       } catch (e: Exception) {
-        addLog("HTTP handler error: " + e.message)
+        addLog("HTTP handler error: " + e.message, LogLevel.ERROR)
         var errorResponse =
           "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32700,\"message\":\"Parse error\"},\"id\":null}"
         exchange.sendResponseHeaders(500, errorResponse.length.toLong())
@@ -284,5 +342,8 @@ class MCPServerExtension : Extension {
 
   companion object {
     private const val HTTP_PORT = 8765
+    private val ERROR_BG = Color(240, 150, 150)
+    private val WARN_FG = Color(180, 100, 0)
+    private val PREFIX_COLOR = Color(100, 100, 100)
   }
 }
