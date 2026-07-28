@@ -52,4 +52,17 @@ class ModelServices(val database: Database, restorePackets: Boolean) {
   val certCacheManager = CertCacheManager()
   val caFactory = CAFactory()
   val recentProjectsStore = RecentProjectsStore()
+
+  companion object {
+    @Volatile private var installed: ModelServices? = null
+
+    fun install(services: ModelServices) {
+      check(installed == null) { "ModelServices has already been installed." }
+      installed = services
+    }
+
+    @JvmStatic
+    fun require(): ModelServices =
+      checkNotNull(installed) { "ModelServices.install() must be called first." }
+  }
 }

@@ -101,7 +101,7 @@ open class ListenPort {
     this.ca_name = ca.getName()
   }
 
-  fun getCA(): Optional<CA> = CAFactory().find(this.ca_name)
+  fun getCA(): Optional<CA> = ModelServices.require().caFactory.find(this.ca_name)
 
   fun getPort(): Int = this.port
 

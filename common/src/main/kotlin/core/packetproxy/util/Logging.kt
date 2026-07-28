@@ -180,11 +180,11 @@ class Logging {
   }
 
   companion object {
-    fun log(format: Any, vararg args: Any?) = packetproxy.util.log(format, *args)
+    @JvmStatic fun log(format: Any, vararg args: Any?) = packetproxy.util.log(format, *args)
 
-    fun err(format: Any, vararg args: Any?) = packetproxy.util.err(format, *args)
+    @JvmStatic fun err(format: Any, vararg args: Any?) = packetproxy.util.err(format, *args)
 
-    fun errWithStackTrace(e: Throwable) = packetproxy.util.errWithStackTrace(e)
+    @JvmStatic fun errWithStackTrace(e: Throwable) = packetproxy.util.errWithStackTrace(e)
   }
 }
 

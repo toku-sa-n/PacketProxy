@@ -49,6 +49,7 @@ class AppInitializer private constructor() {
     if (dbPath != null) {
       services.database.openAt(dbPath)
     }
+    ModelServices.install(services)
     modelServices = services
     coreServices = CoreServices(services, logging)
     logging.logInternal("Databaseを初期化しました: ${services.database.getDatabasePath()}")
