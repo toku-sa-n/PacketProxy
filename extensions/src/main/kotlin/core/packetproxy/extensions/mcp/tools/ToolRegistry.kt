@@ -24,6 +24,7 @@ class ToolRegistry {
     registerTool(BulkSendTool())
     registerTool(VulCheckHelperTool())
     registerTool(JobStatusTool())
+    registerTool(CreateResenderTabHttp2Tool())
   }
 
   fun registerTool(tool: MCPTool) {
