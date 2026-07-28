@@ -106,6 +106,7 @@ subprojects {
   tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperty "file.encoding", "UTF-8"
+    workingDir = rootProject.projectDir
   }
 
   dependencies {
