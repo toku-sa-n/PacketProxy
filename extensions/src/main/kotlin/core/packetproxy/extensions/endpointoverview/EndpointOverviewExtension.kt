@@ -18,6 +18,7 @@ package packetproxy.extensions.endpointoverview
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.FlowLayout
+import java.awt.event.HierarchyEvent
 import java.beans.PropertyChangeListener
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
@@ -30,6 +31,7 @@ import javax.swing.JSplitPane
 import javax.swing.JTextField
 import javax.swing.JTree
 import javax.swing.SwingUtilities
+import javax.swing.Timer
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.event.TreeSelectionEvent
@@ -66,6 +68,8 @@ class EndpointOverviewExtension : Extension(), CoreServiceExtension, GuiServiceE
   private lateinit var sendButton: JButton
   private var endpoints: Collection<EndpointSummary> = emptyList()
   private var sessionProfileListener: PropertyChangeListener? = null
+  private var packetsListener: PropertyChangeListener? = null
+  private var scanDebounceTimer: Timer? = null
   private lateinit var packets: Packets
   private lateinit var sessionProfiles: SessionProfiles
   private lateinit var guiMain: GUIMain
@@ -102,6 +106,7 @@ class EndpointOverviewExtension : Extension(), CoreServiceExtension, GuiServiceE
     panel.add(createToolbar(), BorderLayout.NORTH)
     panel.add(mainSplit, BorderLayout.CENTER)
 
+    setupPacketsLiveUpdate(panel)
     scanHistory()
 
     return panel
@@ -201,10 +206,6 @@ class EndpointOverviewExtension : Extension(), CoreServiceExtension, GuiServiceE
     val toolbar = JPanel(BorderLayout())
 
     val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-    val scanButton = JButton(i18nString("Scan History"))
-    scanButton.addActionListener { scanHistory() }
-    buttonPanel.add(scanButton)
-
     val clearButton = JButton(i18nString("Clear"))
     clearButton.addActionListener { clearTree() }
     buttonPanel.add(clearButton)
@@ -322,6 +323,41 @@ class EndpointOverviewExtension : Extension(), CoreServiceExtension, GuiServiceE
       filterField.text = ""
       variantPanel.clear()
       updateSendButtonState()
+    }
+  }
+
+  private fun setupPacketsLiveUpdate(panel: JPanel) {
+    if (packetsListener == null) {
+      packetsListener = PropertyChangeListener { scheduleScanHistory() }
+      packets.addPropertyChangeListener(packetsListener!!)
+    }
+    panel.addHierarchyListener { event ->
+      if (
+        event.changeFlags and HierarchyEvent.DISPLAYABILITY_CHANGED.toLong() != 0L &&
+          !panel.isDisplayable
+      ) {
+        teardownPacketsLiveUpdate()
+      }
+    }
+  }
+
+  private fun teardownPacketsLiveUpdate() {
+    packetsListener?.let { packets.removePropertyChangeListener(it) }
+    packetsListener = null
+    scanDebounceTimer?.stop()
+    scanDebounceTimer = null
+  }
+
+  private fun scheduleScanHistory() {
+    SwingUtilities.invokeLater {
+      val timer =
+        scanDebounceTimer
+          ?: Timer(400) { scanHistory() }
+            .also {
+              it.isRepeats = false
+              scanDebounceTimer = it
+            }
+      timer.restart()
     }
   }
 
