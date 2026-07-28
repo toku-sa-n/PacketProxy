@@ -54,7 +54,8 @@ abstract class FramesBase {
 
   open fun getName(): String = "HTTP2 Frames Base"
 
-  @Throws(Exception::class) fun checkDelimiter(data: ByteArray): Int = checkDelimiter(data)
+  @Throws(Exception::class)
+  fun checkDelimiter(data: ByteArray): Int = packetproxy.http2.frames.checkDelimiter(data)
 
   @Throws(Exception::class)
   fun clientRequestArrived(frames: ByteArray) {
