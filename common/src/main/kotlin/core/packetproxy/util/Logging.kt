@@ -180,6 +180,12 @@ class Logging {
   }
 
   companion object {
+    /** Registers the application-scoped [Logging] used by process-wide fallback helpers. */
+    @JvmStatic
+    fun installFallback(instance: Logging) {
+      processWideLogging = instance
+    }
+
     @JvmStatic fun log(format: Any, vararg args: Any?) = packetproxy.util.log(format, *args)
 
     @JvmStatic fun err(format: Any, vararg args: Any?) = packetproxy.util.err(format, *args)
@@ -188,20 +194,42 @@ class Logging {
   }
 }
 
-/** Process-wide fallback for code paths that have not received an application-scoped [Logging]. */
+/**
+ * Process-wide fallback for code paths that have not received an application-scoped [Logging]. When
+ * [Logging.installFallback] has been called, messages reach the UI [LogSink].
+ */
 fun log(format: Any, vararg args: Any?) {
+  var instance = processWideLogging
+  if (instance != null) {
+    instance.logInternal(format, *args)
+    return
+  }
   LoggerFactory.getLogger("").warn(formatForFallback(format, *args))
 }
 
 fun err(format: Any, vararg args: Any?) {
+  var instance = processWideLogging
+  if (instance != null) {
+    instance.errInternal(format, *args)
+    return
+  }
   LoggerFactory.getLogger("")
     .error(Ansi.ansi().fg(RED).a(formatForFallback(format, *args)).reset().toString())
 }
 
-fun errWithStackTrace(e: Throwable) = err(e.stackTraceToString())
+fun errWithStackTrace(e: Throwable) {
+  var instance = processWideLogging
+  if (instance != null) {
+    instance.errWithStackTraceInternal(e)
+    return
+  }
+  err(e.stackTraceToString())
+}
 
-/** A logging sink is application-scoped; callers without one have no retained log text. */
-fun getLogText(): String = ""
+/** Returns retained log text from the installed [Logging] sink, or empty if none is installed. */
+fun getLogText(): String = processWideLogging?.getLogTextInternal() ?: ""
+
+@Volatile private var processWideLogging: Logging? = null
 
 private fun formatForFallback(format: Any, vararg args: Any?): String =
   if (format is String && args.isNotEmpty()) {

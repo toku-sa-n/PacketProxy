@@ -24,7 +24,7 @@ import packetproxy.util.Logging
 class AppInitializer private constructor() {
   private var isGulp = false // Gulp modeか否か
   private var settingsPath = "" // 設定用JSONのファイルpath
-  val logging = Logging()
+  val logging = Logging().also { Logging.installFallback(it) }
   private var modelServices: ModelServices? = null
   private var coreServices: CoreServices? = null
 
