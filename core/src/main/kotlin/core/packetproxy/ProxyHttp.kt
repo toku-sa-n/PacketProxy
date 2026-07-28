@@ -58,7 +58,7 @@ constructor(
             override fun onChunkReceived(data: ByteArray): ByteArray {
               var result = ByteArray(0)
               synchronized(client_loopback) {
-                val http = Http.create(data)
+                val http = Http.create(data, modelServices.resolutions)
 
                 if (http.method == "CONNECT") {
                   // HTTP2対応の都合上、ALPNを早期に確定する必要がある。
