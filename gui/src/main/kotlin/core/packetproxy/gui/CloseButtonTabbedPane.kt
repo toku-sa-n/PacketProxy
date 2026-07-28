@@ -15,7 +15,7 @@ import javax.swing.JPanel
 import javax.swing.JTabbedPane
 import javax.swing.UIManager
 
-class CloseButtonTabbedPane : JTabbedPane() {
+open class CloseButtonTabbedPane : JTabbedPane() {
   private val closeIcon = ImageIcon(javaClass.getResource("/gui/close.png"))
   private val mouseoveredIcon = ImageIcon(javaClass.getResource("/gui/close_mouseovered.png"))
 
