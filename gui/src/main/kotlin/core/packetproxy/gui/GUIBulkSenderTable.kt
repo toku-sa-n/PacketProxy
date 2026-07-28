@@ -4,9 +4,14 @@ import java.util.function.Consumer
 import javax.swing.*
 import packetproxy.model.OneShotPacket
 import packetproxy.model.OptionTableModel
+import packetproxy.model.PacketSummarizer
 import packetproxy.model.RegexParam
 
-class GUIBulkSenderTable(private var type: Type, private var onSelected: Consumer<Int>) {
+class GUIBulkSenderTable(
+  private var type: Type,
+  private var packetSummarizer: PacketSummarizer,
+  private var onSelected: Consumer<Int>,
+) {
   enum class Type {
     CLIENT,
     SERVER,
@@ -41,7 +46,8 @@ class GUIBulkSenderTable(private var type: Type, private var onSelected: Consume
     model.addRow(
       arrayOf(
         packet.getId(),
-        if (type == Type.CLIENT) packet.getSummarizedRequest() else packet.getSummarizedResponse(),
+        if (type == Type.CLIENT) packet.getSummarizedRequest(packetSummarizer)
+        else packet.getSummarizedResponse(packetSummarizer),
       )
     )
   }

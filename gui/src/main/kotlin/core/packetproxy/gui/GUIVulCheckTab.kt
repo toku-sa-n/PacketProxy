@@ -54,6 +54,7 @@ class GUIVulCheckTab(
     sendData = TabSet(main, true, false)
     sendTable =
       GUIVulCheckSendTable(
+        main.coreServices.encoderManager.packetSummarizer,
         { generator ->
           selectedGeneratorName = generator
           manager.findVulCheckPattern(generator).let {
@@ -82,9 +83,10 @@ class GUIVulCheckTab(
 
   private fun createRecvPanel(): JComponent {
     recvData = TabSet(main, true, false)
-    recvTable = GUIVulCheckRecvTable { id ->
-      recvPackets[id]?.let { recvData.setData(it.getData()) }
-    }
+    recvTable =
+      GUIVulCheckRecvTable(main.coreServices.encoderManager.packetSummarizer) { id ->
+        recvPackets[id]?.let { recvData.setData(it.getData()) }
+      }
     return JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
       add(recvTable.createPanel())
       add(recvData.tabPanel)

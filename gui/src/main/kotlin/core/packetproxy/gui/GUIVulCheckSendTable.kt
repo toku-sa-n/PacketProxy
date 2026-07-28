@@ -5,9 +5,11 @@ import java.util.function.Function
 import javax.swing.*
 import packetproxy.model.OneShotPacket
 import packetproxy.model.OptionTableModel
+import packetproxy.model.PacketSummarizer
 import packetproxy.util.errWithStackTrace
 
 class GUIVulCheckSendTable(
+  private var packetSummarizer: PacketSummarizer,
   private var onSelected: Consumer<String>,
   private var onEnabled: Function<String, Boolean>,
   private var onDisabled: Function<String, Boolean>,
@@ -65,7 +67,7 @@ class GUIVulCheckSendTable(
       arrayOf(
         enabled,
         name,
-        packet.getSummarizedRequest(),
+        packet.getSummarizedRequest(packetSummarizer),
         packet.getData().size,
         packet.getEncoder(),
         packet.getAlpn(),
@@ -75,7 +77,7 @@ class GUIVulCheckSendTable(
 
   fun setRow(name: String, packet: OneShotPacket) {
     for (i in 0 until table.rowCount) if (table.getValueAt(i, 1) == name) {
-      table.setValueAt(packet.getSummarizedRequest(), i, 2)
+      table.setValueAt(packet.getSummarizedRequest(packetSummarizer), i, 2)
       table.setValueAt(packet.getData().size, i, 3)
       table.setValueAt(packet.getEncoder(), i, 4)
       table.setValueAt(packet.getAlpn(), i, 5)

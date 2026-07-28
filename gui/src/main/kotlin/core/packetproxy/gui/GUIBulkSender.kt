@@ -41,6 +41,7 @@ class GUIBulkSender(private val owner: GUIMain) {
     sendTable =
       GUIBulkSenderTable(
         GUIBulkSenderTable.Type.CLIENT,
+        owner.coreServices.encoderManager.packetSummarizer,
         Consumer { id ->
           selectedSendPacketId = id
           sendPackets[id]?.let { sendData.setData(it.getData()) }
@@ -82,6 +83,7 @@ class GUIBulkSender(private val owner: GUIMain) {
     recvTable =
       GUIBulkSenderTable(
         GUIBulkSenderTable.Type.SERVER,
+        owner.coreServices.encoderManager.packetSummarizer,
         Consumer { id ->
           selectedRecvPacketId = id
           recvPackets[id]?.let { recvData.setData(it.getData()) }

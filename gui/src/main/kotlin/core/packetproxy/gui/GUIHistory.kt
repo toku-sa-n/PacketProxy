@@ -58,6 +58,7 @@ import packetproxy.common.Utils
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.OptionTableModel
 import packetproxy.model.Packet
+import packetproxy.model.PacketSummarizer
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.FILTERS
 import packetproxy.model.PropertyChangeEventType.PACKETS
@@ -65,6 +66,7 @@ import packetproxy.util.errWithStackTrace
 
 class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeListener {
   private val owner = main
+  private val packetSummarizer: PacketSummarizer = main.coreServices.encoderManager.packetSummarizer
   private val columnNames =
     arrayOf(
       "#",
@@ -736,7 +738,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   ) {
     val rowIndex = pairingService.getRowForGroup(groupId) ?: return
     val requestPacketId = tableModel.getValueAt(rowIndex, COL_ID) as Int
-    tableModel.setValueAt(responsePacket.getSummarizedResponse(), rowIndex, COL_SERVER_RESPONSE)
+    tableModel.setValueAt(
+      responsePacket.getSummarizedResponse(packetSummarizer),
+      rowIndex,
+      COL_SERVER_RESPONSE,
+    )
     val currentLength = tableModel.getValueAt(rowIndex, COL_LENGTH) as Int
     tableModel.setValueAt(currentLength + getDisplayData(responsePacket).size, rowIndex, COL_LENGTH)
     val requestPacket = requireNotNull(packets.query(requestPacketId))
@@ -963,7 +969,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     if (isResponse && pairingService.containsResponsePairing(packetId)) {
       val rowIndex = idRow[packetId]
       if (rowIndex != null) {
-        tableModel.setValueAt(packet.getSummarizedResponse(), rowIndex, COL_SERVER_RESPONSE)
+        tableModel.setValueAt(
+          packet.getSummarizedResponse(packetSummarizer),
+          rowIndex,
+          COL_SERVER_RESPONSE,
+        )
         val requestPacketId = pairingService.getRequestIdForResponse(packetId)
         val requestPacket = requireNotNull(packets.query(requestPacketId))
         tableModel.setValueAt(
@@ -1003,8 +1013,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     val dateFormat = SimpleDateFormat("HH:mm:ss yyyy/MM/dd Z")
     return arrayOf(
       packet.getId(),
-      packet.getSummarizedRequest(),
-      packet.getSummarizedResponse(),
+      packet.getSummarizedRequest(packetSummarizer),
+      packet.getSummarizedResponse(packetSummarizer),
       data.size,
       clientIp,
       clientPort,

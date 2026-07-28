@@ -4,9 +4,13 @@ import java.util.function.Consumer
 import javax.swing.*
 import packetproxy.model.OneShotPacket
 import packetproxy.model.OptionTableModel
+import packetproxy.model.PacketSummarizer
 import packetproxy.util.errWithStackTrace
 
-class GUIVulCheckRecvTable(private var onSelected: Consumer<Int>) {
+class GUIVulCheckRecvTable(
+  private var packetSummarizer: PacketSummarizer,
+  private var onSelected: Consumer<Int>,
+) {
   private lateinit var model: OptionTableModel
   private lateinit var table: JTable
 
@@ -41,7 +45,7 @@ class GUIVulCheckRecvTable(private var onSelected: Consumer<Int>) {
       arrayOf(
         id,
         name,
-        packet.getSummarizedResponse(),
+        packet.getSummarizedResponse(packetSummarizer),
         packet.getData().size,
         rtt,
         packet.getEncoder(),
