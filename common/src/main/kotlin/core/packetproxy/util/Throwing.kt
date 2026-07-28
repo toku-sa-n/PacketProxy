@@ -1,3 +1,5 @@
+@file:JvmName("Throwing")
+
 package packetproxy.util
 
 import java.util.function.Consumer

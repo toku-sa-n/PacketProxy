@@ -1,3 +1,5 @@
+@file:JvmName("FrameUtils")
+
 /*
  * Copyright 2019 DeNA Co., Ltd.
  *

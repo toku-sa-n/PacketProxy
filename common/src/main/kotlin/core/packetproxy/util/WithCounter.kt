@@ -1,3 +1,5 @@
+@file:JvmName("WithCounter")
+
 package packetproxy.util
 
 import java.util.concurrent.atomic.AtomicInteger
