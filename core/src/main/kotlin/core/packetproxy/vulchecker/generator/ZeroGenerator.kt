@@ -15,10 +15,10 @@
  */
 package packetproxy.vulchecker.generator
 
-import packetproxy.common.I18nString
+import packetproxy.common.*
 
 open class ZeroGenerator : Generator() {
-  override fun getName(): String = I18nString.get("Zero: 0")
+  override fun getName(): String = i18nString("Zero: 0")
 
   override fun generateOnStart(): Boolean = true
 

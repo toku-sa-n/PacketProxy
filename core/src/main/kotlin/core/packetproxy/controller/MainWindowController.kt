@@ -15,13 +15,4 @@
  */
 package packetproxy.controller
 
-class MainWindowController private constructor() {
-  companion object {
-    @Volatile private var instance: MainWindowController? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): MainWindowController =
-      instance ?: synchronized(this) { instance ?: MainWindowController().also { instance = it } }
-  }
-}
+class MainWindowController

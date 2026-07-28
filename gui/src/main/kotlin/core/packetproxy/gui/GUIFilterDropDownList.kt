@@ -3,14 +3,16 @@ package packetproxy.gui
 import java.util.function.Consumer
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.Filter
-import packetproxy.model.Filters
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
 
-class GUIFilterDropDownList(owner: JFrame, width: Int, private var consumer: Consumer<Filter>) :
-  JDialog(owner) {
+class GUIFilterDropDownList(
+  private val owner: JFrame,
+  width: Int,
+  private var consumer: Consumer<Filter>,
+) : JDialog(owner) {
   private var table: JTable
 
   init {
@@ -28,11 +30,11 @@ class GUIFilterDropDownList(owner: JFrame, width: Int, private var consumer: Con
     var defaults =
       listOf(
         Filter(
-          I18nString.get("No image,css,js,font"),
+          i18nString("No image,css,js,font"),
           "type != image && type != css && type != javascript && type != font",
         )
       )
-    (Filters.getInstance().queryAll() + defaults).forEach {
+    (owner.modelServices.filters.queryAll() + defaults).forEach {
       model.addRow(arrayOf(it.getName(), it.getFilter()))
     }
     table.addMouseListener(

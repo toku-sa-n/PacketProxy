@@ -28,7 +28,7 @@ interface LogSink {
   fun getLogText(): String
 }
 
-object NoOpLogSink : LogSink {
+class NoOpLogSink : LogSink {
   override fun append(message: String) {}
 
   override fun appendErr(message: String) {}

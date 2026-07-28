@@ -22,7 +22,7 @@ import packetproxy.http3.value.frame.Frames
 import packetproxy.http3.value.frame.RawFrame
 import packetproxy.quic.value.QuicMessage
 import packetproxy.quic.value.StreamId
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.rethrow
 
 open class QpackReadStream(streamId: StreamId, streamType: StreamType) :
   Stream(streamId, streamType), ReadStream {

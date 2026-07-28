@@ -21,20 +21,22 @@ import java.nio.charset.StandardCharsets
 import java.util.Arrays
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Protobuf3
+import packetproxy.common.UniqueID
 import packetproxy.common.Utils
 import packetproxy.grpc.GrpcSchemaResolver
+import packetproxy.grpc.GrpcServiceRegistryStore
 import packetproxy.http.Http
 import packetproxy.http2.Grpc
 
 open class EncodeGRPC : EncodeHTTPBase {
-  private val schemaResolver = GrpcSchemaResolver()
+  private val schemaResolver = GrpcSchemaResolver(GrpcServiceRegistryStore())
 
   private var compressedFlag: Byte = 0
   @Volatile private var lastGrpcPath: String? = null
 
   @Throws(Exception::class) constructor() : super()
 
-  @Throws(Exception::class) constructor(ALPN: String?) : super(ALPN, Grpc())
+  @Throws(Exception::class) constructor(ALPN: String?) : super(ALPN, Grpc(UniqueID()))
 
   override fun getName(): String = "gRPC"
 

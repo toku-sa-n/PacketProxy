@@ -26,15 +26,15 @@ import org.xbill.DNS.Record
 import org.xbill.DNS.ResolverConfig
 import org.xbill.DNS.TextParseException
 import org.xbill.DNS.Type
-import packetproxy.model.PrivateDnsHooks
+import packetproxy.model.PrivateDnsRunningCheck
 import packetproxy.model.Resolutions
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
 import packetproxy.util.PacketProxyUtility
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-object PrivateDNSClient {
-  private var resolutions: Resolutions? = null
-
+class PrivateDNSClient(
+  private val privateDnsRunningCheck: PrivateDnsRunningCheck = PrivateDnsRunningCheck { false }
+) {
   private fun isLoopbackAddress(addr: String): Boolean =
     addr == "127.0.0.1" || addr == "0:0:0:0:0:0:0:1" || addr == "::1"
 
@@ -48,7 +48,6 @@ object PrivateDNSClient {
   private fun dnsLooping(serverName: String): Boolean =
     dnsLoopDetectedInDnsServer() || dnsLoopDetectedInEtcHosts(serverName)
 
-  @JvmStatic
   fun getCurrentSystemDnsServerAddress(): String? {
     ResolverConfig.refresh()
     val resolverConfig = ResolverConfig.getCurrentConfig() ?: return null
@@ -61,7 +60,7 @@ object PrivateDNSClient {
   // システムのDNS設定が、PacketProxyのDNSサーバが設定されているときtrueになる
   @Throws(Exception::class)
   private fun dnsLoopDetectedInDnsServer(): Boolean {
-    if (!PrivateDnsHooks.isRunning()) {
+    if (!privateDnsRunningCheck.isRunning()) {
       return false
     }
 
@@ -77,16 +76,14 @@ object PrivateDNSClient {
     return false
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun dnsLoopDetectedInEtcHosts(serverName: String): Boolean =
-    if (PacketProxyUtility.getInstance().isMac() || PacketProxyUtility.getInstance().isUnix()) {
+    if (PacketProxyUtility().isMac() || PacketProxyUtility().isUnix()) {
       dnsLoopingFromHostsLines(Files.readAllLines(Paths.get("/etc/hosts")), serverName)
     } else {
       false
     }
 
-  @JvmStatic
   fun dnsLoopingFromHostsLines(fileLines: List<String>, serverName: String): Boolean =
     fileLines
       .map { line -> if (line.contains("#")) line.substring(0, line.indexOf('#')) else line }
@@ -103,11 +100,9 @@ object PrivateDNSClient {
         false
       }
 
-  @JvmStatic
   @Throws(Exception::class)
-  fun getByName(serverName: String): InetAddress {
-    resolutions = Resolutions.getInstance()
-    val resolution_list = resolutions!!.queryEnabled()
+  fun getByName(serverName: String, resolutions: Resolutions): InetAddress {
+    val resolution_list = resolutions.queryEnabled()
     for (resolution in resolution_list) {
       if (serverName == resolution.getHostName()) {
         val ip = resolution.getIp()
@@ -122,7 +117,6 @@ object PrivateDNSClient {
     else InetAddress.getByName(serverName)
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun getAllByName(serverName: String): Array<InetAddress> {
     if (serverName == "localhost") {
@@ -132,7 +126,6 @@ object PrivateDNSClient {
     else InetAddress.getAllByName(serverName)
   }
 
-  @JvmStatic
   fun getByName6(host: String): InetAddress? {
     val hostIP: InetAddress?
     try {
@@ -150,7 +143,6 @@ object PrivateDNSClient {
     return hostIP
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun getHTTPSRecord(host: String): Array<Record>? {
     val lookup = Lookup(host, Type.HTTPS)

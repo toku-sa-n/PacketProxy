@@ -2,10 +2,10 @@ package packetproxy.extensions.mcp.tools
 
 import com.google.gson.JsonObject
 import packetproxy.model.ConfigString
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 /** 認証機能付きMCPツールの基底クラス */
-abstract class AuthenticatedMCPTool : MCPTool {
+abstract class AuthenticatedMCPTool(private val configs: packetproxy.model.Configs) : MCPTool {
 
   /** AccessTokenの検証を行う */
   @Throws(Exception::class)
@@ -31,7 +31,7 @@ abstract class AuthenticatedMCPTool : MCPTool {
     }
 
     // PacketProxy設定からAccessTokenを取得
-    var configuredToken = ConfigString("SharingConfigsAccessToken").getString()
+    var configuredToken = ConfigString(configs, "SharingConfigsAccessToken").getString()
     if (configuredToken.isEmpty()) {
       throw Exception(
         "Access token not configured in PacketProxy. Please enable 'Import/Export configs' in PacketProxy Settings and copy the generated access token."
@@ -52,7 +52,7 @@ abstract class AuthenticatedMCPTool : MCPTool {
   /** 設定済みAccessTokenを取得（HTTPリクエスト用） */
   @Throws(Exception::class)
   protected fun getConfiguredAccessToken(): String {
-    var accessToken = ConfigString("SharingConfigsAccessToken").getString()
+    var accessToken = ConfigString(configs, "SharingConfigsAccessToken").getString()
     if (accessToken.isEmpty()) {
       throw Exception("Access token not configured. Please enable config sharing in settings.")
     }

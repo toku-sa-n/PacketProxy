@@ -4,7 +4,7 @@ package packetproxy.extensions.randomness.test
 // https://www.nist.gov/disclaimer
 
 import org.apache.commons.math3.distribution.GammaDistribution
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 class LinearComplexityTest(private var m: Int) : RandomnessTest() {
   override fun run(e: Array<Array<Int>>): DoubleArray {

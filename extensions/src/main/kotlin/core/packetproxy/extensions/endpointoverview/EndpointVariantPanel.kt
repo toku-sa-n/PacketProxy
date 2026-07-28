@@ -23,7 +23,7 @@ import javax.swing.JTable
 import javax.swing.ListSelectionModel
 import javax.swing.event.ListSelectionListener
 import javax.swing.table.DefaultTableModel
-import packetproxy.common.I18nString
+import packetproxy.common.*
 
 class EndpointVariantPanel : JPanel(BorderLayout()) {
   private val tableModel = DefaultTableModel()
@@ -37,7 +37,7 @@ class EndpointVariantPanel : JPanel(BorderLayout()) {
   private var suppressSelectionEvent = false
 
   init {
-    add(JLabel(I18nString.get("Variants")), BorderLayout.NORTH)
+    add(JLabel(i18nString("Variants")), BorderLayout.NORTH)
     add(JScrollPane(table), BorderLayout.CENTER)
     table.selectionModel.addListSelectionListener(
       ListSelectionListener { event ->
@@ -59,8 +59,8 @@ class EndpointVariantPanel : JPanel(BorderLayout()) {
   }
 
   fun setVariants(variants: List<EndpointSummary>) {
-    rows = EndpointVariantExtractor.buildRows(variants)
-    val columns = EndpointVariantExtractor.differingColumns(rows)
+    rows = buildRows(variants)
+    val columns = differingColumns(rows)
     val data =
       rows
         .map { row -> columns.map { column -> row.fields[column] ?: "" }.toTypedArray() }

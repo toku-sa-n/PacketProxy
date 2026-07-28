@@ -20,7 +20,7 @@ import core.packetproxy.gulp.command.LogCommand
 import core.packetproxy.gulp.command.SourceCommand
 import org.jline.builtins.Completers.TreeCompleter
 import org.jline.builtins.Completers.TreeCompleter.node
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.gulp.CommandContext
 import packetproxy.gulp.ParsedCommand
 
@@ -59,19 +59,19 @@ abstract class CLIModeHandler {
       "help" -> ctx.println(getHelpMessage())
 
       ".",
-      "source" -> SourceCommand(parsed, ctx)
+      "source" -> SourceCommand()(parsed, ctx)
 
       "l",
-      "log" -> LogCommand(parsed, ctx)
+      "log" -> LogCommand()(parsed, ctx)
 
-      "echo" -> EchoCommand(parsed, ctx)
+      "echo" -> EchoCommand()(parsed, ctx)
 
       else -> extensionCommand(parsed, ctx)
     }
   }
 
   protected fun commandNotDefined(parsed: ParsedCommand, ctx: CommandContext) {
-    ctx.println(I18nString.get("command not defined: %s", parsed.raw))
+    ctx.println(i18nString("command not defined: %s", parsed.raw))
   }
 
   abstract fun getOppositeMode(): CLIModeHandler

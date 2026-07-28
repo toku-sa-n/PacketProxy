@@ -18,7 +18,7 @@ import java.util.zip.GZIPOutputStream
 import javax.tools.ToolProvider
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang3.ArrayUtils
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 class Utils {
   enum class Platform {

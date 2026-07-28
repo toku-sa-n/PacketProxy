@@ -23,7 +23,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.TreeMap
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 class Protobuf3 {
   class Key {

@@ -3,14 +3,14 @@ package packetproxy.gui
 import javax.swing.JComponent
 import javax.swing.JDialog
 import packetproxy.model.OneShotPacket
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIDecoderDialog : JDialog(GUIMain.getInstance()) {
-  private val mainPanel = GUIPacketData()
+class GUIDecoderDialog(private val owner: GUIMain) : JDialog(owner) {
+  private val mainPanel = GUIPacketData(owner)
 
   init {
     title = "Decoder"
-    val rectangle = GUIMain.getInstance().bounds
+    val rectangle = owner.bounds
     val width = rectangle.width - 100
     val height = rectangle.height - 100
     setBounds(

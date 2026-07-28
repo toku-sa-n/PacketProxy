@@ -24,9 +24,9 @@ import javax.tools.JavaFileObject
 import javax.tools.StandardLocation
 import javax.tools.ToolProvider
 import packetproxy.model.CAs.CA
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-object CAFactory {
+class CAFactory {
   // public static void main(String[] args) {
   // CAFactory.queryAll().stream().forEach(ca -> Logging.log(ca));
   // Logging.log("----");
@@ -42,7 +42,7 @@ object CAFactory {
   // }
 
   private val ca_class = packetproxy.model.CAs.CA::class.java
-  private const val ca_package = "packetproxy.model.CAs"
+  private val ca_package = "packetproxy.model.CAs"
   private val ca_list = ArrayList<CA>()
 
   init {
@@ -72,17 +72,14 @@ object CAFactory {
     }
   }
 
-  @JvmStatic
   fun findByUTF8Name(name: String): Optional<CA> =
     ca_list.stream().filter { ca -> ca.getUTF8Name().equals(name, ignoreCase = true) }.findFirst()
 
-  @JvmStatic
   fun find(name: String?): Optional<CA> =
     ca_list.stream().filter { ca -> ca.getName().equals(name, ignoreCase = true) }.findFirst()
 
-  @JvmStatic
   fun queryExportable(): List<CA> =
     ca_list.stream().filter { ca -> ca.isExportable() }.collect(Collectors.toList())
 
-  @JvmStatic fun queryAll(): List<CA> = ca_list
+  fun queryAll(): List<CA> = ca_list
 }

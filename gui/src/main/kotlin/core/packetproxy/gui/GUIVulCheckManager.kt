@@ -2,7 +2,7 @@ package packetproxy.gui
 
 import com.google.common.collect.ImmutableList
 import java.nio.charset.StandardCharsets
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.common.Range
 import packetproxy.model.OneShotPacket
 import packetproxy.vulchecker.VulCheckPattern
@@ -56,8 +56,7 @@ class GUIVulCheckManager(
   private fun createEmptyPattern(packet: OneShotPacket): VulCheckPattern {
     var emptyPacket = packet.clone() as OneShotPacket
     emptyPacket.setData(
-      I18nString.get("Activate the checkbox to generate a pattern")
-        .toByteArray(StandardCharsets.UTF_8)
+      i18nString("Activate the checkbox to generate a pattern").toByteArray(StandardCharsets.UTF_8)
     )
     emptyPacket.setEncoder("Sample")
     emptyPacket.setAlpn("")

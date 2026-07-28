@@ -207,14 +207,14 @@ class OneShotPacket : PacketInfo, Cloneable {
     return packet
   }
 
-  fun getSummarizedRequest(): String {
+  fun getSummarizedRequest(summarizer: PacketSummarizer = NoOpPacketSummarizer()): String {
     if (direction != Direction.CLIENT) return ""
-    return PacketSummarizers.get().summarizeRequest(encoderName, alpn, toPacket())
+    return summarizer.summarizeRequest(encoderName, alpn, toPacket())
   }
 
-  fun getSummarizedResponse(): String {
+  fun getSummarizedResponse(summarizer: PacketSummarizer = NoOpPacketSummarizer()): String {
     if (direction != Direction.SERVER) return ""
-    return PacketSummarizers.get().summarizeResponse(encoderName, alpn, toPacket())
+    return summarizer.summarizeResponse(encoderName, alpn, toPacket())
   }
 
   fun getResenderPacket(resendsIndex: Int, resendIndex: Int): ResenderPacket =

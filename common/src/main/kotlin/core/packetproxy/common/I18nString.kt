@@ -19,54 +19,50 @@ import java.util.*
 import java.util.regex.Pattern
 import packetproxy.util.Logging
 
-object I18nString {
-  @JvmField val locale: Locale = Locale.getDefault()
-  val bundle: ResourceBundle? =
-    when (locale) {
-      Locale.JAPAN -> ResourceBundle.getBundle("strings")
-      else -> null
-    }
+val i18nLocale: Locale = Locale.getDefault()
+val bundle: ResourceBundle? =
+  when (i18nLocale) {
+    Locale.JAPAN -> ResourceBundle.getBundle("strings")
+    else -> null
+  }
 
-  @JvmStatic
-  fun get(message: String, vararg args: Any?): String {
-    return try {
-      get(message).format(*args)
+fun i18nString(message: String, vararg args: Any?): String {
+  return try {
+    i18nString(message).format(*args)
+  } catch (e: Exception) {
+    try {
+      message.format(*args)
     } catch (e: Exception) {
-      try {
-        message.format(*args)
-      } catch (e: Exception) {
-        message
-      }
+      message
     }
   }
+}
 
-  /** propertiesから文字列のローカライズを試みる 失敗した場合や空文字列だった場合は元の文字列を返す */
-  @JvmStatic
-  fun get(message: String): String {
-    val normalized = normalize(message)
-    val localized =
-      try {
-        when (locale) {
-          Locale.JAPAN -> bundle!!.getString(normalized)
-          else -> null
-        }
-      } catch (e: MissingResourceException) {
-        null
-      } catch (e: Exception) {
-        Logging.err("[Error] can't read resource: %s", message)
-        null
+/** propertiesから文字列のローカライズを試みる 失敗した場合や空文字列だった場合は元の文字列を返す */
+fun i18nString(message: String): String {
+  val normalized = normalize(message)
+  val localized =
+    try {
+      when (i18nLocale) {
+        Locale.JAPAN -> bundle!!.getString(normalized)
+        else -> null
       }
+    } catch (e: MissingResourceException) {
+      null
+    } catch (e: Exception) {
+      Logging.err("[Error] can't read resource: %s", message)
+      null
+    }
 
-    return localized ?: message
-  }
+  return localized ?: message
+}
 
-  // "Start listening port %d."のような文字列を"Start_listening_port_%d."に変換する
-  private fun normalize(message: String): String {
-    return message
-      .replace(' ', '_')
-      .replace('=', '_')
-      .replace(":".toRegex(), "\\:")
-      .replace(Pattern.quote("(").toRegex(), "\\(")
-      .replace(Pattern.quote(")").toRegex(), "\\)")
-  }
+// "Start listening port %d."のような文字列を"Start_listening_port_%d."に変換する
+private fun normalize(message: String): String {
+  return message
+    .replace(' ', '_')
+    .replace('=', '_')
+    .replace(":".toRegex(), "\\:")
+    .replace(Pattern.quote("(").toRegex(), "\\(")
+    .replace(Pattern.quote(")").toRegex(), "\\)")
 }

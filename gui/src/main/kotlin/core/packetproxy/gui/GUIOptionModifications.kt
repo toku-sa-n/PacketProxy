@@ -2,14 +2,12 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JFrame
 import packetproxy.model.Modification
-import packetproxy.model.Modifications
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class GUIOptionModifications(owner: JFrame) : GUIOptionComponentBase<Modification>(owner) {
-  private val modifications = Modifications.getInstance()
+class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modification>(owner) {
+  private val modifications = owner.modelServices.modifications
   private val tableList = mutableListOf<Modification>()
 
   init {
@@ -82,7 +80,7 @@ class GUIOptionModifications(owner: JFrame) : GUIOptionComponentBase<Modificatio
         modification.getMethod(),
         modification.getPattern(),
         modification.getReplaced(),
-        modification.getServerName(),
+        modification.getServerName(owner.modelServices.database),
       )
     )
   }

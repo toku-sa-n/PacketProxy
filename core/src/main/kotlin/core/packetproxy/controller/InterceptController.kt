@@ -33,19 +33,11 @@ import packetproxy.model.Server
  * InterceptOptions のルールに基づいて対象パケットをフィルタリングする。
  * - suspend fun received(): プロキシ向け。コルーチンをサスペンドして UI 操作を待つ。
  */
-class InterceptController
-private constructor(
-  private val interceptModel: InterceptModel = InterceptModel.getInstance(),
-  private val resendController: ResendController = ResendController.getInstance(),
+class InterceptController(
+  private val interceptModel: InterceptModel,
+  private val interceptOptions: InterceptOptions,
+  private val resendController: ResendController,
 ) {
-  companion object {
-    @Volatile private var instance: InterceptController? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): InterceptController =
-      instance ?: synchronized(this) { instance ?: InterceptController().also { instance = it } }
-  }
 
   private sealed class InterceptDecision {
     data class Forward(val data: ByteArray) : InterceptDecision()
@@ -125,11 +117,11 @@ private constructor(
   ): Boolean {
     if (!interceptModel.isInterceptEnabled()) return false
 
-    if (InterceptOptions.getInstance().isEnabled()) {
+    if (interceptOptions.isEnabled()) {
       return if (serverPacket == null) {
-        InterceptOptions.getInstance().interceptOnRequest(server, clientPacket)
+        interceptOptions.interceptOnRequest(server, clientPacket)
       } else {
-        InterceptOptions.getInstance().interceptOnResponse(server, clientPacket, serverPacket)
+        interceptOptions.interceptOnResponse(server, clientPacket, serverPacket)
       }
     }
 

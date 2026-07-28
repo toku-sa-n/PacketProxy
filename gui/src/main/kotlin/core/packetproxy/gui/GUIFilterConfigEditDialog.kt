@@ -2,14 +2,14 @@ package packetproxy.gui
 
 import java.awt.Dimension
 import javax.swing.*
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.Filter
-import packetproxy.model.Filters
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIFilterConfigEditDialog(owner: JFrame, private var filter: Filter) : JDialog(owner) {
-  private var cancel = JButton(I18nString.get("Cancel"))
-  private var update = JButton(I18nString.get("Update"))
+class GUIFilterConfigEditDialog(private val owner: JFrame, private var filter: Filter) :
+  JDialog(owner) {
+  private var cancel = JButton(i18nString("Cancel"))
+  private var update = JButton(i18nString("Update"))
   private var nameField = JTextField(filter.getName())
   private var content =
     JTextArea(filter.getFilter()).apply {
@@ -18,14 +18,14 @@ class GUIFilterConfigEditDialog(owner: JFrame, private var filter: Filter) : JDi
     }
 
   init {
-    title = I18nString.get("Setting")
+    title = i18nString("Setting")
     var rect = owner.bounds
     setBounds(rect.x + rect.width / 2 - 350, rect.y + rect.height / 2 - 125, 700, 250)
     contentPane.add(
       JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        add(row(I18nString.get("Filter name:"), nameField, 2))
-        add(row(I18nString.get("Filter:"), content, 5))
+        add(row(i18nString("Filter name:"), nameField, 2))
+        add(row(i18nString("Filter:"), content, 5))
         add(
           JPanel().apply {
             add(cancel)
@@ -37,10 +37,10 @@ class GUIFilterConfigEditDialog(owner: JFrame, private var filter: Filter) : JDi
     cancel.addActionListener { dispose() }
     update.addActionListener {
       try {
-        var value = requireNotNull(Filters.getInstance().query(filter.getId()))
+        var value = requireNotNull(owner.modelServices.filters.query(filter.getId()))
         value.setName(nameField.text)
         value.setFilter(content.text)
-        Filters.getInstance().update(value)
+        owner.modelServices.filters.update(value)
         dispose()
       } catch (e: Exception) {
         errWithStackTrace(e)

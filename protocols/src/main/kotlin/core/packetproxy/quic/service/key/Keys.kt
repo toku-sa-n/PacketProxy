@@ -5,7 +5,7 @@ import java.nio.file.Paths
 import org.apache.commons.codec.binary.Hex
 import packetproxy.quic.utils.Constants
 import packetproxy.quic.value.ConnectionId
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class Keys {
   val clientKeys = RoleKeys(Constants.Role.CLIENT)

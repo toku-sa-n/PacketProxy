@@ -1,7 +1,7 @@
 package packetproxy.quic.service.framegenerator.helper
 
 import java.util.TreeSet
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 class ReceivedPacketNumbers {
   private val unreceivedPacketNumbers = TreeSet<Long>()

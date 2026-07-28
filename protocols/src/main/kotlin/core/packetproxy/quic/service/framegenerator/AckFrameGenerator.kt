@@ -5,7 +5,7 @@ import packetproxy.quic.value.PacketNumber
 import packetproxy.quic.value.frame.AckFrame
 import packetproxy.quic.value.frame.helper.AckRange
 import packetproxy.quic.value.frame.helper.AckRanges
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 class AckFrameGenerator {
   private var largestAckedPn = -1L

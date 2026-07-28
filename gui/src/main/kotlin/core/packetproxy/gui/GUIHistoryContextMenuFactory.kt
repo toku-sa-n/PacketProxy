@@ -29,18 +29,17 @@ import javax.swing.JPopupMenu
 import javax.swing.JTable
 import javax.swing.KeyStroke
 import org.apache.commons.io.FileUtils
-import packetproxy.common.I18nString
-import packetproxy.controller.ResendController
+import packetproxy.common.*
+import packetproxy.http.*
 import packetproxy.http.Http
-import packetproxy.http.SessionProfileAuthorizationExtractor
 import packetproxy.model.Packets
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 /**
  * Extracted popup menu builder and action wiring for GUIHistory. Reduces the size and
  * responsibility in GUIHistory.java.
  */
-object GUIHistoryContextMenuFactory {
+class GUIHistoryContextMenuFactory {
 
   class Handles(
     val menu: JPopupMenu,
@@ -50,10 +49,9 @@ object GUIHistoryContextMenuFactory {
     val copyAll: JMenuItem,
   )
 
-  @JvmStatic
   fun build(
     context: GUIHistory,
-    owner: JFrame,
+    owner: GUIMain,
     table: JTable,
     guiPacket: GUIPacket,
     packets: Packets,
@@ -74,7 +72,7 @@ object GUIHistoryContextMenuFactory {
           if (packet == null) {
             return@createMenuItem
           }
-          ResendController.getInstance().resend(packet.getOneShotPacket(data))
+          owner.coreServices.resendController.resend(packet.getOneShotPacket(data))
           packet.setResend()
           packets.update(packet)
           context.updateRequestOne(context.selectedPacketId)
@@ -94,9 +92,9 @@ object GUIHistoryContextMenuFactory {
           packet.setResend()
           packets.update(packet)
           if (packet.getModifiedData().isEmpty()) {
-            GUIResender.getInstance().addResends(packet.getOneShotFromDecodedData())
+            owner.getGuiResender().addResends(packet.getOneShotFromDecodedData())
           } else {
-            GUIResender.getInstance().addResends(packet.getOneShotFromModifiedData())
+            owner.getGuiResender().addResends(packet.getOneShotFromModifiedData())
           }
           context.updateRequestOne(context.selectedPacketId)
         } catch (ex: Exception) {
@@ -105,20 +103,20 @@ object GUIHistoryContextMenuFactory {
       }
 
     val createSessionProfile =
-      createMenuItem(I18nString.get("create session profile"), -1, null) {
+      createMenuItem(i18nString("create session profile"), -1, null) {
         try {
           val data = guiPacket.getData()
-          val authorization = SessionProfileAuthorizationExtractor.extract(data)
+          val authorization = extract(data)
           if (authorization == null || authorization.isEmpty()) {
             JOptionPane.showMessageDialog(
               owner,
-              I18nString.get("No Authorization header found in the current request."),
-              I18nString.get("Message"),
+              i18nString("No Authorization header found in the current request."),
+              i18nString("Message"),
               JOptionPane.INFORMATION_MESSAGE,
             )
             return@createMenuItem
           }
-          val dlg = GUIOptionSessionProfileDialog(owner, null)
+          val dlg = GUIOptionSessionProfileDialog(owner, null, owner.modelServices.sessionProfiles)
           dlg.showDialog(authorization)
         } catch (ex: Exception) {
           errWithStackTrace(ex)
@@ -133,7 +131,7 @@ object GUIHistoryContextMenuFactory {
       ) {
         try {
           val packet = guiPacket.getPacket()
-          copyMethodUrlBody(packet.getDecodedData(), packet)
+          copyMethodUrlBody(packet.getDecodedData(), packet, owner.modelServices.charSetUtility)
         } catch (ex: Exception) {
           errWithStackTrace(ex)
         }
@@ -144,7 +142,7 @@ object GUIHistoryContextMenuFactory {
         try {
           val id = context.selectedPacketId
           val packet = packets.query(id) ?: return@createMenuItem
-          copyUrl(packet.getDecodedData(), packet)
+          copyUrl(packet.getDecodedData(), packet, owner.modelServices.charSetUtility)
         } catch (ex: Exception) {
           errWithStackTrace(ex)
         }
@@ -155,9 +153,9 @@ object GUIHistoryContextMenuFactory {
         try {
           val packet = guiPacket.getPacket()
           if (packet.getModifiedData().isEmpty()) {
-            GUIBulkSender.getInstance().add(packet.getOneShotFromDecodedData(), packet.getId())
+            owner.getGuiBulkSender().add(packet.getOneShotFromDecodedData(), packet.getId())
           } else {
-            GUIBulkSender.getInstance().add(packet.getOneShotFromModifiedData(), packet.getId())
+            owner.getGuiBulkSender().add(packet.getOneShotFromModifiedData(), packet.getId())
           }
         } catch (ex: Exception) {
           errWithStackTrace(ex)

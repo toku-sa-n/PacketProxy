@@ -18,31 +18,36 @@ package packetproxy.gulp
 import kotlinx.coroutines.*
 import org.jline.reader.EndOfFileException
 import org.jline.reader.UserInterruptException
+import packetproxy.CoreServices
 import packetproxy.cli.DecodeModeHandler
 import packetproxy.cli.EncodeModeHandler
 import packetproxy.common.ConfigIO
 import packetproxy.common.Utils
-import packetproxy.gulp.input.ChainedSource
 import packetproxy.gulp.input.ScriptSource
 import packetproxy.gulp.input.TerminalFactory
+import packetproxy.model.ModelServices
 import packetproxy.util.Logging
 
-object GulpTerminal {
-  @JvmStatic
-  fun run(settingJsonPath: String?, scriptFilePath: String) {
+class GulpTerminal {
+  fun run(
+    modelServices: ModelServices,
+    coreServices: CoreServices,
+    settingJsonPath: String?,
+    scriptFilePath: String,
+  ) {
     val cmdCtx = CommandContext()
-    val terminal = TerminalFactory.create(cmdCtx)
+    val terminal = TerminalFactory().create(cmdCtx)
 
-    ChainedSource.push(terminal)
-    ChainedSource.push(ScriptSource(scriptFilePath))
-    ChainedSource.open()
+    cmdCtx.chainedSource.push(terminal)
+    cmdCtx.chainedSource.push(ScriptSource(scriptFilePath))
+    cmdCtx.chainedSource.open()
 
     runBlocking {
       while (isActive) {
         /** コマンド入力受付。Ctrl+C: continue 改行して次の入力受付を開始する Ctrl+D: break Terminalを閉じる */
         val line =
           try {
-            withContext(Dispatchers.IO) { ChainedSource.readLine() } ?: break
+            withContext(Dispatchers.IO) { cmdCtx.chainedSource.readLine() } ?: break
           } catch (e: Exception) {
             when (e) {
               is UserInterruptException -> {} // Ctrl+C
@@ -55,7 +60,7 @@ object GulpTerminal {
             continue
           }
 
-        val parsed = CommandParser.parse(line) ?: continue
+        val parsed = CommandParser().parse(line) ?: continue
 
         /** コマンド実行。実行用の新しいコルーチンをlaunchしJobとして保持する。Ctrl+C: コマンドの実行を中断する */
         when (parsed.cmd) {
@@ -66,10 +71,10 @@ object GulpTerminal {
           "switch" -> cmdCtx.currentHandler = cmdCtx.currentHandler.getOppositeMode()
 
           "e",
-          "encode" -> cmdCtx.currentHandler = EncodeModeHandler
+          "encode" -> cmdCtx.currentHandler = EncodeModeHandler()
 
           "d",
-          "decode" -> cmdCtx.currentHandler = DecodeModeHandler
+          "decode" -> cmdCtx.currentHandler = DecodeModeHandler()
 
           else -> {
             cmdCtx.executionJob = launch {
@@ -92,7 +97,7 @@ object GulpTerminal {
   }
 
   /** JSON設定ファイルを読み込んで適用 ListenPortManager初期化後に呼び出すことで、設定ファイル内の有効なプロキシが自動的に開始される */
-  private fun loadSettingsFromJson(jsonPath: String?) {
+  private fun loadSettingsFromJson(modelServices: ModelServices, jsonPath: String?) {
     if (jsonPath?.isEmpty() ?: true) return
 
     try {
@@ -100,7 +105,14 @@ object GulpTerminal {
       val jsonBytes = Utils.readfile(jsonPath)
       val json = String(jsonBytes, Charsets.UTF_8)
 
-      val configIO = ConfigIO()
+      val configIO =
+        ConfigIO(
+          modelServices.database,
+          modelServices.listenPorts,
+          modelServices.servers,
+          modelServices.modifications,
+          modelServices.sslPassThroughs,
+        )
       configIO.setOptions(json)
 
       Logging.log("設定ファイルを正常に読み込みました: $jsonPath")

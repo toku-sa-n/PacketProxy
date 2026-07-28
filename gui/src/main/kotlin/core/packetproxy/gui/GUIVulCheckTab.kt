@@ -2,12 +2,16 @@ package packetproxy.gui
 
 import java.awt.Color
 import javax.swing.*
-import packetproxy.common.FontManager
 import packetproxy.common.Range
 import packetproxy.model.OneShotPacket
 import packetproxy.vulchecker.VulChecker
 
-class GUIVulCheckTab(vulChecker: VulChecker, packet: OneShotPacket, range: Range) {
+class GUIVulCheckTab(
+  private val main: GUIMain,
+  vulChecker: VulChecker,
+  packet: OneShotPacket,
+  range: Range,
+) {
   private var name = vulChecker.getName()
   private var manager = GUIVulCheckManager(vulChecker, packet, range)
   private var recvPackets = mutableMapOf<Int, OneShotPacket>()
@@ -39,7 +43,7 @@ class GUIVulCheckTab(vulChecker: VulChecker, packet: OneShotPacket, range: Range
       add(
         JLabel(name).apply {
           foreground = Color(0, 200, 0)
-          font = FontManager.getInstance().getUICaptionFont()
+          font = main.modelServices.fontManager.getUICaptionFont()
         }
       )
       add(split)
@@ -47,7 +51,7 @@ class GUIVulCheckTab(vulChecker: VulChecker, packet: OneShotPacket, range: Range
   }
 
   private fun createSendPanel(): JComponent {
-    sendData = TabSet(true, false)
+    sendData = TabSet(main, true, false)
     sendTable =
       GUIVulCheckSendTable(
         { generator ->
@@ -77,7 +81,7 @@ class GUIVulCheckTab(vulChecker: VulChecker, packet: OneShotPacket, range: Range
   }
 
   private fun createRecvPanel(): JComponent {
-    recvData = TabSet(true, false)
+    recvData = TabSet(main, true, false)
     recvTable = GUIVulCheckRecvTable { id ->
       recvPackets[id]?.let { recvData.setData(it.getData()) }
     }

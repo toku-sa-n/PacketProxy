@@ -2,12 +2,12 @@ package packetproxy.gui
 
 import java.awt.Dimension
 import javax.swing.*
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.RegexParam
 
-class GUIRegexParamDialog(owner: JFrame) : JDialog(owner) {
-  private var cancel = JButton(I18nString.get("Cancel"))
-  private var save = JButton(I18nString.get("Save"))
+class GUIRegexParamDialog(private val owner: JFrame) : JDialog(owner) {
+  private var cancel = JButton(i18nString("Cancel"))
+  private var save = JButton(i18nString("Save"))
   private var regex = JTextField()
   private var nameField = JTextField()
   private var regexParam: RegexParam? = null

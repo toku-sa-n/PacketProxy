@@ -36,9 +36,9 @@ import java.util.LinkedList
 import org.apache.commons.lang3.ArrayUtils
 import org.eclipse.jetty.http2.hpack.HpackDecoder
 import org.eclipse.jetty.http2.hpack.HpackEncoder
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.DataFrame
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameUtils
 import packetproxy.http2.frames.GoawayFrame
 import packetproxy.http2.frames.HeadersFrame
 import packetproxy.http2.frames.PingFrame
@@ -46,7 +46,7 @@ import packetproxy.http2.frames.RstStreamFrame
 import packetproxy.http2.frames.SettingsFrame
 import packetproxy.http2.frames.SettingsFrame.SettingsFrameType
 import packetproxy.http2.frames.WindowUpdateFrame
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 open class FrameManager {
   private var hpackEncoder = HpackEncoder(4096, 65536)
@@ -84,7 +84,7 @@ open class FrameManager {
 
   @Throws(Exception::class)
   fun write(frames: ByteArray) {
-    for (frame in FrameUtils.parseFrames(frames, hpackDecoder)) {
+    for (frame in parseFrames(frames, hpackDecoder)) {
       analyzeFrame(frame)
     }
   }
@@ -102,7 +102,7 @@ open class FrameManager {
           hpackDecoder = HpackDecoder(header_table_size, header_list_size)
           flag_receive_peer_settings = true
           if (!flag_send_end_settings && flag_send_settings) {
-            flowControlManager.getOutputStream().write(FrameUtils.END_SETTINGS)
+            flowControlManager.getOutputStream().write(END_SETTINGS)
             flowControlManager.getOutputStream().flush()
             flag_send_end_settings = true
           }
@@ -156,14 +156,14 @@ open class FrameManager {
     baos.flush()
     var length: Int
     while (true) {
-      length = FrameUtils.checkDelimiter(baos.toByteArray())
+      length = checkDelimiter(baos.toByteArray())
       if (length <= 0) break
       val frame = ArrayUtils.subarray(baos.toByteArray(), 0, length)
       val remaining = ArrayUtils.subarray(baos.toByteArray(), length, baos.size())
       baos.reset()
       baos.write(remaining)
       baos.flush()
-      if (FrameUtils.isPreface(frame)) {
+      if (isPreface(frame)) {
         flowControlManager.getOutputStream().write(frame)
         flowControlManager.getOutputStream().flush()
       } else {
@@ -173,7 +173,7 @@ open class FrameManager {
         if (f.type == Frame.Type.SETTINGS) {
           flag_send_settings = true
           if (!flag_send_end_settings && flag_receive_peer_settings) {
-            flowControlManager.getOutputStream().write(FrameUtils.END_SETTINGS)
+            flowControlManager.getOutputStream().write(END_SETTINGS)
             flowControlManager.getOutputStream().flush()
             flag_send_end_settings = true
           }

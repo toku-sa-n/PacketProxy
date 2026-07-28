@@ -23,11 +23,11 @@ import packetproxy.model.Packet
 import packetproxy.model.Packets
 
 /** Shared History recording helpers used by Duplex event listeners. */
-internal object DuplexPacketHistory {
+class DuplexPacketHistory(private val uniqueId: UniqueID) {
   // 1MB以上のパケットは最後のタイミングだけHistoryに記録する、それ未満はパケットが更新されるたびにHistoryを更新する
-  const val SKIP_LENGTH = 1 * 1024 * 1024
+  val SKIP_LENGTH = 1 * 1024 * 1024
   // 10MB以上のパケットはHistoryには記録しない
-  const val TOO_LARGE_LENGTH = 10 * 1024 * 1024
+  val TOO_LARGE_LENGTH = 10 * 1024 * 1024
 
   fun updateIfSmall(packets: Packets, packet: Packet, dataSize: Int) {
     if (dataSize < SKIP_LENGTH) {
@@ -40,7 +40,7 @@ internal object DuplexPacketHistory {
       clientPacket.getGroup()
     } else {
       // サーバから先にレスポンスがあった場合
-      UniqueID.getInstance().createId()
+      uniqueId.createId()
     }
 
   fun syncContentTypeToClient(packets: Packets, clientPacket: Packet?, serverPacket: Packet) {

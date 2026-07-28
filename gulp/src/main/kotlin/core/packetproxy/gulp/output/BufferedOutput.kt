@@ -21,7 +21,7 @@ package packetproxy.gulp.output
  * 出力内容を蓄積し、後から取得可能にする。 色付けは無効（PlainStyle）のため、ANSIエスケープシーケンスは含まれない。
  */
 class BufferedOutput : CommandOutput {
-  override val style: OutputStyle = PlainStyle
+  override val style: OutputStyle = PlainStyle()
 
   private val buffer = StringBuilder()
 

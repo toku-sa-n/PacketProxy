@@ -27,7 +27,6 @@ import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
@@ -37,28 +36,26 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.SwingUtilities
 import javax.swing.border.TitledBorder
 import javax.swing.event.ChangeListener
-import packetproxy.common.I18nString
-import packetproxy.controller.ResendController
+import packetproxy.common.*
 import packetproxy.controller.ResendController.ResendWorker
-import packetproxy.http.SessionRequestModifier
+import packetproxy.http.*
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
-import packetproxy.model.Packets
 import packetproxy.model.SessionProfile
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 /**
  * リクエストとレスポンスを左右に並べて表示するパネル 各パネルにReceived Packet, Decoded, Modified, Encoded, Allのタブを持つ
  * HTTP以外の通信では単一パケット表示モードに切り替わる
  */
-class GUIRequestResponsePanel(private val owner: JFrame) {
+class GUIRequestResponsePanel(private val owner: GUIMain) {
   private companion object {
-    private const val SPLIT_PANE_DIVIDER_SIZE = 8
-    private const val ALL_PANEL_ROWS = 1
-    private const val ALL_PANEL_COLUMNS = 4
-    private const val LABEL_ALIGNMENT_CENTER = 0.5f
-    private const val MIN_PANEL_SIZE = 100
-    private const val SPLIT_PANE_RESIZE_WEIGHT = 0.5
+    private val SPLIT_PANE_DIVIDER_SIZE = 8
+    private val ALL_PANEL_ROWS = 1
+    private val ALL_PANEL_COLUMNS = 4
+    private val LABEL_ALIGNMENT_CENTER = 0.5f
+    private val MIN_PANEL_SIZE = 100
+    private val SPLIT_PANE_RESIZE_WEIGHT = 0.5
     private val REQUEST_BORDER_COLOR = Color(0x33, 0x99, 0xff)
     private val RESPONSE_BORDER_COLOR = Color(0x99, 0x33, 0x33)
     private val SINGLE_BORDER_COLOR = Color(0x66, 0x66, 0x99)
@@ -109,8 +106,8 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
     sessionProfileProvider = provider
   }
 
-  private val splitMarkedOriginalRowHighlight = MarkedOriginalRowHighlight()
-  private val singleMarkedOriginalRowHighlight = MarkedOriginalRowHighlight()
+  private val splitMarkedOriginalRowHighlight = MarkedOriginalRowHighlight(owner.getGuiHistory())
+  private val singleMarkedOriginalRowHighlight = MarkedOriginalRowHighlight(owner.getGuiHistory())
 
   @Throws(Exception::class)
   fun createPanel(): JComponent {
@@ -165,8 +162,8 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
   private fun getBodyData(): ByteArray = (activePaneForBody ?: requestPane).getActiveData()
 
   private fun getHistoryContextPacket(): Packet? {
-    val id = GUIHistory.getInstance().selectedPacketId
-    return Packets.getInstance().query(id)
+    val id = owner.getGuiHistory().selectedPacketId
+    return owner.modelServices.packets.query(id)
   }
 
   private fun createPacketDataButtonBar(
@@ -179,6 +176,9 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
   ): PacketDataButtonBar {
     return PacketDataButtonBar(
       owner = owner,
+      history = owner.getGuiHistory(),
+      packetPanel = owner.getGuiHistory().getGuiPacket(),
+      resender = owner.getGuiResender(),
       getActiveData = getActiveData,
       getContextPacket = getContextPacket,
       getBodyData = getBodyData,
@@ -237,10 +237,10 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
   ) {
     val panel: JPanel = JPanel()
     private val tabs = JTabbedPane()
-    private val decodedTabs = TabSet(true, false)
-    private val receivedTabs = TabSet(true, false)
-    private val modifiedTabs = TabSet(true, false)
-    private val sentTabs = TabSet(true, false)
+    private val decodedTabs = TabSet(owner, true, false)
+    private val receivedTabs = TabSet(owner, true, false)
+    private val modifiedTabs = TabSet(owner, true, false)
+    private val sentTabs = TabSet(owner, true, false)
     private lateinit var allReceived: RawTextPane
     private lateinit var allDecoded: RawTextPane
     private lateinit var allModified: RawTextPane
@@ -337,10 +337,10 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
       val panel = JPanel()
       panel.layout = GridLayout(ALL_PANEL_ROWS, ALL_PANEL_COLUMNS)
 
-      allReceived = createTextPaneForAll(panel, I18nString.get("Received"))
-      allDecoded = createTextPaneForAll(panel, I18nString.get("Decoded"))
-      allModified = createTextPaneForAll(panel, I18nString.get("Modified"))
-      allSent = createTextPaneForAll(panel, I18nString.get("Encoded"))
+      allReceived = createTextPaneForAll(panel, i18nString("Received"))
+      allDecoded = createTextPaneForAll(panel, i18nString("Decoded"))
+      allModified = createTextPaneForAll(panel, i18nString("Modified"))
+      allSent = createTextPaneForAll(panel, i18nString("Encoded"))
 
       return panel
     }
@@ -354,7 +354,13 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
     val label = JLabel(labelName)
     label.alignmentX = LABEL_ALIGNMENT_CENTER
 
-    val text = RawTextPane()
+    val text =
+      RawTextPane(
+        owner,
+        owner.modelServices.fontManager,
+        owner.modelServices.charSetUtility,
+        owner.coreServices.packetProxyUtility,
+      )
     text.isEditable = false
     panel.add(label)
     val scroll = JScrollPane(text)
@@ -448,11 +454,12 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
     val baseBytes = if (requestBytes.isNotEmpty()) requestBytes else packet.getDecodedData()
     if (baseBytes.isEmpty()) return
     try {
-      val modifiedBytes = SessionRequestModifier.apply(baseBytes, sessionProfileProvider?.invoke())
+      val modifiedBytes = apply(baseBytes, sessionProfileProvider?.invoke())
       val sendPacket = packet.getOneShotPacket(modifiedBytes)
       val sentRequestPacket = sendPacket.toPacket()
-      ResendController.getInstance()
-        .resend(
+      val resendController = owner.coreServices.resendController
+      resendController.resend(
+        resendController.run {
           object : ResendWorker(sendPacket, 1) {
             override fun process(chunks: MutableList<OneShotPacket>) {
               if (chunks.isEmpty()) {
@@ -467,7 +474,8 @@ class GUIRequestResponsePanel(private val owner: JFrame) {
               }
             }
           }
-        )
+        }
+      )
     } catch (e: Exception) {
       errWithStackTrace(e)
     }

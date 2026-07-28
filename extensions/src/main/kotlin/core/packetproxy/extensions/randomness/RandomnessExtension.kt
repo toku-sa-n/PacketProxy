@@ -29,7 +29,6 @@ import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JFormattedTextField
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JMenuItem
 import javax.swing.JOptionPane
@@ -50,17 +49,21 @@ import org.jfree.chart.renderer.xy.StandardXYItemRenderer
 import org.jfree.data.Range
 import org.jfree.data.xy.XYSeries
 import org.jfree.data.xy.XYSeriesCollection
+import packetproxy.CoreServiceExtension
+import packetproxy.CoreServices
 import packetproxy.controller.ResendController
+import packetproxy.controller.ResendController.ResendWorker
 import packetproxy.extensions.randomness.test.RandomnessTestManager
 import packetproxy.gui.GUIBulkSenderData
-import packetproxy.gui.GUIPacket
+import packetproxy.gui.GUIMain
+import packetproxy.gui.GuiServiceExtension
 import packetproxy.model.Extension
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class RandomnessExtension : Extension {
+class RandomnessExtension : Extension, CoreServiceExtension, GuiServiceExtension {
   private var sendPacket: OneShotPacket? = null
   private var recvPackets = HashMap<Int, OneShotPacket>()
   private var tokens = ArrayList<String>()
@@ -72,6 +75,9 @@ class RandomnessExtension : Extension {
   private lateinit var chart: JFreeChart
   private lateinit var sendData: GUIBulkSenderData
   private var sendPacketId = 0
+  private lateinit var resendController: ResendController
+  private lateinit var guiMain: GUIMain
+  private val randomnessTestManager = RandomnessTestManager()
 
   constructor() : super() {
     initialize()
@@ -99,15 +105,23 @@ class RandomnessExtension : Extension {
     sendData.setData(oneshot.getData())
   }
 
-  override fun historyClickHandler(): JMenuItem {
+  override fun historyClickHandler(packetProvider: () -> Packet): JMenuItem {
     return createMenuItem("send to Randomness Checker", -1, null) {
       try {
-        var packet: Packet = GUIPacket.getInstance().getPacket()
+        var packet = packetProvider()
         add(packet.getOneShotFromModifiedData(), packet.getId())
       } catch (e: Exception) {
         errWithStackTrace(e)
       }
     }
+  }
+
+  override fun initialize(coreServices: CoreServices) {
+    resendController = coreServices.resendController
+  }
+
+  override fun initialize(guiMain: GUIMain) {
+    this.guiMain = guiMain
   }
 
   private fun initialize() {
@@ -117,7 +131,7 @@ class RandomnessExtension : Extension {
   @Throws(Exception::class)
   private fun createSendPanel(): JComponent {
     sendData =
-      GUIBulkSenderData(requireNotNull(owner), GUIBulkSenderData.Type.CLIENT) { data ->
+      GUIBulkSenderData(guiMain, GUIBulkSenderData.Type.CLIENT) { data ->
         var packet = sendPacket
         if (packet != null) {
           packet.setData(data)
@@ -169,9 +183,9 @@ class RandomnessExtension : Extension {
           future =
             future.thenApplyAsync { argument ->
               try {
-                ResendController.getInstance()
-                  .resend(
-                    object : ResendController.ResendWorker(sendPacket!!, 1) {
+                resendController.resend(
+                  resendController.run {
+                    object : ResendWorker(sendPacket!!, 1) {
                       override fun process(oneshots: MutableList<OneShotPacket>) {
                         var id = requestProgressBar.value
                         for (oneshot in oneshots) {
@@ -192,7 +206,7 @@ class RandomnessExtension : Extension {
                             }
                           }
                           JOptionPane.showMessageDialog(
-                            owner,
+                            guiMain,
                             String.format("get %d tokens", tokens.size),
                             "Packet collection finished",
                             JOptionPane.PLAIN_MESSAGE,
@@ -200,7 +214,8 @@ class RandomnessExtension : Extension {
                         }
                       }
                     }
-                  )
+                  }
+                )
               } catch (e: Exception) {
                 errWithStackTrace(e)
               }
@@ -263,7 +278,7 @@ class RandomnessExtension : Extension {
     testPanel.background = Color.WHITE
     testPanel.layout = BoxLayout(testPanel, BoxLayout.X_AXIS)
     testPanel.add(JLabel("testing method:"))
-    testMethods = RandomnessTestManager.getInstance().createTestList()
+    testMethods = randomnessTestManager.createTestList()
     testPanel.add(testMethods)
     var analyzeButton = JButton("Start analysis")
     analyzeButton.addActionListener {
@@ -305,7 +320,7 @@ class RandomnessExtension : Extension {
             }
           else -> throw Exception("preprocessKey $preprocessKey not found")
         }
-        var points = RandomnessTestManager.getInstance().analyze(testMethodKey, preprocessed)
+        var points = randomnessTestManager.analyze(testMethodKey, preprocessed)
         var series = XYSeries("data", false)
         for (point in points) {
           series.add(point[0], point[1])
@@ -370,16 +385,5 @@ class RandomnessExtension : Extension {
     }
     output.addActionListener(listener)
     return output
-  }
-
-  companion object {
-    private var owner: JFrame? = null
-
-    @JvmStatic fun getOwner(): JFrame? = owner
-
-    @JvmStatic
-    fun setOwner(owner: JFrame?) {
-      this.owner = owner
-    }
   }
 }

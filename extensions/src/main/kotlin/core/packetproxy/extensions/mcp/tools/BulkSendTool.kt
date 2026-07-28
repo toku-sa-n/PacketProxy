@@ -12,13 +12,18 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import packetproxy.controller.ResendController
 import packetproxy.controller.ResendController.ResendWorker
+import packetproxy.model.Configs
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
 import packetproxy.model.Packets
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 /** 複数パケット一括送信ツール フェーズ2: 順次送信モード、modifications適用、regex_params機能 */
-class BulkSendTool : AuthenticatedMCPTool() {
+class BulkSendTool(
+  private val packets: Packets,
+  private val resendController: ResendController,
+  configs: Configs,
+) : AuthenticatedMCPTool(configs) {
 
   override fun getName(): String = "bulk_send"
 
@@ -411,7 +416,7 @@ class BulkSendTool : AuthenticatedMCPTool() {
 
     try {
       // パケットを取得
-      var originalPacket = Packets.getInstance().query(packetId)
+      var originalPacket = packets.query(packetId)
       if (originalPacket == null) {
         result.success = false
         result.failedCount = count
@@ -474,8 +479,8 @@ class BulkSendTool : AuthenticatedMCPTool() {
       var receivedPackets = ArrayList<OneShotPacket>()
       var sendErrors = ArrayList<Exception>()
 
-      ResendController.getInstance()
-        .resend(
+      resendController.resend(
+        resendController.run {
           object : ResendWorker(packetsToSend) {
             override fun process(chunks: MutableList<OneShotPacket>) {
               synchronized(receivedPackets) { receivedPackets.addAll(chunks) }
@@ -490,7 +495,8 @@ class BulkSendTool : AuthenticatedMCPTool() {
               latch.countDown()
             }
           }
-        )
+        }
+      )
 
       // 完了を待機
       var completed = latch.await(30, TimeUnit.SECONDS)
@@ -543,7 +549,7 @@ class BulkSendTool : AuthenticatedMCPTool() {
 
     try {
       // パケットを取得
-      var originalPacket = Packets.getInstance().query(packetId)
+      var originalPacket = packets.query(packetId)
       if (originalPacket == null) {
         result.success = false
         result.failedCount = count
@@ -606,7 +612,7 @@ class BulkSendTool : AuthenticatedMCPTool() {
             )
 
           // 単発送信
-          ResendController.getInstance().resend(jobPacket)
+          resendController.resend(jobPacket)
           successCount++
 
           // 同一パケット内の送信間隔

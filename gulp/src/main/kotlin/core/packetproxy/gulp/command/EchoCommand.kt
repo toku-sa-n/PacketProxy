@@ -27,7 +27,7 @@ import packetproxy.gulp.ParsedCommand
  *
  * 内部連携の際はBufferedOutputを使用することで、 標準出力を汚さずに結果を取得できる。
  */
-object EchoCommand : Command {
+class EchoCommand : Command {
   override suspend fun invoke(parsed: ParsedCommand, ctx: CommandContext) {
     val message = parsed.args.joinToString(" ")
     ctx.println(message)

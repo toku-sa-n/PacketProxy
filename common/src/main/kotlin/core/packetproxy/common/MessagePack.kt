@@ -22,8 +22,8 @@ import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.util.TreeMap
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
 
 class MessagePack {
   class Key {

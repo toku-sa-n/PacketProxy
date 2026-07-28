@@ -23,12 +23,11 @@ import java.net.InetSocketAddress
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.SERVERS
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class Servers private constructor() : PropertyChangeListener {
+class Servers(private val database: Database) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
 
-  private var database: Database = Database.getInstance()
   private var dao: Dao<Server, Int> = database.createTable(Server::class.java, this)
   private var cache = DaoQueryCache<Server>()
 
@@ -240,14 +239,12 @@ class Servers private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(Server::class.java, this)
           cache.clear()
           ensureDescriptorPathColumn()
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(Server::class.java, this)
           cache.clear()
           ensureDescriptorPathColumn()
@@ -255,19 +252,6 @@ class Servers private constructor() : PropertyChangeListener {
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  companion object {
-    private var instance: Servers? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): Servers {
-      if (instance == null) {
-        instance = Servers()
-      }
-      return instance!!
     }
   }
 }

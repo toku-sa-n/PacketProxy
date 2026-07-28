@@ -9,7 +9,7 @@ package packetproxy
 import java.security.KeyStore
 import packetproxy.model.CAs.CA
 
-class CertCacheManager private constructor() {
+class CertCacheManager() {
   private val certCache = HashMap<String, KeyStore>()
 
   @Throws(Exception::class)
@@ -23,19 +23,7 @@ class CertCacheManager private constructor() {
     }
   }
 
-  companion object {
-    private var instance: CertCacheManager? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): CertCacheManager {
-      if (instance == null) instance = CertCacheManager()
-      return instance!!
-    }
-
-    @JvmStatic
-    fun clearCache() {
-      instance?.certCache?.clear()
-    }
+  fun clearCache() {
+    certCache.clear()
   }
 }

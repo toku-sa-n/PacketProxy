@@ -20,7 +20,7 @@ import packetproxy.http.Http
 import packetproxy.http1.Http1StreamingResponse
 import packetproxy.http2.Http2StreamingResponse
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 open class EncodeHTTPStreamingResponse : Encoder {
   enum class HTTPVersion {
@@ -45,8 +45,6 @@ open class EncodeHTTPStreamingResponse : Encoder {
         ALPN == "h2" || ALPN.startsWith("grpc") -> HTTPVersion.HTTP2
         else -> HTTPVersion.HTTP1
       }
-    http1StreamingResponse = Http1StreamingResponse()
-    http2StreamingResponse = Http2StreamingResponse()
   }
 
   fun getHttpVersion(): HTTPVersion = httpVersion

@@ -47,20 +47,16 @@ import javax.swing.UIManager
 import javax.swing.text.DefaultEditorKit
 import javax.swing.text.JTextComponent
 import javax.swing.text.Keymap
-import packetproxy.common.AppVersion
-import packetproxy.common.DialogParents
-import packetproxy.common.FontManager
-import packetproxy.common.I18nString
-import packetproxy.common.ProjectDisplayName
-import packetproxy.model.Database
+import packetproxy.CoreServices
+import packetproxy.common.*
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.InterceptModel
+import packetproxy.model.ModelServices
 import packetproxy.model.PropertyChangeEventType
-import packetproxy.util.Logging
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.PacketProxyUtility
+import packetproxy.util.errWithStackTrace
 
-class GUIMain private constructor() : JFrame(), PropertyChangeListener {
+class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) :
+  JFrame(), PropertyChangeListener {
 
   private lateinit var menuBar: GUIMenu
   lateinit var tabbedPane: JTabbedPane
@@ -74,6 +70,7 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
   private lateinit var guiExtensions: GUIExtensions
   private lateinit var guiVulCheckHelper: GUIVulCheckHelper
   private lateinit var interceptModel: InterceptModel
+  private val appVersion = AppVersion()
 
   enum class Panes {
     HISTORY,
@@ -101,14 +98,13 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
 
   init {
     try {
-      DialogParents.mainFrame = this
-      Logging.setLogSink(GuiLogSink())
+      coreServices.logging.setLogSinkInternal(GuiLogSink())
       setIcon()
       guiHistory = initProjectAndHistory()
       setLookandFeel()
 
       // Register for database events
-      Database.getInstance().addPropertyChangeListener(this)
+      modelServices.database.addPropertyChangeListener(this)
 
       // Set initial title with project name
       updateTitle()
@@ -121,10 +117,10 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
 
       guiOption = GUIOption(this)
       guiIntercept = GUIIntercept(this)
-      guiResender = GUIResender.getInstance()
-      guiBulkSender = GUIBulkSender.getInstance()
-      guiExtensions = GUIExtensions.getInstance()
-      guiVulCheckHelper = GUIVulCheckHelper.getInstance()
+      guiResender = GUIResender(this)
+      guiBulkSender = GUIBulkSender(this)
+      guiExtensions = GUIExtensions(this, guiHistory)
+      guiVulCheckHelper = GUIVulCheckHelper(this)
 
       tabbedPane = JTabbedPane()
 
@@ -143,11 +139,11 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
       tabbedPane.addTab(getPaneString(Panes.BULKSENDER), guiBulkSender.createPanel())
       tabbedPane.addTab(getPaneString(Panes.EXTENSIONS), guiExtensions.createPanel())
       tabbedPane.addTab(getPaneString(Panes.OPTIONS), guiOption.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.LOG), Logging.createLogPanel())
+      tabbedPane.addTab(getPaneString(Panes.LOG), coreServices.logging.createLogPanelInternal())
 
       contentPane.add(tabbedPane, BorderLayout.CENTER)
 
-      interceptModel = InterceptModel.getInstance()
+      interceptModel = modelServices.interceptModel
       interceptModel.addPropertyChangeListener(this)
 
       //// 終了時の処理
@@ -165,6 +161,14 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
     }
   }
 
+  fun getGuiResender(): GUIResender = guiResender
+
+  fun getGuiHistory(): GUIHistory = guiHistory
+
+  fun getGuiBulkSender(): GUIBulkSender = guiBulkSender
+
+  fun getGuiVulCheckHelper(): GUIVulCheckHelper = guiVulCheckHelper
+
   private fun setIcon() {
     setIconForWindows()
     addDockIconForMac()
@@ -173,11 +177,11 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
   private fun initProjectAndHistory(): GUIHistory {
     val chooser = GUIProjectChooserDialog(this)
     val restore = chooser.chooseAndSetup()
-    return if (restore) GUIHistory.restoreLastInstance(this) else GUIHistory.getInstance(this)
+    return GUIHistory(this, restore)
   }
 
   private fun setLookandFeel() {
-    if (PacketProxyUtility.getInstance().isUnix()) {
+    if (coreServices.packetProxyUtility.isUnix()) {
       System.setProperty("awt.useSystemAAFontSettings", "on")
       System.setProperty("swing.aatext", "true")
     }
@@ -196,12 +200,12 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
     }
 
     // フォント設定をデフォルトに復元(シンタックスハイライト機能による影響を防ぐため)
-    FontManager.getInstance().restoreUIFont()
-    FontManager.getInstance().restoreFont()
+    modelServices.fontManager.restoreUIFont()
+    modelServices.fontManager.restoreFont()
 
-    UIManager.getLookAndFeelDefaults().put("defaultFont", FontManager.getInstance().getUIFont())
+    UIManager.getLookAndFeelDefaults().put("defaultFont", modelServices.fontManager.getUIFont())
     // OptionPaneのロケール
-    JOptionPane.setDefaultLocale(I18nString.locale)
+    JOptionPane.setDefaultLocale(i18nLocale)
 
     // スクロールバーの幅を太くする
     UIManager.put("ScrollBar.width", 15)
@@ -212,7 +216,7 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
 
   /** Windowsにアイコンを表示する */
   private fun setIconForWindows() {
-    if (!PacketProxyUtility.getInstance().isWindows()) {
+    if (!coreServices.packetProxyUtility.isWindows()) {
       return
     }
     val icon = ImageIcon(javaClass.getResource("/gui/icon.png"))
@@ -221,7 +225,7 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
 
   /** MacのDock上でにPacketProxyアイコンを表示する */
   private fun addDockIconForMac() {
-    if (!PacketProxyUtility.getInstance().isMac()) {
+    if (!coreServices.packetProxyUtility.isMac()) {
       return
     }
     val icon = ImageIcon(javaClass.getResource("/gui/icon.png"))
@@ -230,7 +234,7 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
 
   /** JTextPane上でCommand+Cとかでコピペをできるようにする */
   private fun addShortcutForMac() {
-    if (!PacketProxyUtility.getInstance().isMac()) {
+    if (!coreServices.packetProxyUtility.isMac()) {
       return
     }
     val p = contentPane as JPanel
@@ -278,7 +282,7 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
   }
 
   private fun addShortcutForWindows() {
-    if (PacketProxyUtility.getInstance().isMac()) {
+    if (coreServices.packetProxyUtility.isMac()) {
       return
     }
     val p = contentPane as JPanel
@@ -308,7 +312,7 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
 
   /** Macでフルスクリーン表示できるようにする */
   private fun enableFullScreenForMac(window: Window) {
-    if (!PacketProxyUtility.getInstance().isMac()) {
+    if (!coreServices.packetProxyUtility.isMac()) {
       return
     }
     rootPane.putClientProperty("apple.awt.fullscreenable", true)
@@ -334,7 +338,8 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
   }
 
   fun updateTitle() {
-    val titleText = String.format("PacketProxy %s - %s", AppVersion.get(), ProjectDisplayName.get())
+    val titleText =
+      String.format("PacketProxy %s - %s", appVersion.get(), get(modelServices.database))
     title = titleText
   }
 
@@ -356,16 +361,6 @@ class GUIMain private constructor() : JFrame(), PropertyChangeListener {
   }
 
   companion object {
-    private const val serialVersionUID = 1L
-    private var instance: GUIMain? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): GUIMain {
-      if (instance == null) {
-        instance = GUIMain()
-      }
-      return instance!!
-    }
+    private val serialVersionUID = 1L
   }
 }

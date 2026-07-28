@@ -15,8 +15,7 @@
  */
 package packetproxy.model
 
-class ConfigInteger(private val key: String) {
-  private val configs = Configs.getInstance()
+class ConfigInteger(private val configs: Configs, private val key: String) {
   private var config = configs.query(key)
 
   init {

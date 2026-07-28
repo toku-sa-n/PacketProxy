@@ -15,17 +15,27 @@
  */
 package packetproxy
 
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
+import packetproxy.model.Resolutions
 import packetproxy.quic.service.connection.ClientConnections
 import packetproxy.quic.service.connection.ServerConnection
 import packetproxy.quic.value.ConnectionIdPair
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class ProxyQuicForward @Throws(Exception::class) constructor(private val listen_info: ListenPort) :
-  Proxy() {
+class ProxyQuicForward
+@Throws(Exception::class)
+constructor(
+  private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
+  certCacheManager: CertCacheManager,
+  private val resolutions: Resolutions,
+  private val database: Database,
+) : Proxy() {
   private val clientConnections =
-    ClientConnections(listen_info.getPort(), listen_info.getCA().get())
+    ClientConnections(listen_info.getPort(), listen_info.getCA().get(), certCacheManager)
 
   override fun run() {
     try {
@@ -33,21 +43,26 @@ class ProxyQuicForward @Throws(Exception::class) constructor(private val listen_
         val clientConnection = clientConnections.accept()
         log("accept")
 
-        val serverName = listen_info.getServer()!!.getIp()!!
+        val serverName = listen_info.getServer(database)!!.getIp()!!
         log("[QUIC-forward!] %s", serverName)
 
         val serverConnection =
-          ServerConnection(ConnectionIdPair.generateRandom(), serverName, listen_info.getPort())
+          ServerConnection(
+            ConnectionIdPair.generateRandom(),
+            serverName,
+            listen_info.getPort(),
+            resolutions,
+          )
 
         val duplex =
-          DuplexFactory.createDuplexAsync(
+          duplexFactory.createDuplexAsync(
             clientConnection,
             serverConnection,
-            listen_info.getServer()!!.getEncoder()!!,
+            listen_info.getServer(database)!!.getEncoder()!!,
           )
 
         duplex.start()
-        DuplexManager.getInstance().registerDuplex(duplex)
+        duplexManager.registerDuplex(duplex)
       }
     } catch (e: Exception) {
       errWithStackTrace(e)

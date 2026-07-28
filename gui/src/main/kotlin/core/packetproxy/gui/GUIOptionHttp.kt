@@ -7,13 +7,14 @@ import javax.swing.BoxLayout
 import javax.swing.JComboBox
 import javax.swing.JLabel
 import javax.swing.JPanel
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.ConfigString
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.model.Configs
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionHttp {
+class GUIOptionHttp(configs: Configs) {
   private val combo = JComboBox<String>()
-  private val configPriority = ConfigString("PriorityOrderOfHttpVersions")
+  private val configPriority = ConfigString(configs, "PriorityOrderOfHttpVersions")
 
   init {
     combo.prototypeDisplayValue = "xxxxxxx"
@@ -45,7 +46,7 @@ class GUIOptionHttp {
     panel.background = Color.WHITE
     panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
     panel.add(combo)
-    panel.add(JLabel(I18nString.get("has a high priority")))
+    panel.add(JLabel(i18nString("has a high priority")))
     panel.alignmentX = Component.LEFT_ALIGNMENT
     panel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), panel.maximumSize.height)
     return panel

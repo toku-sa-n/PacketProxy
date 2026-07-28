@@ -2,14 +2,14 @@ package packetproxy.gui
 
 import java.awt.Dimension
 import javax.swing.*
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.Filter
-import packetproxy.model.Filters
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIFilterConfigAddDialog(owner: JFrame, baseFilter: String = "") : JDialog(owner) {
-  private var cancel = JButton(I18nString.get("Cancel"))
-  private var add = JButton(I18nString.get("Add"))
+class GUIFilterConfigAddDialog(private val owner: JFrame, baseFilter: String = "") :
+  JDialog(owner) {
+  private var cancel = JButton(i18nString("Cancel"))
+  private var add = JButton(i18nString("Add"))
   private var nameField = JTextField()
   private var filter =
     JTextArea().apply {
@@ -19,14 +19,14 @@ class GUIFilterConfigAddDialog(owner: JFrame, baseFilter: String = "") : JDialog
     }
 
   init {
-    title = I18nString.get("Add a filter")
+    title = i18nString("Add a filter")
     var rect = owner.bounds
     setBounds(rect.x + rect.width / 2 - 350, rect.y + rect.height / 2 - 125, 700, 250)
     contentPane.add(
       JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        add(row(I18nString.get("Filter name:"), nameField, 2))
-        add(row(I18nString.get("Filter:"), filter, 5))
+        add(row(i18nString("Filter name:"), nameField, 2))
+        add(row(i18nString("Filter:"), filter, 5))
         add(
           JPanel().apply {
             add(cancel)
@@ -38,7 +38,7 @@ class GUIFilterConfigAddDialog(owner: JFrame, baseFilter: String = "") : JDialog
     cancel.addActionListener { dispose() }
     add.addActionListener {
       try {
-        Filters.getInstance().create(Filter(nameField.text, filter.text))
+        owner.modelServices.filters.create(Filter(nameField.text, filter.text))
         dispose()
       } catch (e: Exception) {
         errWithStackTrace(e)

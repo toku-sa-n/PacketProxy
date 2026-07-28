@@ -31,10 +31,16 @@ import packetproxy.common.ClientKeyManager
 import packetproxy.common.Utils
 import packetproxy.model.CAs.CA
 import packetproxy.model.ConfigString
+import packetproxy.model.Configs
 import packetproxy.model.Servers
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-object Https {
+class Https(
+  private val configs: Configs,
+  private val servers: Servers,
+  private val certCacheManager: CertCacheManager,
+  private val clientKeyManager: ClientKeyManager,
+) {
   private val KS_PASS = "testtest".toCharArray()
 
   private var clientKeyManagers: Array<KeyManager>? =
@@ -64,24 +70,18 @@ object Https {
       }
     )
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createSSLContext(commonName: String, ca: CA): SSLContext {
     var sslContext = SSLContext.getInstance("TLS")
     var domainNames =
-      Servers.getInstance()
-        .queryResolvedByDNS()
-        .map { it.getIp()!! }
-        .sortedWith(String::compareTo)
-        .toTypedArray()
-    var ks: KeyStore = CertCacheManager.getInstance().getKeyStore(commonName, domainNames, ca)
+      servers.queryResolvedByDNS().map { it.getIp()!! }.sortedWith(String::compareTo).toTypedArray()
+    var ks: KeyStore = certCacheManager.getKeyStore(commonName, domainNames, ca)
     var kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
     kmf.init(ks, KS_PASS)
     sslContext.init(kmf.keyManagers, null, null)
     return sslContext
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createServerSSLSocket(listen_port: Int, commonName: String, ca: CA): ServerSocket {
     var sslContext = createSSLContext(commonName, ca)
@@ -89,7 +89,6 @@ object Https {
     return ssf.createServerSocket(listen_port) as SSLServerSocket
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createServerSSLSocket(
     listen_port: Int,
@@ -105,7 +104,6 @@ object Https {
     return serverSocket
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createBothSideSSLSockets(
     clientSocket: Socket,
@@ -120,8 +118,8 @@ object Https {
         as SSLSocket
     clientSSLSocket.useClientMode = false
 
-    var server = Servers.getInstance().queryByAddress(serverAddr)
-    clientKeyManagers = ClientKeyManager.getKeyManagers(server)
+    var server = servers.queryByAddress(serverAddr)
+    clientKeyManagers = clientKeyManager.getKeyManagers(server)
     var serverSSLSocket = arrayOfNulls<SSLSocket>(1)
     clientSSLSocket.setHandshakeApplicationProtocolSelector { _, clientProtocols ->
       try {
@@ -157,7 +155,7 @@ object Https {
         var sp = serverSSLSocket[0]!!.sslParameters
 
         var alpns = clientProtocols.toMutableList()
-        if (ConfigString("PriorityOrderOfHttpVersions").getString() == "HTTP1") {
+        if (ConfigString(configs, "PriorityOrderOfHttpVersions").getString() == "HTTP1") {
           if (alpns.contains("http/1.1") || alpns.contains("http/1.0")) {
             alpns.remove("h2")
             alpns.remove("grpc")
@@ -213,7 +211,6 @@ object Https {
     return arrayOf(clientSSLSocket, serverSSLSocket[0]!!)
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun convertToServerSSLSocket(
     socket: Socket,
@@ -235,7 +232,6 @@ object Https {
     return ssl_socket
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createSSLSocketFactory(): SSLSocketFactory {
     var sslContext = SSLContext.getInstance("TLS")
@@ -253,7 +249,6 @@ object Https {
     return sslContext.socketFactory as SSLSocketFactory
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun convertToClientSSLSocket(socket: Socket, alpn: String?): SSLSocket {
     var ssf = createSSLSocketFactory()
@@ -271,7 +266,6 @@ object Https {
     return sock
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createClientSSLSocket(addr: InetSocketAddress, alpn: String?): SSLSocket {
     var ssf = createSSLSocketFactory()
@@ -289,7 +283,6 @@ object Https {
     return sock
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createClientSSLSocket(
     addr: InetSocketAddress,
@@ -299,8 +292,8 @@ object Https {
     /* SNI */
     var serverName = SNIHostName(SNIServerName!!)
     /* Fetch Client Certificate from ClientKeyManager */
-    var server = Servers.getInstance().queryByAddress(addr)
-    clientKeyManagers = ClientKeyManager.getKeyManagers(server)
+    var server = servers.queryByAddress(addr)
+    clientKeyManagers = clientKeyManager.getKeyManagers(server)
 
     var ssf = createSSLSocketFactory()
     var sock = ssf.createSocket(addr.address, addr.getPort()) as SSLSocket
@@ -323,7 +316,6 @@ object Https {
     return sock
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun getCommonName(addr: InetSocketAddress): String {
     var ssf = createSSLSocketFactory()

@@ -6,8 +6,8 @@
  */
 package packetproxy.http
 
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
 
 class HeaderField {
   private var _name = ""

@@ -7,8 +7,8 @@ import java.nio.file.Paths
 import javax.tools.*
 import packetproxy.quic.value.frame.Frame
 
-object FrameParser {
-  private const val framePackage = "packetproxy.quic.value.frame"
+class FrameParser {
+  private val framePackage = "packetproxy.quic.value.frame"
   private val frameClass = Frame::class.java
   private var frameMap: MutableMap<Byte, Class<out Frame>>? = null
 
@@ -34,7 +34,6 @@ object FrameParser {
   }
 
   @Throws(Exception::class)
-  @JvmStatic
   fun create(buffer: ByteBuffer): Frame {
     val saved = buffer.position()
     val type = buffer.get()

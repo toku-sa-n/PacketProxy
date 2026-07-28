@@ -15,22 +15,26 @@
  */
 package packetproxy.model
 
-object DiffModels {
+class DiffModels(
+  private val diff: Diff,
+  private val diffBinary: DiffBinary,
+  private val diffJson: DiffJson,
+) {
   fun markAsOriginal(data: ByteArray) {
-    Diff.getInstance().markAsOriginal(data)
-    DiffBinary.getInstance().markAsOriginal(data)
-    DiffJson.getInstance().markAsOriginal(data)
+    diff.markAsOriginal(data)
+    diffBinary.markAsOriginal(data)
+    diffJson.markAsOriginal(data)
   }
 
   fun markAsTarget(data: ByteArray) {
-    Diff.getInstance().markAsTarget(data)
-    DiffBinary.getInstance().markAsTarget(data)
-    DiffJson.getInstance().markAsTarget(data)
+    diff.markAsTarget(data)
+    diffBinary.markAsTarget(data)
+    diffJson.markAsTarget(data)
   }
 
   fun clearOriginal() {
-    Diff.getInstance().clearAsOriginal()
-    DiffBinary.getInstance().clearAsOriginal()
-    DiffJson.getInstance().clearAsOriginal()
+    diff.clearAsOriginal()
+    diffBinary.clearAsOriginal()
+    diffJson.clearAsOriginal()
   }
 }

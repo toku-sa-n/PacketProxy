@@ -31,7 +31,7 @@ import packetproxy.util.Logging
  * gRPC body の JSON⇔protobuf 変換と [GrpcServiceRegistry] 解決を担う。
  * エンコーダごとに1インスタンス持ち、[lastResolvedRegistry] を通じて リクエスト時に解決した registry をレスポンス処理でも再利用する。
  */
-class GrpcSchemaResolver {
+class GrpcSchemaResolver(private val serviceRegistryStore: GrpcServiceRegistryStore) {
 
   @Volatile private var lastResolvedRegistry: GrpcServiceRegistry? = null
 
@@ -52,7 +52,7 @@ class GrpcSchemaResolver {
           authority = host
         }
       }
-      GrpcServiceRegistryStore.getInstance().getByAuthority(authority)
+      serviceRegistryStore.getByAuthority(authority)
     } catch (e: Exception) {
       Logging.errWithStackTrace(e)
       null

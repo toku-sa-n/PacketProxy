@@ -8,8 +8,12 @@ package packetproxy
 
 import packetproxy.model.ListenPort
 
-class Listen(val listenInfo: ListenPort) {
-  private val proxy: Proxy = ProxyFactory.create(listenInfo)
+class Listen(
+  val listenInfo: ListenPort,
+  proxyFactory: ProxyFactory,
+  private val duplexManager: DuplexManager,
+) {
+  private val proxy: Proxy = proxyFactory.create(listenInfo)
 
   init {
     proxy.start()
@@ -18,6 +22,6 @@ class Listen(val listenInfo: ListenPort) {
   @Throws(Exception::class)
   fun close() {
     proxy.close()
-    DuplexManager.getInstance().closeAndClearDuplex(listenInfo.getPort())
+    duplexManager.closeAndClearDuplex(listenInfo.getPort())
   }
 }

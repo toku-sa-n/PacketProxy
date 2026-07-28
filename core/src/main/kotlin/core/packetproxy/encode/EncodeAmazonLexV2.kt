@@ -18,7 +18,7 @@ package packetproxy.encode
 import com.google.gson.GsonBuilder
 import packetproxy.common.AmazonLexV2
 import packetproxy.http.Http
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 class EncodeAmazonLexV2 @Throws(Exception::class) constructor(ALPN: String?) :
   EncodeHTTPBase(ALPN) {

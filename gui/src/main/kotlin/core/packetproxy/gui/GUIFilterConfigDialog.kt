@@ -3,11 +3,11 @@ package packetproxy.gui
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.*
-import packetproxy.common.I18nString
+import packetproxy.common.*
 
-class GUIFilterConfigDialog(owner: JFrame) : JDialog(owner) {
+class GUIFilterConfigDialog(private val owner: JFrame) : JDialog(owner) {
   init {
-    title = I18nString.get("Manage filters")
+    title = i18nString("Manage filters")
     addWindowListener(
       object : WindowAdapter() {
         override fun windowClosing(e: WindowEvent) {

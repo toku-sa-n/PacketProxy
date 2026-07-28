@@ -22,8 +22,7 @@ import packetproxy.extensions.samplehttp.SampleEncoders
 import packetproxy.extensions.securityheaders.SecurityHeadersExtension
 import packetproxy.model.Extensions
 
-object PresetExtensions {
-  @JvmStatic
+class PresetExtensions {
   fun registerAll() {
     Extensions.registerPreset(MCPServerExtension::class.java)
     Extensions.registerPreset(RandomnessExtension::class.java)

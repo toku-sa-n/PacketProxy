@@ -20,63 +20,61 @@ import javax.swing.tree.DefaultMutableTreeNode
 
 data class PathSegment(val fullPrefix: String, val segmentLabel: String)
 
-object EndpointTreeBuilder {
-  fun buildPathSegments(path: String): List<PathSegment> {
-    val segments = path.split("/").filter { it.isNotEmpty() }
-    var cumulative = ""
-    return segments.map { segment ->
-      cumulative = "$cumulative/$segment"
-      PathSegment(fullPrefix = cumulative, segmentLabel = "/$segment")
-    }
+fun buildPathSegments(path: String): List<PathSegment> {
+  val segments = path.split("/").filter { it.isNotEmpty() }
+  var cumulative = ""
+  return segments.map { segment ->
+    cumulative = "$cumulative/$segment"
+    PathSegment(fullPrefix = cumulative, segmentLabel = "/$segment")
   }
+}
 
-  fun build(endpoints: Collection<EndpointSummary>): DefaultMutableTreeNode {
-    val root = DefaultMutableTreeNode()
-    val hostNodes = mutableMapOf<String, DefaultMutableTreeNode>()
-    val pathNodes = mutableMapOf<Pair<String, String>, DefaultMutableTreeNode>()
-    val methodBuckets = mutableMapOf<Triple<String, String, String>, MutableList<EndpointSummary>>()
-    val methodBucketParents = mutableMapOf<Triple<String, String, String>, DefaultMutableTreeNode>()
+fun build(endpoints: Collection<EndpointSummary>): DefaultMutableTreeNode {
+  val root = DefaultMutableTreeNode()
+  val hostNodes = mutableMapOf<String, DefaultMutableTreeNode>()
+  val pathNodes = mutableMapOf<Pair<String, String>, DefaultMutableTreeNode>()
+  val methodBuckets = mutableMapOf<Triple<String, String, String>, MutableList<EndpointSummary>>()
+  val methodBucketParents = mutableMapOf<Triple<String, String, String>, DefaultMutableTreeNode>()
 
-    val sorted =
-      endpoints.sortedWith(compareBy<EndpointSummary>({ it.host }, { it.url }, { it.method }))
+  val sorted =
+    endpoints.sortedWith(compareBy<EndpointSummary>({ it.host }, { it.url }, { it.method }))
 
-    for (summary in sorted) {
-      val hostNode =
-        hostNodes.getOrPut(summary.host) {
-          DefaultMutableTreeNode(EndpointTreeHost(summary.host)).also { root.add(it) }
-        }
-
-      val path =
-        try {
-          URI(summary.url).path ?: ""
-        } catch (_: Exception) {
-          ""
-        }
-
-      var current = hostNode
-      var fullPathPrefix = ""
-      for (segment in buildPathSegments(path)) {
-        val key = summary.host to segment.fullPrefix
-        val pathNode =
-          pathNodes.getOrPut(key) {
-            DefaultMutableTreeNode(EndpointTreeFolder(segment.fullPrefix, segment.segmentLabel))
-              .also { current.add(it) }
-          }
-        current = pathNode
-        fullPathPrefix = segment.fullPrefix
+  for (summary in sorted) {
+    val hostNode =
+      hostNodes.getOrPut(summary.host) {
+        DefaultMutableTreeNode(EndpointTreeHost(summary.host)).also { root.add(it) }
       }
 
-      val methodKey = Triple(summary.host, fullPathPrefix, summary.method)
-      methodBuckets.getOrPut(methodKey) { mutableListOf() }.add(summary)
-      methodBucketParents[methodKey] = current
+    val path =
+      try {
+        URI(summary.url).path ?: ""
+      } catch (_: Exception) {
+        ""
+      }
+
+    var current = hostNode
+    var fullPathPrefix = ""
+    for (segment in buildPathSegments(path)) {
+      val key = summary.host to segment.fullPrefix
+      val pathNode =
+        pathNodes.getOrPut(key) {
+          DefaultMutableTreeNode(EndpointTreeFolder(segment.fullPrefix, segment.segmentLabel))
+            .also { current.add(it) }
+        }
+      current = pathNode
+      fullPathPrefix = segment.fullPrefix
     }
 
-    for ((methodKey, summaries) in methodBuckets) {
-      val parent = methodBucketParents[methodKey] ?: continue
-      val method = methodKey.third
-      parent.add(DefaultMutableTreeNode(EndpointTreeMethod(method, summaries.toList())))
-    }
-
-    return root
+    val methodKey = Triple(summary.host, fullPathPrefix, summary.method)
+    methodBuckets.getOrPut(methodKey) { mutableListOf() }.add(summary)
+    methodBucketParents[methodKey] = current
   }
+
+  for ((methodKey, summaries) in methodBuckets) {
+    val parent = methodBucketParents[methodKey] ?: continue
+    val method = methodKey.third
+    parent.add(DefaultMutableTreeNode(EndpointTreeMethod(method, summaries.toList())))
+  }
+
+  return root
 }

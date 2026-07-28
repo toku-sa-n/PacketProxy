@@ -12,7 +12,7 @@ class MergedRowDataResolverTest {
     val responseData = byteArrayOf(4, 5, 6)
 
     val result =
-      MergedRowDataResolver.resolve(
+      resolve(
         owner = mock(JFrame::class.java),
         message = "message",
         title = "title",

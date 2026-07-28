@@ -14,13 +14,12 @@ import javax.swing.JTable
 import javax.swing.RowFilter
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableRowSorter
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.CharSet
-import packetproxy.util.CharSetUtility
 
-class GUIOptionCharSetDialog(owner: JFrame) : JDialog(owner) {
-  private val cancel = JButton(I18nString.get("Cancel"))
-  private val save = JButton(I18nString.get("Save"))
+class GUIOptionCharSetDialog(private val owner: JFrame) : JDialog(owner) {
+  private val cancel = JButton(i18nString("Cancel"))
+  private val save = JButton(i18nString("Save"))
   private val textCharset = HintTextField("(ex.) Shift_JIS")
   private lateinit var tableModel: CharSetsTableModel
   private lateinit var sorter: TableRowSorter<CharSetsTableModel>
@@ -65,7 +64,7 @@ class GUIOptionCharSetDialog(owner: JFrame) : JDialog(owner) {
   }
 
   private fun createTable(): JScrollPane {
-    val available = CharSetUtility.getInstance().getAvailableCharSetList().toSet()
+    val available = owner.modelServices.charSetUtility.getAvailableCharSetList().toSet()
     val data =
       java.nio.charset.Charset.availableCharsets()
         .keys

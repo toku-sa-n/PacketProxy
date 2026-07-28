@@ -27,11 +27,11 @@ import packetproxy.http3.utils.parseVarInt
 import packetproxy.http3.value.frame.Frame
 import packetproxy.http3.value.frame.Frames
 import packetproxy.http3.value.frame.GreaseFrame
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 open class FrameParser {
   companion object {
-    private const val framePackage = "packetproxy.http3.value.frame"
+    private val framePackage = "packetproxy.http3.value.frame"
     private val frameClass = Frame::class.java
     private val frameMap: MutableMap<Long, Class<Frame>> = HashMap()
 

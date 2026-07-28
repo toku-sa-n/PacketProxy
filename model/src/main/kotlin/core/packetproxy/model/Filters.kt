@@ -23,12 +23,11 @@ import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.FILTERS
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class Filters private constructor() : PropertyChangeListener {
+class Filters(private val database: Database) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
 
-  private var database: Database = Database.getInstance()
   private var dao: Dao<Filter, Int> = database.createTable(Filter::class.java, this)
 
   init {
@@ -101,12 +100,10 @@ class Filters private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(Filter::class.java, this)
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(Filter::class.java, this)
         }
       }
@@ -136,19 +133,6 @@ class Filters private constructor() : PropertyChangeListener {
     if (option == JOptionPane.YES_OPTION) {
       database.dropTable(Filter::class.java)
       dao = database.createTable(Filter::class.java, this)
-    }
-  }
-
-  companion object {
-    private var instance: Filters? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): Filters {
-      if (instance == null) {
-        instance = Filters()
-      }
-      return instance!!
     }
   }
 }

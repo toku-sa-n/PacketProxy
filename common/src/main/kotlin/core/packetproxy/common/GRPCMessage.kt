@@ -22,7 +22,7 @@ import java.nio.ByteBuffer
 import java.util.StringJoiner
 import net.arnx.jsonic.JSON
 import org.xbill.DNS.utils.base64
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GRPCMessage {
   var type: Int
@@ -72,8 +72,8 @@ class GRPCMessage {
   }
 
   companion object {
-    private const val GRPC_WEB_FH_DATA = 0b0
-    private const val GRPC_WEB_FH_TRAILER = 0b10000000
+    private val GRPC_WEB_FH_DATA = 0b0
+    private val GRPC_WEB_FH_TRAILER = 0b10000000
 
     @JvmStatic
     fun decodeTextMessages(base64Str: String): List<GRPCMessage> =

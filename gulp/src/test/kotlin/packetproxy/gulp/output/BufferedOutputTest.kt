@@ -71,7 +71,7 @@ class BufferedOutputTest {
 
   @Test
   fun styleがPlainStyleであること() {
-    assertThat(output.style).isEqualTo(PlainStyle)
+    assertThat(output.style).isEqualTo(PlainStyle())
   }
 
   @Test

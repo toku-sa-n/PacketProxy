@@ -8,16 +8,15 @@ import javax.swing.JPanel
 import javax.swing.JTabbedPane
 import packetproxy.common.Range
 import packetproxy.model.PropertyChangeEventType.SELECTED_INDEX
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.PacketProxyUtility
 import packetproxy.util.SearchBox
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
 
-class TabSet(search: Boolean, copy: Boolean) {
+class TabSet(private val owner: GUIMain, search: Boolean, copy: Boolean) {
   private val changes = PropertyChangeSupport(this)
-  private val rawPanel = GUIHistoryRaw()
-  private val binaryPanel = GUIHistoryBinary()
-  private val jsonPanel = GUIJson()
+  private val rawPanel = GUIHistoryRaw(owner)
+  private val binaryPanel = GUIHistoryBinary(owner)
+  private val jsonPanel = GUIJson(owner)
   private val dataPane = JTabbedPane()
   private val basePanel = JPanel(BorderLayout())
   private var copyButton: JButton? = null
@@ -41,7 +40,7 @@ class TabSet(search: Boolean, copy: Boolean) {
     }
     basePanel.add(dataPane)
     if (search) {
-      searchBox = SearchBox()
+      searchBox = SearchBox(owner.modelServices.fontManager)
       basePanel.add(searchBox, BorderLayout.SOUTH)
     }
     if (copy) {
@@ -118,7 +117,9 @@ class TabSet(search: Boolean, copy: Boolean) {
         0 -> rawPanel.setData(currentData)
         1 -> binaryPanel.setData(currentData)
         2 ->
-          jsonPanel.setData(PacketProxyUtility.getInstance().prettyFormatJSONInRawData(currentData))
+          jsonPanel.setData(
+            owner.coreServices.packetProxyUtility.prettyFormatJSONInRawData(currentData)
+          )
         else -> err("Not effective index, though this returns raw_panel data in such case.")
       }
       val currentSearchBox = searchBox ?: return

@@ -22,7 +22,7 @@ import java.io.PipedOutputStream
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.StringUtils
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 abstract class Encoder {
   private val PIPE_SIZE = 65536

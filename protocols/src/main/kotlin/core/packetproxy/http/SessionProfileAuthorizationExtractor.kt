@@ -15,19 +15,16 @@
  */
 package packetproxy.http
 
-object SessionProfileAuthorizationExtractor {
-  @JvmStatic
-  fun extract(requestData: ByteArray?): String {
-    if (requestData == null || requestData.isEmpty()) {
-      return ""
-    }
-    if (!HttpHeader.isHTTPHeader(requestData)) {
-      return ""
-    }
-    try {
-      return Http.create(requestData).getFirstHeader("Authorization")
-    } catch (_: Exception) {
-      return ""
-    }
+fun extract(requestData: ByteArray?): String {
+  if (requestData == null || requestData.isEmpty()) {
+    return ""
+  }
+  if (!HttpHeader.isHTTPHeader(requestData)) {
+    return ""
+  }
+  try {
+    return Http.create(requestData).getFirstHeader("Authorization")
+  } catch (_: Exception) {
+    return ""
   }
 }

@@ -24,24 +24,20 @@ import packetproxy.DuplexAsync
 import packetproxy.DuplexFactory
 import packetproxy.DuplexManager
 import packetproxy.EncoderManager
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.encode.EncodeHTTPBase
 import packetproxy.encode.Encoder
 import packetproxy.http.Http
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
 
-class ResendController private constructor() {
-  companion object {
-    @Volatile private var instance: ResendController? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): ResendController =
-      instance ?: synchronized(this) { instance ?: ResendController().also { instance = it } }
-  }
+class ResendController(
+  private val encoderManager: EncoderManager,
+  private val duplexManager: DuplexManager,
+  private val duplexFactory: DuplexFactory,
+) {
 
   /** レスポンスを受け取って処理する必要がないとき用 */
   @Throws(Exception::class)
@@ -79,7 +75,7 @@ class ResendController private constructor() {
     worker.execute()
   }
 
-  open class ResendWorker : SwingWorker<Any?, OneShotPacket> {
+  inner open class ResendWorker : SwingWorker<Any?, OneShotPacket> {
     @JvmField protected var count: Int
     @JvmField protected var oneshot: OneShotPacket?
     @JvmField protected var oneshots: Array<OneShotPacket>?
@@ -157,24 +153,22 @@ class ResendController private constructor() {
 
       init {
         var encoder: Encoder =
-          EncoderManager.getInstance().createInstance(oneshot.getEncoder()!!, oneshot.getAlpn())
+          encoderManager.createInstance(oneshot.getEncoder()!!, oneshot.getAlpn())
         if (!encoder.useNewConnectionForResend() && !encoder.useNewEncoderForResend()) {
           directSend = true
-          duplex = DuplexManager.getInstance().getDuplex(oneshot.getConn())
+          duplex = duplexManager.getDuplex(oneshot.getConn())
           preparedData = oneshot.getData()
         } else if (encoder.useNewConnectionForResend()) {
-          duplex = DuplexFactory.createDuplexSyncFromOneShotPacket(oneshot)
+          duplex = duplexFactory.createDuplexSyncFromOneShotPacket(oneshot)
           isSync = false
         } else {
-          var originalDuplex = DuplexManager.getInstance().getDuplex(oneshot.getConn())
+          var originalDuplex = duplexManager.getDuplex(oneshot.getConn())
           if (originalDuplex == null) {
             err(
-              I18nString.get(
-                "[Error] tried to resend packets, but the connection was already closed."
-              )
+              i18nString("[Error] tried to resend packets, but the connection was already closed.")
             )
           } else {
-            duplex = DuplexFactory.createDuplexFromOriginalDuplex(originalDuplex, oneshot)
+            duplex = duplexFactory.createDuplexFromOriginalDuplex(originalDuplex, oneshot)
             if (duplex is DuplexAsync) {
               (duplex as DuplexAsync).start()
             }
@@ -208,8 +202,7 @@ class ResendController private constructor() {
         var data = currentDuplex.receive()!!
 
         /* 100 Continue 対策 */
-        var encoder =
-          EncoderManager.getInstance().createInstance(oneshot.getEncoder()!!, oneshot.getAlpn())
+        var encoder = encoderManager.createInstance(oneshot.getEncoder()!!, oneshot.getAlpn())
         if (
           encoder is EncodeHTTPBase && encoder.getHttpVersion() == EncodeHTTPBase.HTTPVersion.HTTP1
         ) {
@@ -244,7 +237,7 @@ class ResendController private constructor() {
           oneshot.getServer(),
           oneshot.getServerName()!!,
           oneshot.getUseSSL(),
-          I18nString.get(
+          i18nString(
               "In case that packets were resend to already connected socket, results can't be displayed in this window. See the history window instead."
             )
             .toByteArray(),

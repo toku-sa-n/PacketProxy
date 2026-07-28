@@ -26,7 +26,7 @@ import javax.swing.table.DefaultTableModel
 import org.apache.commons.collections4.map.HashedMap
 import packetproxy.model.Packet
 import packetproxy.model.Packets
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 /**
  * Filterのパーサー 文法は以下の通り <Expr> ::= <OrExpr> <OrExpr> ::= <AndExpr> | <AndExpr> '||' <OrExpr>
@@ -34,7 +34,12 @@ import packetproxy.util.Logging.errWithStackTrace
  * <Rhs> | '(' <Expr> ')' <Lhs> ::= HashedMapのkeys <Rhs> ::= [^&|()]+ <Operator> ::= '=~' | '==' |
  * '>=' | '<=' | '!~' | '!='
  */
-class FilterTextParser private constructor(private val str: String) {
+class FilterTextParser
+private constructor(
+  private val str: String,
+  private val table: DefaultTableModel,
+  private val packets: Packets,
+) {
   private var index = 0
 
   @Throws(Exception::class) private fun expr(): RowFilter<Any, Any> = orExpr()
@@ -128,12 +133,12 @@ class FilterTextParser private constructor(private val str: String) {
 
     val filter: RowFilter<Any, Any> =
       if (operator == "!~" || operator == "!=") {
-        RowFilter.notFilter(generateRequestRowFilter(rhs, column))
+        RowFilter.notFilter(generateRequestRowFilter(rhs, column, table))
       } else if (operator == "=~" || operator == "==") {
         when (column) {
-          columnMapper["full_text_i"] -> generateFullTextRowFilter_i(rhs)
-          columnMapper["full_text"] -> generateFullTextRowFilter(rhs)
-          else -> generateRequestRowFilter(rhs, column)
+          columnMapper["full_text_i"] -> generateFullTextRowFilter_i(rhs, packets)
+          columnMapper["full_text"] -> generateFullTextRowFilter(rhs, packets)
+          else -> generateRequestRowFilter(rhs, column, table)
         }
       } else if (operator == "<=") {
         RowFilter.numberFilter(ComparisonType.BEFORE, Integer.parseInt(rhs), column)
@@ -158,8 +163,11 @@ class FilterTextParser private constructor(private val str: String) {
     return c
   }
 
-  private open class RequestRowFilter(searchWord: String, columns: IntArray) :
-    MyGeneralFilter(columns) {
+  private open class RequestRowFilter(
+    searchWord: String,
+    columns: IntArray,
+    private val table: DefaultTableModel,
+  ) : MyGeneralFilter(columns) {
     val groupIds: MutableSet<Long> = HashSet()
     private val searchWord: String = searchWord
     private var already_analyzed_row_num = 0
@@ -171,7 +179,6 @@ class FilterTextParser private constructor(private val str: String) {
       val v = value.getValue(columnMapper["group"]!!)
       if (v is Long) {
         try {
-          val table: DefaultTableModel = GUIHistory.getInstance().getTableModel()
           if (already_analyzed_row_num < table.rowCount) {
             for (i in already_analyzed_row_num until table.rowCount) {
               val data = table.getValueAt(i, index) as String?
@@ -261,27 +268,37 @@ class FilterTextParser private constructor(private val str: String) {
 
     @JvmStatic
     @Throws(ParseException::class, Exception::class)
-    fun parse(str: String): RowFilter<Any, Any> = FilterTextParser(str).expr()
+    fun parse(str: String, table: DefaultTableModel, packets: Packets): RowFilter<Any, Any> =
+      FilterTextParser(str, table, packets).expr()
 
     @Throws(Exception::class)
-    private fun generateRequestRowFilter(searchWord: String, column: Int): RowFilter<Any, Any> =
-      RequestRowFilter(searchWord, intArrayOf(column))
+    private fun generateRequestRowFilter(
+      searchWord: String,
+      column: Int,
+      table: DefaultTableModel,
+    ): RowFilter<Any, Any> = RequestRowFilter(searchWord, intArrayOf(column), table)
 
     // case sensitive full text search
     @Throws(Exception::class)
-    private fun generateFullTextRowFilter(searchWord: String): RowFilter<Any, Any> {
+    private fun generateFullTextRowFilter(
+      searchWord: String,
+      packets: Packets,
+    ): RowFilter<Any, Any> {
       val fullTextRowFilter = FullTextRowFilter(searchWord, intArrayOf(columnMapper["group"]!!))
-      val packets: List<Packet> = Packets.getInstance().queryFullText(searchWord)
-      packets.forEach { p -> fullTextRowFilter.groupIds.add(p.getGroup()) }
+      val result: List<Packet> = packets.queryFullText(searchWord)
+      result.forEach { p -> fullTextRowFilter.groupIds.add(p.getGroup()) }
       return fullTextRowFilter
     }
 
     // case insensitive full text search
     @Throws(Exception::class)
-    private fun generateFullTextRowFilter_i(searchWord: String): RowFilter<Any, Any> {
+    private fun generateFullTextRowFilter_i(
+      searchWord: String,
+      packets: Packets,
+    ): RowFilter<Any, Any> {
       val fullTextRowFilter = FullTextRowFilter(searchWord, intArrayOf(columnMapper["group"]!!))
-      val packets: List<Packet> = Packets.getInstance().queryFullText_i(searchWord)
-      packets.forEach { p -> fullTextRowFilter.groupIds.add(p.getGroup()) }
+      val result: List<Packet> = packets.queryFullText_i(searchWord)
+      result.forEach { p -> fullTextRowFilter.groupIds.add(p.getGroup()) }
       return fullTextRowFilter
     }
 

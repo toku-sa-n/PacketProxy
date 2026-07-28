@@ -6,11 +6,11 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import packetproxy.model.OneShotPacket
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIPacketData {
+class GUIPacketData(owner: GUIMain) {
   private val mainPanel = JPanel()
-  private val tabs = TabSet(true, false)
+  private val tabs = TabSet(owner, true, false)
   private var showingPacket: OneShotPacket? = null
 
   init {

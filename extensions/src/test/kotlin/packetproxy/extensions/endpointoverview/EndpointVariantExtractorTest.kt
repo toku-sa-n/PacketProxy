@@ -28,8 +28,8 @@ class EndpointVariantExtractorTest {
     val second =
       createSummaryWithRequestBody(url = "https://example.com/api/users", body = """{"id":2}""")
 
-    val rows = EndpointVariantExtractor.buildRows(listOf(first, second))
-    val columns = EndpointVariantExtractor.differingColumns(rows)
+    val rows = buildRows(listOf(first, second))
+    val columns = differingColumns(rows)
 
     assertTrue(columns.contains("id"))
     assertEquals("1", rows[0].fields["id"])
@@ -41,8 +41,8 @@ class EndpointVariantExtractorTest {
     val first = createSummary("https://example.com/api/users?id=1", statusCodes = setOf("200"))
     val second = createSummary("https://example.com/api/users?id=2", statusCodes = setOf("200"))
 
-    val rows = EndpointVariantExtractor.buildRows(listOf(first, second))
-    val columns = EndpointVariantExtractor.differingColumns(rows)
+    val rows = buildRows(listOf(first, second))
+    val columns = differingColumns(rows)
 
     assertTrue(columns.contains("id"))
     assertEquals("1", rows[0].fields["id"])
@@ -54,8 +54,8 @@ class EndpointVariantExtractorTest {
     val first = createSummary("https://example.com/api/users", statusCodes = setOf("200"))
     val second = createSummary("https://example.com/api/users", statusCodes = setOf("200"))
 
-    val rows = EndpointVariantExtractor.buildRows(listOf(first, second))
-    val columns = EndpointVariantExtractor.differingColumns(rows)
+    val rows = buildRows(listOf(first, second))
+    val columns = differingColumns(rows)
 
     assertEquals(listOf("url"), columns)
   }
@@ -64,8 +64,8 @@ class EndpointVariantExtractorTest {
   fun differingColumns_singleVariant_showsStatusWithoutUrl() {
     val summary = createSummary("https://example.com/api/users", statusCodes = setOf("200", "404"))
 
-    val rows = EndpointVariantExtractor.buildRows(listOf(summary))
-    val columns = EndpointVariantExtractor.differingColumns(rows)
+    val rows = buildRows(listOf(summary))
+    val columns = differingColumns(rows)
 
     assertEquals(listOf("status"), columns)
   }

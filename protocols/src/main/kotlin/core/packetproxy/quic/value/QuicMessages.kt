@@ -6,7 +6,7 @@ import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
 import java.util.stream.Collectors
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.rethrow
 
 class QuicMessages {
   private val messages = mutableListOf<QuicMessage>()

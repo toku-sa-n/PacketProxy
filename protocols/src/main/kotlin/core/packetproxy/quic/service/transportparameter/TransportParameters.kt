@@ -10,7 +10,7 @@ import packetproxy.quic.value.transportparameter.bool.ExpGreaseQuicBitParameter
 import packetproxy.quic.value.transportparameter.bytearray.*
 import packetproxy.quic.value.transportparameter.complex.PreferredAddressParameter
 import packetproxy.quic.value.transportparameter.number.*
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 class TransportParameters(val role: Constants.Role) : Extension() {
   var initMaxData = 0L
@@ -44,7 +44,8 @@ class TransportParameters(val role: Constants.Role) : Extension() {
     val length = buffer.short
     if (length.toInt() == 0) return
     val end = buffer.position() + length
-    while (buffer.position() < end) setLocal(TransportParameterParser.parse(buffer))
+    val transportParameterParser = TransportParameterParser()
+    while (buffer.position() < end) setLocal(transportParameterParser.parse(buffer))
   }
 
   private fun setLocal(param: TransportParameter) =

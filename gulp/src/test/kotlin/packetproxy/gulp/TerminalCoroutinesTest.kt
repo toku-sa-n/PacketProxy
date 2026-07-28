@@ -25,7 +25,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import packetproxy.gulp.input.ChainedSource
 import packetproxy.gulp.input.LineSource
 import packetproxy.gulp.output.BufferedOutput
 
@@ -55,11 +54,10 @@ class TerminalCoroutinesTest {
   @Test
   fun コマンド実行中にcancelJobを実行することでコマンドの中断ができること() = runBlocking {
     val mockTerminal = createMockTerminal()
-
-    ChainedSource.push(mockTerminal)
-    ChainedSource.open()
-
     val cmdCtx = CommandContext(BufferedOutput())
+
+    cmdCtx.chainedSource.push(mockTerminal)
+    cmdCtx.chainedSource.open()
 
     // 長時間実行されるコマンドをシミュレート
     var commandStarted = false

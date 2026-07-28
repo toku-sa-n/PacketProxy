@@ -2,13 +2,11 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JFrame
 import packetproxy.model.Resolution
-import packetproxy.model.Resolutions
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionResolutions(owner: JFrame) : GUIOptionComponentBase<Resolution>(owner) {
-  private val resolutions = Resolutions.getInstance()
+class GUIOptionResolutions(owner: GUIMain) : GUIOptionComponentBase<Resolution>(owner) {
+  private val resolutions = owner.modelServices.resolutions
   private val tableList = mutableListOf<Resolution>()
 
   init {

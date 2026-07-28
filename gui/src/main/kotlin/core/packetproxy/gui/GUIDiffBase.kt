@@ -9,9 +9,9 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
 import packetproxy.model.DiffSet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-abstract class GUIDiffBase {
+abstract class GUIDiffBase(protected val owner: GUIMain) {
   protected var width = 0
   protected var height = 0
   protected var panel: JComponent
@@ -31,7 +31,14 @@ abstract class GUIDiffBase {
 
   init {
     var panelOrig = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
-    textOrig = RawTextPane().apply { isEditable = true }
+    textOrig =
+      RawTextPane(
+          owner,
+          owner.modelServices.fontManager,
+          owner.modelServices.charSetUtility,
+          owner.coreServices.packetProxyUtility,
+        )
+        .apply { isEditable = true }
     panelOrig.add(JLabel("Original").apply { alignmentX = 0.5f })
     scrollOrig =
       JScrollPane(textOrig).apply {
@@ -40,7 +47,14 @@ abstract class GUIDiffBase {
       }
     panelOrig.add(scrollOrig)
     var panelTarg = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
-    textTarg = RawTextPane().apply { isEditable = true }
+    textTarg =
+      RawTextPane(
+          owner,
+          owner.modelServices.fontManager,
+          owner.modelServices.charSetUtility,
+          owner.coreServices.packetProxyUtility,
+        )
+        .apply { isEditable = true }
     panelTarg.add(JLabel("Target").apply { alignmentX = 0.5f })
     scrollTarg =
       JScrollPane(textTarg).apply {

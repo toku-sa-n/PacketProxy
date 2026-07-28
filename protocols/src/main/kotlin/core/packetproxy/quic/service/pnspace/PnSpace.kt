@@ -18,8 +18,8 @@ import packetproxy.quic.value.SentPacket
 import packetproxy.quic.value.frame.*
 import packetproxy.quic.value.packet.PnSpacePacket
 import packetproxy.quic.value.packet.QuicPacket
-import packetproxy.util.Logging.err
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.err
+import packetproxy.util.rethrow
 
 abstract class PnSpace(protected val conn: Connection, val pnSpaceType: PnSpaceType) {
   val frameToMsgCryptoStream = CryptoFramesToMessages()

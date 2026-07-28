@@ -106,14 +106,16 @@ class InterceptOption {
     this.server_id = server_id
   }
 
-  @Throws(Exception::class) fun getServer(): Server? = Servers.getInstance().query(this.server_id)
+  @Throws(Exception::class)
+  fun getServer(database: Database): Server? =
+    database.createTable(Server::class.java).queryForId(this.server_id)
 
   @Throws(Exception::class)
-  fun getServerName(): String {
+  fun getServerName(database: Database): String {
     if (this.server_id == ALL_SERVER) {
       return "*"
     }
-    val server = Servers.getInstance().query(this.server_id)
+    val server = getServer(database)
     return if (server != null) server.toString() else ""
   }
 

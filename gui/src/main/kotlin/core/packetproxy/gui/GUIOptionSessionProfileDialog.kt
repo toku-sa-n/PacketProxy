@@ -21,22 +21,22 @@ import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JDialog
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JTextField
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.SessionProfile
 import packetproxy.model.SessionProfiles
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GUIOptionSessionProfileDialog(
-  private val frameOwner: JFrame,
+  private val frameOwner: GUIMain,
   private val authorizationSupplier: Supplier<String>?,
+  private val sessionProfiles: SessionProfiles,
 ) : JDialog(frameOwner) {
-  private val buttonCancel = JButton(I18nString.get("Cancel"))
-  private val buttonSet = JButton(I18nString.get("Save"))
+  private val buttonCancel = JButton(i18nString("Cancel"))
+  private val buttonSet = JButton(i18nString("Save"))
   private val nameField = JTextField()
   private val authorizationField = JTextField()
 
@@ -98,7 +98,7 @@ class GUIOptionSessionProfileDialog(
   }
 
   private fun buildDialog() {
-    title = I18nString.get("Session Profile")
+    title = i18nString("Session Profile")
     val rect = frameOwner.bounds
     val height = 220
     val width = 800
@@ -111,11 +111,11 @@ class GUIOptionSessionProfileDialog(
 
     val panel = JPanel()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-    panel.add(labelAndObject(I18nString.get("Name:"), nameField))
-    panel.add(labelAndObject(I18nString.get("Authorization:"), authorizationField))
+    panel.add(labelAndObject(i18nString("Name:"), nameField))
+    panel.add(labelAndObject(i18nString("Authorization:"), authorizationField))
 
     if (authorizationSupplier != null) {
-      val importButton = JButton(I18nString.get("Import from current request"))
+      val importButton = JButton(i18nString("Import from current request"))
       importButton.addActionListener { importAuthorizationFromRequest() }
       panel.add(importButton)
     }
@@ -137,8 +137,8 @@ class GUIOptionSessionProfileDialog(
       if (authorization.isNullOrEmpty()) {
         JOptionPane.showMessageDialog(
           frameOwner,
-          I18nString.get("No Authorization header found in the current request."),
-          I18nString.get("Message"),
+          i18nString("No Authorization header found in the current request."),
+          i18nString("Message"),
           JOptionPane.INFORMATION_MESSAGE,
         )
         return
@@ -154,15 +154,15 @@ class GUIOptionSessionProfileDialog(
     if (name.isEmpty()) {
       JOptionPane.showMessageDialog(
         frameOwner,
-        I18nString.get("Name is required."),
-        I18nString.get("Message"),
+        i18nString("Name is required."),
+        i18nString("Message"),
         JOptionPane.INFORMATION_MESSAGE,
       )
       return
     }
 
     try {
-      val profiles = SessionProfiles.getInstance()
+      val profiles = sessionProfiles
       val authorization = authorizationField.text
       val existing = profiles.queryByName(name)
       val isConflict = existing != null && (editingId == null || existing.id != editingId)
@@ -171,8 +171,8 @@ class GUIOptionSessionProfileDialog(
         val option =
           JOptionPane.showConfirmDialog(
             frameOwner,
-            I18nString.get("A session profile named \"%s\" already exists. Overwrite?", name),
-            I18nString.get("Message"),
+            i18nString("A session profile named \"%s\" already exists. Overwrite?", name),
+            i18nString("Message"),
             JOptionPane.YES_NO_OPTION,
           )
         if (option != JOptionPane.YES_OPTION) {

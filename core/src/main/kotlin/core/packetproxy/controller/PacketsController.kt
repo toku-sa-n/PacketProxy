@@ -18,15 +18,7 @@ package packetproxy.controller
 import packetproxy.model.Packet
 import packetproxy.model.Packets
 
-class PacketsController private constructor(private val packets: Packets = Packets.getInstance()) {
-  companion object {
-    @Volatile private var instance: PacketsController? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getinstance(): PacketsController =
-      instance ?: synchronized(this) { instance ?: PacketsController().also { instance = it } }
-  }
+class PacketsController(private val packets: Packets) {
 
   @Throws(Exception::class)
   fun add(packet: Packet?) {

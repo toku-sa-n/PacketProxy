@@ -9,20 +9,20 @@ import javax.swing.JDialog
 import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.OpenVPNForwardPort
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionOpenVPNDialog(owner: JFrame) : JDialog(owner) {
+class GUIOptionOpenVPNDialog(private val owner: JFrame) : JDialog(owner) {
   private val combo = JComboBox<String>()
-  private val buttonCancel = JButton(I18nString.get("Cancel"))
-  private val buttonSet = JButton(I18nString.get("Save"))
+  private val buttonCancel = JButton(i18nString("Cancel"))
+  private val buttonSet = JButton(i18nString("Save"))
   private val fromPortField = HintTextField("443")
   private val toPortField = HintTextField("8443")
   private var forwardPort: OpenVPNForwardPort? = null
 
   init {
-    title = I18nString.get("Setting")
+    title = i18nString("Setting")
     val rect = owner.bounds
     setBounds(rect.x + rect.width / 2 - 250, rect.y + rect.height / 2 - 250, 500, 500)
 
@@ -96,8 +96,8 @@ class GUIOptionOpenVPNDialog(owner: JFrame) : JDialog(owner) {
   }
 
   private fun createFromPortSetting(): JComponent =
-    labelAndObject(I18nString.get("src port"), fromPortField)
+    labelAndObject(i18nString("src port"), fromPortField)
 
   private fun createToPortSetting(): JComponent =
-    labelAndObject(I18nString.get("dst port"), toPortField)
+    labelAndObject(i18nString("dst port"), toPortField)
 }

@@ -38,7 +38,6 @@ import javax.swing.BoxLayout
 import javax.swing.ImageIcon
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JMenuItem
 import javax.swing.JOptionPane
 import javax.swing.JPanel
@@ -54,22 +53,18 @@ import javax.swing.event.TableModelEvent
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
-import packetproxy.common.FontManager
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.common.Utils
-import packetproxy.model.Database
 import packetproxy.model.Database.DatabaseMessage
-import packetproxy.model.Filters
 import packetproxy.model.OptionTableModel
 import packetproxy.model.Packet
-import packetproxy.model.Packets
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.FILTERS
 import packetproxy.model.PropertyChangeEventType.PACKETS
-import packetproxy.model.ResenderPackets
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener {
+class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeListener {
+  private val owner = main
   private val columnNames =
     arrayOf(
       "#",
@@ -95,8 +90,13 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
   private lateinit var tableModel: OptionTableModel
   private val colorManager = TableCustomColorManager()
   private lateinit var table: JTable
-  private val packets = Packets.getInstance(restore)
-  private val guiPacket = GUIPacket.getInstance()
+  private val packets = main.modelServices.packets
+  private val guiPacket = GUIPacket(main)
+
+  fun getGuiPacket(): GUIPacket = guiPacket
+
+  fun getPacket(): Packet = guiPacket.getPacket()
+
   lateinit var sorter: TableRowSorter<OptionTableModel>
   private lateinit var guiFilter: HintTextField
   private var preferredPosition = 0
@@ -114,8 +114,8 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
 
   init {
     packets.addPropertyChangeListener(this)
-    ResenderPackets.getInstance().initTable(restore)
-    Filters.getInstance().addPropertyChangeListener(this)
+    main.modelServices.resenderPackets.initTable(restore)
+    main.modelServices.filters.addPropertyChangeListener(this)
   }
 
   fun getTableModel(): DefaultTableModel = tableModel
@@ -204,11 +204,11 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
           return component
         }
       }
-    table.rowHeight = FontManager.getInstance().getUIFontHeight(table)
+    table.rowHeight = main.modelServices.fontManager.getUIFontHeight(table)
     for (i in columnNames.indices) {
       table.getColumn(columnNames[i]).preferredWidth = columnWidth[i]
     }
-    TableHeaderStyle.apply(table, columnNames.size)
+    apply(table, columnNames.size)
     (table.getDefaultRenderer(Boolean::class.javaObjectType) as JComponent).isOpaque = true
     table.selectionModel.addListSelectionListener { _: ListSelectionEvent ->
       try {
@@ -224,17 +224,18 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
     table.rowSorter = sorter
 
     val handles =
-      GUIHistoryContextMenuFactory.build(
-        this,
-        owner,
-        table,
-        guiPacket,
-        packets,
-        colorManager,
-        packetColorGreen,
-        packetColorBrown,
-        packetColorYellow,
-      )
+      GUIHistoryContextMenuFactory()
+        .build(
+          this,
+          owner,
+          table,
+          guiPacket,
+          packets,
+          colorManager,
+          packetColorGreen,
+          packetColorBrown,
+          packetColorYellow,
+        )
     menu = handles.menu
     addKeyboardNavigation(handles.send, handles.sendToResender, handles.copy, handles.copyAll)
     addTableMouseListeners()
@@ -409,9 +410,7 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
 
   private fun createFilterPanel(): JComponent {
     guiFilter =
-      HintTextField(
-        I18nString.get("filter string... (ex: request == example.com && type == image)")
-      )
+      HintTextField(i18nString("filter string... (ex: request == example.com && type == image)"))
     guiFilter.maximumSize = Dimension(Short.MAX_VALUE.toInt(), guiFilter.minimumSize.height)
     guiFilter.addKeyListener(
       object : KeyAdapter() {
@@ -635,7 +634,7 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
       object : WriteFileChooserWrapper.FileChooserListener {
         override fun onApproved(file: File, extension: String) {
           try {
-            Database.getInstance().Save(file.absolutePath)
+            main.modelServices.database.Save(file.absolutePath)
             JOptionPane.showMessageDialog(null, "データを保存しました。")
             updateRequest(true)
           } catch (exception: Exception) {
@@ -1027,7 +1026,7 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
       return true
     }
     try {
-      sorter.rowFilter = FilterTextParser.parse(text)
+      sorter.rowFilter = FilterTextParser.parse(text, tableModel, packets)
       return true
     } catch (_: ParseException) {
       // Nothing to do
@@ -1040,36 +1039,10 @@ class GUIHistory private constructor(restore: Boolean) : PropertyChangeListener 
   }
 
   companion object {
-    private const val COL_ID = 0
-    private const val COL_SERVER_RESPONSE = 2
-    private const val COL_LENGTH = 3
-    private const val COL_MODIFIED = 10
-    private const val COL_CONTENT_TYPE = 11
-
-    private var instance: GUIHistory? = null
-    private lateinit var owner: JFrame
-
-    @JvmStatic fun getOwner(): JFrame = owner
-
-    @JvmStatic
-    fun getInstance(frame: JFrame): GUIHistory {
-      owner = frame
-      return getInstance()
-    }
-
-    @JvmStatic
-    fun getInstance(): GUIHistory {
-      if (instance == null) {
-        instance = GUIHistory(false)
-      }
-      return instance!!
-    }
-
-    @JvmStatic
-    fun restoreLastInstance(frame: JFrame): GUIHistory {
-      owner = frame
-      instance = GUIHistory(true)
-      return instance!!
-    }
+    private val COL_ID = 0
+    private val COL_SERVER_RESPONSE = 2
+    private val COL_LENGTH = 3
+    private val COL_MODIFIED = 10
+    private val COL_CONTENT_TYPE = 11
   }
 }

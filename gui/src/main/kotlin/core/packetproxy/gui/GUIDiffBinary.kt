@@ -4,9 +4,9 @@ import packetproxy.common.Binary
 import packetproxy.model.DiffBinary
 import packetproxy.model.DiffEventAdapter
 import packetproxy.model.DiffSet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIDiffBinary : GUIDiffBase() {
+class GUIDiffBinary(owner: GUIMain) : GUIDiffBase(owner) {
   override fun sortUniq(ds: DiffSet): DiffSet {
     var original = ""
     var target = ""
@@ -21,8 +21,8 @@ class GUIDiffBinary : GUIDiffBase() {
 
   override fun update() {
     var ds =
-      if (jc.isSelected) sortUniq(DiffBinary.getInstance().getSet()!!)
-      else DiffBinary.getInstance().getSet()!!
+      if (jc.isSelected) sortUniq(owner.modelServices.diffBinary.getSet()!!)
+      else owner.modelServices.diffBinary.getSet()!!
     var original = ds.getOriginal()
     var target = ds.getTarget()
     if (original != null)

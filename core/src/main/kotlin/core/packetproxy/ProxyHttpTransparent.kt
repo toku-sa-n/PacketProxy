@@ -27,17 +27,26 @@ import packetproxy.common.Endpoint
 import packetproxy.common.EndpointFactory
 import packetproxy.common.StringUtils
 import packetproxy.http.Http
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
+import packetproxy.model.Resolutions
 import packetproxy.model.Server
 import packetproxy.model.Servers
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class ProxyHttpTransparent
 @Throws(Exception::class)
-constructor(private val listen_socket: ServerSocket, private val listen_info: ListenPort) :
-  Proxy() {
+constructor(
+  private val listen_socket: ServerSocket,
+  private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val endpointFactory: EndpointFactory,
+  private val servers: Servers,
+  private val resolutions: Resolutions,
+  private val database: Database,
+) : Proxy() {
   @Throws(Exception::class)
   override fun close() {
     listen_socket.close()
@@ -57,8 +66,8 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
 
   data class HostPort(val hostName: String, val port: Int) {
     @Throws(Exception::class)
-    fun getInetSocketAddress(): InetSocketAddress =
-      InetSocketAddress(PrivateDNSClient.getByName(hostName), port)
+    fun getInetSocketAddress(resolutions: Resolutions): InetSocketAddress =
+      InetSocketAddress(PrivateDNSClient().getByName(hostName, resolutions), port)
   }
 
   @Throws(Exception::class)
@@ -119,20 +128,21 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
     val lookaheadBuffer = ByteArrayInputStream(bout.toByteArray())
 
     try {
-      val client_e = EndpointFactory.createClientEndpoint(client, lookaheadBuffer)
+      val client_e = endpointFactory.createClientEndpoint(client, lookaheadBuffer)
 
       val server_e: Endpoint =
-        if (listen_info.getServer() != null) { // upstream proxy
-          EndpointFactory.createServerEndpoint(listen_info.getServer()!!.getAddress())
+        if (listen_info.getServer(database) != null) { // upstream proxy
+          endpointFactory.createServerEndpoint(
+            listen_info.getServer(database)!!.getAddress(resolutions)
+          )
         } else {
-          EndpointFactory.createServerEndpoint(hostPort.getInetSocketAddress())
+          endpointFactory.createServerEndpoint(hostPort.getInetSocketAddress(resolutions))
         }
 
-      val server =
-        Servers.getInstance().queryByHostNameAndPort(hostPort.hostName, listen_info.getPort())
+      val server = servers.queryByHostNameAndPort(hostPort.hostName, listen_info.getPort())
       createConnection(client_e, server_e, server)
     } catch (e: ConnectException) {
-      val addr = hostPort.getInetSocketAddress()
+      val addr = hostPort.getInetSocketAddress(resolutions)
       log("Connection Refused: %s:%d", addr.hostName, addr.getPort())
       errWithStackTrace(e)
     }
@@ -141,8 +151,8 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
   @Throws(Exception::class)
   fun createConnection(client_e: Endpoint, server_e: Endpoint, server: Server?) {
     val duplex =
-      if (server == null) DuplexFactory.createDuplexAsync(client_e, server_e, "HTTP")
-      else DuplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder()!!)
+      if (server == null) duplexFactory.createDuplexAsync(client_e, server_e, "HTTP")
+      else duplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder()!!)
     duplex.start()
     // DuplexManager.getInstance().registerDuplex(duplex);
   }

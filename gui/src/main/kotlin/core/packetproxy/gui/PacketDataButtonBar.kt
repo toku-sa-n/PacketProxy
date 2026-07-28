@@ -23,21 +23,19 @@ import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.LineBorder
-import packetproxy.controller.ResendController
 import packetproxy.controller.SinglePacketAttackController
-import packetproxy.model.DiffModels
 import packetproxy.model.Packet
-import packetproxy.model.Packets
-import packetproxy.util.CharSetUtility
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class PacketDataButtonBar(
-  private val owner: JFrame,
+  private val owner: GUIMain,
+  private val history: GUIHistory,
+  private val packetPanel: GUIPacket,
+  private val resender: GUIResender,
   private val getActiveData: () -> ByteArray?,
   private val getContextPacket: () -> Packet?,
   private val getBodyData: () -> ByteArray?,
@@ -45,13 +43,13 @@ class PacketDataButtonBar(
   private val markedOriginalRowHighlight: MarkedOriginalRowHighlight,
   private val resendDelegate: (() -> Unit)? = null,
 ) {
-  private val charSetUtility = CharSetUtility.getInstance()
+  private val charSetUtility = owner.modelServices.charSetUtility
 
   private val charSetCombo =
     JComboBox(charSetUtility.getAvailableCharSetList().toTypedArray()).apply {
       addActionListener {
         charSetUtility.setCharSet(selectedItem as String)
-        runCatching { GUIPacket.getInstance().update() }.onFailure { errWithStackTrace(it) }
+        runCatching { packetPanel.update() }.onFailure { errWithStackTrace(it) }
       }
       maximumSize = Dimension(150, maximumSize.height)
       addMouseListener(
@@ -74,7 +72,7 @@ class PacketDataButtonBar(
               return@addActionListener
             }
             val packet = getContextPacket() ?: return@addActionListener
-            copyMethodUrlBody(data, packet)
+            copyMethodUrlBody(data, packet, charSetUtility)
           }
           .onFailure { errWithStackTrace(it) }
       }
@@ -89,7 +87,7 @@ class PacketDataButtonBar(
             if (data.isEmpty()) {
               return@addActionListener
             }
-            copyBody(data)
+            copyBody(data, charSetUtility)
           }
           .onFailure { errWithStackTrace(it) }
       }
@@ -105,7 +103,7 @@ class PacketDataButtonBar(
               return@addActionListener
             }
             val packet = getContextPacket() ?: return@addActionListener
-            copyUrl(data, packet)
+            copyUrl(data, packet, charSetUtility)
           }
           .onFailure { errWithStackTrace(it) }
       }
@@ -122,7 +120,7 @@ class PacketDataButtonBar(
               return@addActionListener
             }
             withActivePacket { data, packet, packetId ->
-              ResendController.getInstance().resend(packet.getOneShotPacket(data))
+              owner.coreServices.resendController.resend(packet.getOneShotPacket(data))
               markResent(packet, packetId)
             }
           }
@@ -136,7 +134,7 @@ class PacketDataButtonBar(
       addActionListener {
         runCatching {
             withActivePacket { data, packet, packetId ->
-              ResendController.getInstance().resend(packet.getOneShotPacket(data), 20)
+              owner.coreServices.resendController.resend(packet.getOneShotPacket(data), 20)
               markResent(packet, packetId)
             }
           }
@@ -150,7 +148,12 @@ class PacketDataButtonBar(
       addActionListener {
         runCatching {
             withActivePacket { data, packet, packetId ->
-              SinglePacketAttackController(packet.getOneShotPacket(data)).attack(20)
+              SinglePacketAttackController(
+                  packet.getOneShotPacket(data),
+                  owner.coreServices.duplexFactory,
+                  owner.coreServices.encoderManager,
+                )
+                .attack(20)
               markResent(packet, packetId)
             }
           }
@@ -165,9 +168,9 @@ class PacketDataButtonBar(
         runCatching {
             withActivePacket { data, packet, packetId ->
               packet.setResend()
-              Packets.getInstance().update(packet)
-              GUIResender.getInstance().addResends(packet.getOneShotPacket(data))
-              GUIHistory.getInstance().updateRequestOne(packetId)
+              owner.modelServices.packets.update(packet)
+              resender.addResends(packet.getOneShotPacket(data))
+              history.updateRequestOne(packetId)
             }
           }
           .onFailure { errWithStackTrace(it) }
@@ -182,7 +185,7 @@ class PacketDataButtonBar(
             if (!markedOriginalRowHighlight.hasMarkedOriginal) {
               return@addActionListener
             }
-            DiffModels.clearOriginal()
+            owner.modelServices.diffModels.clearOriginal()
             markedOriginalRowHighlight.restoreMarkedRowAndClear()
           }
           .onFailure { errWithStackTrace(it) }
@@ -195,7 +198,7 @@ class PacketDataButtonBar(
       addActionListener {
         runCatching {
             val data = resolveDataForDiff() ?: return@addActionListener
-            DiffModels.markAsTarget(data)
+            owner.modelServices.diffModels.markAsTarget(data)
             GUIDiffDialogParent(owner).showDialog()
           }
           .onFailure { errWithStackTrace(it) }
@@ -209,10 +212,10 @@ class PacketDataButtonBar(
         runCatching {
             val data = resolveDataForDiff() ?: return@addActionListener
             if (markedOriginalRowHighlight.hasMarkedOriginal) {
-              DiffModels.clearOriginal()
+              owner.modelServices.diffModels.clearOriginal()
               markedOriginalRowHighlight.restoreMarkedRowAndClear()
             }
-            DiffModels.markAsOriginal(data)
+            owner.modelServices.diffModels.markAsOriginal(data)
             markedOriginalRowHighlight.markCurrentRowAsOriginal()
             log("Diff: original text was saved!")
           }
@@ -247,7 +250,7 @@ class PacketDataButtonBar(
 
     val centeredPanel = ScrollableCenteredPanel()
     centeredPanel.add(buttonPanel)
-    return ScrollableButtonPanel.createScrollPane(centeredPanel)
+    return createScrollPane(centeredPanel)
   }
 
   private fun updateCharSetCombo() {
@@ -255,7 +258,7 @@ class PacketDataButtonBar(
     for (charSetName in charSetUtility.getAvailableCharSetList()) {
       charSetCombo.addItem(charSetName)
     }
-    val charSetName = CharSetUtility.getInstance().getCharSetForGUIComponent()
+    val charSetName = owner.modelServices.charSetUtility.getCharSetForGUIComponent()
     if (charSetUtility.getAvailableCharSetList().contains(charSetName)) {
       charSetCombo.selectedItem = charSetName
     } else {
@@ -274,26 +277,26 @@ class PacketDataButtonBar(
 
   private fun markResent(packet: Packet, packetId: Int) {
     packet.setResend()
-    Packets.getInstance().update(packet)
-    GUIHistory.getInstance().updateRequestOne(packetId)
+    owner.modelServices.packets.update(packet)
+    history.updateRequestOne(packetId)
   }
 
   private fun resolveDataForCopyBody(): ByteArray? =
-    MergedRowDataResolver.resolve(
+    resolve(
       owner = owner,
       message = "Which body do you want to copy?",
       title = "Select Copy Target",
-      isMergedRow = MergedRowDataResolver.isSelectedRowMerged(),
+      isMergedRow = history.isSelectedRowMerged(),
       requestData = { getBodyData() },
       responseData = { getResponseData() },
     )
 
   private fun resolveDataForDiff(): ByteArray? =
-    MergedRowDataResolver.resolve(
+    resolve(
       owner = owner,
       message = "Which data do you want to use for Diff?",
       title = "Select Diff Target",
-      isMergedRow = MergedRowDataResolver.isSelectedRowMerged(),
+      isMergedRow = history.isSelectedRowMerged(),
       requestData = { getActiveData() },
       responseData = { getResponseData() },
     )

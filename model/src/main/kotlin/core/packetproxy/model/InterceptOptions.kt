@@ -24,16 +24,14 @@ import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.InterceptOption.Direction
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.INTERCEPT_OPTIONS
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class InterceptOptions private constructor() : PropertyChangeListener {
+class InterceptOptions(private val database: Database) : PropertyChangeListener {
   private val pcs = PropertyChangeSupport(this)
 
-  private var database: Database = Database.getInstance()
   private var dao: Dao<InterceptOption, Int> =
     database.createTable(InterceptOption::class.java, this)
-  private var servers: Servers = Servers.getInstance()
-  private var enabled = ConfigBoolean("InterceptOptions")
+  private var enabled = ConfigBoolean(Configs(database), "InterceptOptions")
   private var cache = DaoQueryCache<InterceptOption>()
 
   init {
@@ -90,12 +88,10 @@ class InterceptOptions private constructor() : PropertyChangeListener {
 
   fun addPropertyChangeListener(listener: PropertyChangeListener) {
     pcs.addPropertyChangeListener(listener)
-    servers.addPropertyChangeListener(listener)
   }
 
   fun removePropertyChangeListener(listener: PropertyChangeListener) {
     pcs.removePropertyChangeListener(listener)
-    servers.removePropertyChangeListener(listener)
   }
 
   @Throws(Exception::class)
@@ -295,13 +291,11 @@ class InterceptOptions private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(InterceptOption::class.java, this)
           cache.clear()
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(InterceptOption::class.java, this)
           cache.clear()
         }
@@ -340,19 +334,6 @@ class InterceptOptions private constructor() : PropertyChangeListener {
     if (option == JOptionPane.YES_OPTION) {
       database.dropTable(InterceptOption::class.java)
       dao = database.createTable(InterceptOption::class.java, this)
-    }
-  }
-
-  companion object {
-    private var instance: InterceptOptions? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): InterceptOptions {
-      if (instance == null) {
-        instance = InterceptOptions()
-      }
-      return instance!!
     }
   }
 }

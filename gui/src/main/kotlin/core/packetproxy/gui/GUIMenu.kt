@@ -17,21 +17,16 @@ package packetproxy.gui
 
 import java.awt.event.KeyEvent
 import java.io.File
-import javax.swing.JFrame
 import javax.swing.JMenu
 import javax.swing.JMenuBar
 import javax.swing.JMenuItem
 import javax.swing.JOptionPane
+import packetproxy.common.*
 import packetproxy.common.ConfigIO
-import packetproxy.common.I18nString
-import packetproxy.common.RecentProjectsStore
 import packetproxy.common.Utils
-import packetproxy.model.Database
-import packetproxy.model.Packets
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.PacketProxyUtility
+import packetproxy.util.errWithStackTrace
 
-class GUIMenu(private val owner: JFrame) : JMenuBar() {
+class GUIMenu(private val owner: GUIMain) : JMenuBar() {
 
   private enum class Panes {
     HISTORY,
@@ -47,9 +42,9 @@ class GUIMenu(private val owner: JFrame) : JMenuBar() {
   }
 
   init {
-    val file_menu = JMenu(I18nString.get("Project"))
+    val file_menu = JMenu(i18nString("Project"))
     this.add(file_menu)
-    val save_sqlite = JMenuItem(I18nString.get("Save packets to sqlite3 file"), KeyEvent.VK_S)
+    val save_sqlite = JMenuItem(i18nString("Save packets to sqlite3 file"), KeyEvent.VK_S)
     file_menu.add(save_sqlite)
     save_sqlite.addActionListener {
       val filechooser = WriteFileChooserWrapper(owner, "sqlite3")
@@ -58,25 +53,25 @@ class GUIMenu(private val owner: JFrame) : JMenuBar() {
 
           override fun onApproved(file: File, extension: String) {
             try {
-              Database.getInstance().Save(file.absolutePath)
-              RecentProjectsStore.add(file.toPath())
-              JOptionPane.showMessageDialog(null, I18nString.get("Data saved successfully"))
+              owner.modelServices.database.Save(file.absolutePath)
+              owner.modelServices.recentProjectsStore.add(file.toPath())
+              JOptionPane.showMessageDialog(null, i18nString("Data saved successfully"))
             } catch (e1: Exception) {
               errWithStackTrace(e1)
-              JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"))
+              JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
             }
           }
 
           override fun onCanceled() {}
 
           override fun onError() {
-            JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"))
+            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
           }
         }
       )
       filechooser.showSaveDialog()
     }
-    val save_txt = JMenuItem(I18nString.get("Save packets to text file"), KeyEvent.VK_S)
+    val save_txt = JMenuItem(i18nString("Save packets to text file"), KeyEvent.VK_S)
     file_menu.add(save_txt)
     save_txt.addActionListener {
       val filechooser = WriteFileChooserWrapper(owner, "txt")
@@ -85,24 +80,24 @@ class GUIMenu(private val owner: JFrame) : JMenuBar() {
 
           override fun onApproved(file: File, extension: String) {
             try {
-              Packets.getInstance().outputAllPackets(file.absolutePath)
-              JOptionPane.showMessageDialog(null, I18nString.get("Data saved successfully"))
+              owner.modelServices.packets.outputAllPackets(file.absolutePath)
+              JOptionPane.showMessageDialog(null, i18nString("Data saved successfully"))
             } catch (e1: Exception) {
               errWithStackTrace(e1)
-              JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"))
+              JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
             }
           }
 
           override fun onCanceled() {}
 
           override fun onError() {
-            JOptionPane.showMessageDialog(null, I18nString.get("Data can't be saved with error"))
+            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
           }
         }
       )
       filechooser.showSaveDialog()
     }
-    val load_menu = JMenuItem(I18nString.get("Load packets from sqlite3 file"), KeyEvent.VK_L)
+    val load_menu = JMenuItem(i18nString("Load packets from sqlite3 file"), KeyEvent.VK_L)
     file_menu.add(load_menu)
     load_menu.addActionListener {
       try {
@@ -113,79 +108,79 @@ class GUIMenu(private val owner: JFrame) : JMenuBar() {
         val selected = filechooser.showOpenDialog(owner)
         if (selected == NativeFileChooser.APPROVE_OPTION) {
           val file = filechooser.getSelectedFile()
-          Database.getInstance().Load(file.absolutePath)
-          RecentProjectsStore.add(file.toPath())
+          owner.modelServices.database.Load(file.absolutePath)
+          owner.modelServices.recentProjectsStore.add(file.toPath())
         }
       } catch (e1: Exception) {
         errWithStackTrace(e1)
-        JOptionPane.showMessageDialog(null, I18nString.get("Data can't be loaded with error"))
+        JOptionPane.showMessageDialog(null, i18nString("Data can't be loaded with error"))
       }
     }
 
     var cmd_key = "⌘ ^ "
-    if (!PacketProxyUtility.getInstance().isMac()) {
+    if (!owner.coreServices.packetProxyUtility.isMac()) {
       cmd_key = "Ctrl + "
     }
-    val view_menu = JMenu(I18nString.get("View"))
+    val view_menu = JMenu(i18nString("View"))
     this.add(view_menu)
-    val view_history = JMenuItem(I18nString.get("View History") + "  " + cmd_key + "H")
+    val view_history = JMenuItem(i18nString("View History") + "  " + cmd_key + "H")
     view_menu.add(view_history)
     view_history.addActionListener {
       try {
-        GUIMain.getInstance().tabbedPane.setSelectedIndex(Panes.HISTORY.ordinal)
+        owner.tabbedPane.setSelectedIndex(Panes.HISTORY.ordinal)
       } catch (e1: Exception) {
         errWithStackTrace(e1)
       }
     }
-    val view_intercept = JMenuItem(I18nString.get("View Interceptor") + "  " + cmd_key + "I")
+    val view_intercept = JMenuItem(i18nString("View Interceptor") + "  " + cmd_key + "I")
     view_menu.add(view_intercept)
     view_intercept.addActionListener {
       try {
-        GUIMain.getInstance().tabbedPane.setSelectedIndex(Panes.INTERCEPT.ordinal)
+        owner.tabbedPane.setSelectedIndex(Panes.INTERCEPT.ordinal)
       } catch (e1: Exception) {
         errWithStackTrace(e1)
       }
     }
-    val view_resender = JMenuItem(I18nString.get("View Resender") + "  " + cmd_key + "R")
+    val view_resender = JMenuItem(i18nString("View Resender") + "  " + cmd_key + "R")
     view_menu.add(view_resender)
     view_resender.addActionListener {
       try {
-        GUIMain.getInstance().tabbedPane.setSelectedIndex(Panes.RESENDER.ordinal)
+        owner.tabbedPane.setSelectedIndex(Panes.RESENDER.ordinal)
       } catch (e1: Exception) {
         errWithStackTrace(e1)
       }
     }
-    val view_bulk_sender = JMenuItem(I18nString.get("View BulkSender") + "  " + cmd_key + "B")
+    val view_bulk_sender = JMenuItem(i18nString("View BulkSender") + "  " + cmd_key + "B")
     view_menu.add(view_bulk_sender)
     view_bulk_sender.addActionListener {
       try {
-        GUIMain.getInstance().tabbedPane.setSelectedIndex(Panes.BULKSENDER.ordinal)
+        owner.tabbedPane.setSelectedIndex(Panes.BULKSENDER.ordinal)
       } catch (e1: Exception) {
         errWithStackTrace(e1)
       }
     }
-    val view_options = JMenuItem(I18nString.get("View Options") + "  " + cmd_key + "O")
+    val view_options = JMenuItem(i18nString("View Options") + "  " + cmd_key + "O")
     view_menu.add(view_options)
     view_options.addActionListener {
       try {
-        GUIMain.getInstance().tabbedPane.setSelectedIndex(Panes.OPTIONS.ordinal)
+        owner.tabbedPane.setSelectedIndex(Panes.OPTIONS.ordinal)
       } catch (e1: Exception) {
         errWithStackTrace(e1)
       }
     }
-    val view_log = JMenuItem(I18nString.get("View Log") + "  " + cmd_key + "L")
+    val view_log = JMenuItem(i18nString("View Log") + "  " + cmd_key + "L")
     view_menu.add(view_log)
     view_log.addActionListener {
       try {
-        GUIMain.getInstance().tabbedPane.setSelectedIndex(Panes.LOG.ordinal)
+        owner.tabbedPane.setSelectedIndex(Panes.LOG.ordinal)
       } catch (e1: Exception) {
         errWithStackTrace(e1)
       }
     }
 
-    val config_menu = JMenu(I18nString.get("Options"))
+    val config_menu = JMenu(i18nString("Options"))
     this.add(config_menu)
-    val import_configs = JMenuItem(I18nString.get("Import Configs"))
+    val import_configs = JMenuItem(i18nString("Import Configs"))
     config_menu.add(import_configs)
     import_configs.addActionListener {
       try {
@@ -198,16 +193,23 @@ class GUIMenu(private val owner: JFrame) : JMenuBar() {
           val file = filechooser.getSelectedFile()
           val jbytes = Utils.readfile(file.absolutePath)
           val json = String(jbytes)
-          val io = ConfigIO()
+          val io =
+            ConfigIO(
+              owner.modelServices.database,
+              owner.modelServices.listenPorts,
+              owner.modelServices.servers,
+              owner.modelServices.modifications,
+              owner.modelServices.sslPassThroughs,
+            )
           io.setOptions(json)
-          JOptionPane.showMessageDialog(null, I18nString.get("Config loaded successfully"))
+          JOptionPane.showMessageDialog(null, i18nString("Config loaded successfully"))
         }
       } catch (e1: Exception) {
         errWithStackTrace(e1)
-        JOptionPane.showMessageDialog(null, I18nString.get("Config can't be loaded with error"))
+        JOptionPane.showMessageDialog(null, i18nString("Config can't be loaded with error"))
       }
     }
-    val export_configs = JMenuItem(I18nString.get("Export Configs"))
+    val export_configs = JMenuItem(i18nString("Export Configs"))
     config_menu.add(export_configs)
     export_configs.addActionListener {
       try {
@@ -217,26 +219,27 @@ class GUIMenu(private val owner: JFrame) : JMenuBar() {
 
             override fun onApproved(file: File, extension: String) {
               try {
-                val io = ConfigIO()
+                val io =
+                  ConfigIO(
+                    owner.modelServices.database,
+                    owner.modelServices.listenPorts,
+                    owner.modelServices.servers,
+                    owner.modelServices.modifications,
+                    owner.modelServices.sslPassThroughs,
+                  )
                 val json = io.getOptions()
                 Utils.writefile(file.absolutePath, json.toByteArray())
-                JOptionPane.showMessageDialog(null, I18nString.get("Config saved successfully"))
+                JOptionPane.showMessageDialog(null, i18nString("Config saved successfully"))
               } catch (e1: Exception) {
                 errWithStackTrace(e1)
-                JOptionPane.showMessageDialog(
-                  null,
-                  I18nString.get("Config can't be saved with error"),
-                )
+                JOptionPane.showMessageDialog(null, i18nString("Config can't be saved with error"))
               }
             }
 
             override fun onCanceled() {}
 
             override fun onError() {
-              JOptionPane.showMessageDialog(
-                null,
-                I18nString.get("Config can't be saved with error"),
-              )
+              JOptionPane.showMessageDialog(null, i18nString("Config can't be saved with error"))
             }
           }
         )

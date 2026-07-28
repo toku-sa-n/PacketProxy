@@ -9,13 +9,12 @@ import packetproxy.quic.value.VariableLengthInteger
 import packetproxy.quic.value.transportparameter.TransportParameter
 import packetproxy.quic.value.transportparameter.UnknownParameter
 
-object TransportParameterParser {
-  private const val pkg = "packetproxy.quic.value.transportparameter"
+class TransportParameterParser {
+  private val pkg = "packetproxy.quic.value.transportparameter"
   private val cls = TransportParameter::class.java
   private var map: MutableMap<Long, Class<out TransportParameter>>? = null
 
   @Throws(Exception::class)
-  @JvmStatic
   fun parse(buffer: ByteBuffer): TransportParameter {
     val saved = buffer.position()
     val type = VariableLengthInteger.parse(buffer).value

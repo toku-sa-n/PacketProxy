@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Optional
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Utils
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class HttpHeader(rawHttp: ByteArray) {
   private var statusLine: String

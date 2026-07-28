@@ -10,24 +10,29 @@ import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.net.BindException
 import packetproxy.model.ListenPort
-import packetproxy.model.ListenPortRebootHooks
 import packetproxy.model.ListenPortRebooter
 import packetproxy.model.ListenPorts
 import packetproxy.model.PropertyChangeEventType.LISTEN_PORTS
 import packetproxy.model.PropertyChangeEventType.SERVERS
+import packetproxy.model.SSLPassThroughs
 import packetproxy.model.Servers
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class ListenPortManager private constructor() : PropertyChangeListener {
+class ListenPortManager(
+  private val listenPorts: ListenPorts,
+  private val servers: Servers,
+  private val sslPassThroughs: SSLPassThroughs,
+  private val proxyFactory: ProxyFactory,
+  private val duplexManager: DuplexManager,
+) : PropertyChangeListener {
   private val listenMap = HashMap<String, Listen>()
-  private val listenPorts = ListenPorts.getInstance()
 
   init {
-    ListenPortRebootHooks.rebooter = ListenPortRebooter { rebootIfHTTPProxyRunning() }
+    sslPassThroughs.listenPortRebooter = ListenPortRebooter { rebootIfHTTPProxyRunning() }
     listenPorts.addPropertyChangeListener(this)
-    Servers.getInstance().addPropertyChangeListener(this)
+    servers.addPropertyChangeListener(this)
     listenPorts.refresh()
   }
 
@@ -36,7 +41,7 @@ class ListenPortManager private constructor() : PropertyChangeListener {
     for (listenPort in listenPorts.queryEnabledHttpProxis()) {
       val listen = listenMap[listenPort.getProtoPort()] ?: continue
       listen.close()
-      listenMap[listenPort.getProtoPort()] = Listen(listenPort)
+      listenMap[listenPort.getProtoPort()] = Listen(listenPort, proxyFactory, duplexManager)
     }
   }
 
@@ -82,13 +87,13 @@ class ListenPortManager private constructor() : PropertyChangeListener {
       if (listen != null) {
         if (listen.listenInfo != listenPort) {
           listen.close()
-          listenMap[listenPort.getProtoPort()] = Listen(listenPort)
+          listenMap[listenPort.getProtoPort()] = Listen(listenPort, proxyFactory, duplexManager)
           log("## restart: %s", listenPort.getProtoPort())
         }
         return
       }
       log("## start: %s", listenPort.getProtoPort())
-      listenMap[listenPort.getProtoPort()] = Listen(listenPort)
+      listenMap[listenPort.getProtoPort()] = Listen(listenPort, proxyFactory, duplexManager)
     } catch (exception: BindException) {
       err("cannot listen port. (permission issue or already listened)")
       listenPort.setDisabled()
@@ -110,18 +115,7 @@ class ListenPortManager private constructor() : PropertyChangeListener {
       val listen = listenMap[listenPort.getProtoPort()] ?: continue
       log("## restarting forwarder due to server change: %s", listenPort.getProtoPort())
       listen.close()
-      listenMap[listenPort.getProtoPort()] = Listen(listenPort)
-    }
-  }
-
-  companion object {
-    private var instance: ListenPortManager? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): ListenPortManager {
-      if (instance == null) instance = ListenPortManager()
-      return instance!!
+      listenMap[listenPort.getProtoPort()] = Listen(listenPort, proxyFactory, duplexManager)
     }
   }
 }

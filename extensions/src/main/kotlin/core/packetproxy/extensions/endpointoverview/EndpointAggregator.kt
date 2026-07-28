@@ -20,79 +20,74 @@ import packetproxy.common.CryptUtils
 import packetproxy.http.Http
 import packetproxy.model.Packet
 
-object EndpointAggregator {
-  fun buildRequestMap(packets: List<Packet>): Map<Long, Packet> {
-    val requestMap = mutableMapOf<Long, Packet>()
+fun buildRequestMap(packets: List<Packet>): Map<Long, Packet> {
+  val requestMap = mutableMapOf<Long, Packet>()
 
-    for (packet in packets) {
-      if (packet.getDirection() != Packet.Direction.CLIENT) {
-        continue
-      }
-      requestMap[packet.getGroup()] = packet
+  for (packet in packets) {
+    if (packet.getDirection() != Packet.Direction.CLIENT) {
+      continue
     }
-
-    return requestMap
+    requestMap[packet.getGroup()] = packet
   }
 
-  fun aggregateEndpoints(packets: List<Packet>): Map<String, EndpointSummary> {
-    val requestMap = buildRequestMap(packets)
-    val endpointMap = mutableMapOf<String, EndpointSummary>()
+  return requestMap
+}
 
-    for (responsePacket in packets) {
-      if (responsePacket.getDirection() != Packet.Direction.SERVER) {
-        continue
-      }
+fun aggregateEndpoints(packets: List<Packet>): Map<String, EndpointSummary> {
+  val requestMap = buildRequestMap(packets)
+  val endpointMap = mutableMapOf<String, EndpointSummary>()
 
-      val requestPacket = requestMap[responsePacket.getGroup()] ?: continue
-      mergePacketPair(endpointMap, requestPacket, responsePacket)
+  for (responsePacket in packets) {
+    if (responsePacket.getDirection() != Packet.Direction.SERVER) {
+      continue
     }
 
-    return endpointMap
+    val requestPacket = requestMap[responsePacket.getGroup()] ?: continue
+    mergePacketPair(endpointMap, requestPacket, responsePacket)
   }
 
-  private fun mergePacketPair(
-    endpointMap: MutableMap<String, EndpointSummary>,
-    requestPacket: Packet,
-    responsePacket: Packet,
-  ) {
-    try {
-      val requestHttp = Http.create(requestPacket.getDecodedData())
-      val responseHttp = Http.create(responsePacket.getDecodedData())
+  return endpointMap
+}
 
-      val method = requestHttp.getMethod().takeIf { it.isNotEmpty() } ?: return
-      val host = requestHttp.header.getValue("Host").orElse(requestPacket.getServerName()) ?: return
-      if (!requestHttp.header.getValue("Host").isPresent) {
-        requestHttp.updateHeader("Host", host)
-      }
-      val url =
-        requestHttp.getURL(requestPacket.getServerPort(), requestPacket.getUseSSL()) ?: return
-      val statusCode = responseHttp.getStatusCode().takeIf { it.isNotEmpty() } ?: return
+private fun mergePacketPair(
+  endpointMap: MutableMap<String, EndpointSummary>,
+  requestPacket: Packet,
+  responsePacket: Packet,
+) {
+  try {
+    val requestHttp = Http.create(requestPacket.getDecodedData())
+    val responseHttp = Http.create(responsePacket.getDecodedData())
 
-      val contentType = responseHttp.header.getValue("Content-Type").orElse("")
-      val bodyFingerprint = fingerprintRequestBody(requestHttp)
-      val endpointKey = "$method $url $bodyFingerprint"
-
-      val summary =
-        endpointMap.getOrPut(endpointKey) {
-          EndpointSummary(method = method, url = url, host = host)
-        }
-
-      summary.statusCodes.add(statusCode)
-      if (contentType.isNotEmpty()) {
-        summary.contentTypes.add(contentType)
-      }
-      summary.latestRequestPacket = requestPacket
-      summary.latestResponsePacket = responsePacket
-    } catch (_: Exception) {
-      // Skip packets that cannot be parsed as HTTP.
+    val method = requestHttp.getMethod().takeIf { it.isNotEmpty() } ?: return
+    val host = requestHttp.header.getValue("Host").orElse(requestPacket.getServerName()) ?: return
+    if (!requestHttp.header.getValue("Host").isPresent) {
+      requestHttp.updateHeader("Host", host)
     }
-  }
+    val url = requestHttp.getURL(requestPacket.getServerPort(), requestPacket.getUseSSL()) ?: return
+    val statusCode = responseHttp.getStatusCode().takeIf { it.isNotEmpty() } ?: return
 
-  private fun fingerprintRequestBody(requestHttp: Http): String {
-    val body = requestHttp.body ?: return ""
-    if (body.isEmpty()) {
-      return ""
+    val contentType = responseHttp.header.getValue("Content-Type").orElse("")
+    val bodyFingerprint = fingerprintRequestBody(requestHttp)
+    val endpointKey = "$method $url $bodyFingerprint"
+
+    val summary =
+      endpointMap.getOrPut(endpointKey) { EndpointSummary(method = method, url = url, host = host) }
+
+    summary.statusCodes.add(statusCode)
+    if (contentType.isNotEmpty()) {
+      summary.contentTypes.add(contentType)
     }
-    return Hex.encodeHexString(CryptUtils.sha256(body))
+    summary.latestRequestPacket = requestPacket
+    summary.latestResponsePacket = responsePacket
+  } catch (_: Exception) {
+    // Skip packets that cannot be parsed as HTTP.
   }
+}
+
+private fun fingerprintRequestBody(requestHttp: Http): String {
+  val body = requestHttp.body ?: return ""
+  if (body.isEmpty()) {
+    return ""
+  }
+  return Hex.encodeHexString(CryptUtils.sha256(body))
 }

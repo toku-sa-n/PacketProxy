@@ -18,95 +18,93 @@ package packetproxy.extensions.endpointoverview
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
-object EndpointTreeKeys {
-  fun keyForHost(host: String): String = "host|$host"
+fun keyForHost(host: String): String = "host|$host"
 
-  fun keyForFolder(host: String, fullPathPrefix: String): String = "folder|$host|$fullPathPrefix"
+fun keyForFolder(host: String, fullPathPrefix: String): String = "folder|$host|$fullPathPrefix"
 
-  fun keyForMethod(host: String, fullPathPrefix: String, method: String): String =
-    "method|$host|$fullPathPrefix|$method"
+fun keyForMethod(host: String, fullPathPrefix: String, method: String): String =
+  "method|$host|$fullPathPrefix|$method"
 
-  fun keyForPath(path: TreePath): String? {
-    var host: String? = null
-    var fullPathPrefix = ""
-    var lastKey: String? = null
-    for (i in 1 until path.pathCount) {
-      val node = path.getPathComponent(i) as? DefaultMutableTreeNode ?: return null
-      when (val obj = node.userObject) {
-        is EndpointTreeHost -> {
-          host = obj.host
-          lastKey = keyForHost(obj.host)
-        }
-        is EndpointTreeFolder -> {
-          val currentHost = host ?: return null
-          fullPathPrefix = obj.fullPathPrefix
-          lastKey = keyForFolder(currentHost, obj.fullPathPrefix)
-        }
-        is EndpointTreeMethod -> {
-          val currentHost = host ?: return null
-          lastKey = keyForMethod(currentHost, fullPathPrefix, obj.method)
-        }
-      }
-    }
-    return lastKey
-  }
-
-  fun findPathByKey(root: DefaultMutableTreeNode, targetKey: String): TreePath? {
-    val rootPath = TreePath(root)
-    for (i in 0 until root.childCount) {
-      val child = root.getChildAt(i) as DefaultMutableTreeNode
-      findPathByKey(child, rootPath, null, "", targetKey)?.let {
-        return it
-      }
-    }
-    return null
-  }
-
-  private fun findPathByKey(
-    node: DefaultMutableTreeNode,
-    parentPath: TreePath,
-    host: String?,
-    fullPathPrefix: String,
-    targetKey: String,
-  ): TreePath? {
-    val path = parentPath.pathByAddingChild(node)
-    val obj = node.userObject
-    val key: String?
-    val nextHost: String?
-    val nextPrefix: String
-    when (obj) {
+fun keyForPath(path: TreePath): String? {
+  var host: String? = null
+  var fullPathPrefix = ""
+  var lastKey: String? = null
+  for (i in 1 until path.pathCount) {
+    val node = path.getPathComponent(i) as? DefaultMutableTreeNode ?: return null
+    when (val obj = node.userObject) {
       is EndpointTreeHost -> {
-        key = keyForHost(obj.host)
-        nextHost = obj.host
-        nextPrefix = ""
+        host = obj.host
+        lastKey = keyForHost(obj.host)
       }
       is EndpointTreeFolder -> {
-        if (host == null) return null
-        key = keyForFolder(host, obj.fullPathPrefix)
-        nextHost = host
-        nextPrefix = obj.fullPathPrefix
+        val currentHost = host ?: return null
+        fullPathPrefix = obj.fullPathPrefix
+        lastKey = keyForFolder(currentHost, obj.fullPathPrefix)
       }
       is EndpointTreeMethod -> {
-        if (host == null) return null
-        key = keyForMethod(host, fullPathPrefix, obj.method)
-        nextHost = host
-        nextPrefix = fullPathPrefix
-      }
-      else -> {
-        key = null
-        nextHost = host
-        nextPrefix = fullPathPrefix
+        val currentHost = host ?: return null
+        lastKey = keyForMethod(currentHost, fullPathPrefix, obj.method)
       }
     }
-    if (key == targetKey) {
-      return path
-    }
-    for (i in 0 until node.childCount) {
-      val child = node.getChildAt(i) as DefaultMutableTreeNode
-      findPathByKey(child, path, nextHost, nextPrefix, targetKey)?.let {
-        return it
-      }
-    }
-    return null
   }
+  return lastKey
+}
+
+fun findPathByKey(root: DefaultMutableTreeNode, targetKey: String): TreePath? {
+  val rootPath = TreePath(root)
+  for (i in 0 until root.childCount) {
+    val child = root.getChildAt(i) as DefaultMutableTreeNode
+    findPathByKey(child, rootPath, null, "", targetKey)?.let {
+      return it
+    }
+  }
+  return null
+}
+
+private fun findPathByKey(
+  node: DefaultMutableTreeNode,
+  parentPath: TreePath,
+  host: String?,
+  fullPathPrefix: String,
+  targetKey: String,
+): TreePath? {
+  val path = parentPath.pathByAddingChild(node)
+  val obj = node.userObject
+  val key: String?
+  val nextHost: String?
+  val nextPrefix: String
+  when (obj) {
+    is EndpointTreeHost -> {
+      key = keyForHost(obj.host)
+      nextHost = obj.host
+      nextPrefix = ""
+    }
+    is EndpointTreeFolder -> {
+      if (host == null) return null
+      key = keyForFolder(host, obj.fullPathPrefix)
+      nextHost = host
+      nextPrefix = obj.fullPathPrefix
+    }
+    is EndpointTreeMethod -> {
+      if (host == null) return null
+      key = keyForMethod(host, fullPathPrefix, obj.method)
+      nextHost = host
+      nextPrefix = fullPathPrefix
+    }
+    else -> {
+      key = null
+      nextHost = host
+      nextPrefix = fullPathPrefix
+    }
+  }
+  if (key == targetKey) {
+    return path
+  }
+  for (i in 0 until node.childCount) {
+    val child = node.getChildAt(i) as DefaultMutableTreeNode
+    findPathByKey(child, path, nextHost, nextPrefix, targetKey)?.let {
+      return it
+    }
+  }
+  return null
 }

@@ -11,7 +11,7 @@ import java.io.ByteArrayOutputStream
 import net.arnx.jsonic.JSON
 import org.apache.commons.lang3.ArrayUtils
 import org.apache.commons.lang3.RandomStringUtils
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.Logging
 
 class StringUtils {
   companion object {
@@ -33,7 +33,7 @@ class StringUtils {
       try {
         prettyUpJson(String(json)).toByteArray(Charsets.UTF_8)
       } catch (e: Exception) {
-        errWithStackTrace(e)
+        Logging.errWithStackTrace(e)
         prettyUpJson(String(json)).toByteArray()
       }
 
@@ -67,8 +67,7 @@ class StringUtils {
     @JvmStatic
     fun hexToByte(hexa: ByteArray): ByteArray {
       var hex = String(hexa).trim()
-      if (hex.length % 2 != 0)
-        throw Exception(I18nString.get("Length of string is not multiples of 2"))
+      if (hex.length % 2 != 0) throw Exception(i18nString("Length of string is not multiples of 2"))
       var bytes = ByteArray(hex.length / 2)
       for (index in bytes.indices) bytes[index] =
         hex.substring(index * 2, (index + 1) * 2).toInt(16).toByte()
@@ -127,7 +126,7 @@ class StringUtils {
     @JvmStatic
     fun binaryReplace(input: ByteArray, pattern: ByteArray, replace: ByteArray): ByteArray {
       if (pattern.size != replace.size)
-        throw Exception(I18nString.get("Lengths of target and replacement are not same."))
+        throw Exception(i18nString("Lengths of target and replacement are not same."))
       var result = input.clone()
       if (pattern.isEmpty()) return result
       var start = 0

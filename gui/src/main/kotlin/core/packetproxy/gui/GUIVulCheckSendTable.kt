@@ -5,7 +5,7 @@ import java.util.function.Function
 import javax.swing.*
 import packetproxy.model.OneShotPacket
 import packetproxy.model.OptionTableModel
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GUIVulCheckSendTable(
   private var onSelected: Consumer<String>,
@@ -24,7 +24,7 @@ class GUIVulCheckSendTable(
     table =
       JTable(model).apply {
         autoCreateRowSorter = true
-        TableHeaderStyle.apply(this, names.size)
+        apply(this, names.size)
       }
     table.addMouseListener(
       object : java.awt.event.MouseAdapter() {

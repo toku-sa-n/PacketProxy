@@ -6,9 +6,9 @@ import com.google.gson.annotations.SerializedName
 import packetproxy.model.Database
 import packetproxy.model.Filter
 import packetproxy.model.Filters
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class FilterIO {
+class FilterIO(private val database: Database, private val filters: Filters) {
   private class DaoHub {
     @SerializedName("filters") lateinit var filterList: List<Filter>
   }
@@ -16,7 +16,7 @@ class FilterIO {
   @Throws(Exception::class)
   fun getOptions(): String {
     val daoHub = DaoHub()
-    daoHub.filterList = Filters.getInstance().queryAll().toMutableList().also { it.reverse() }
+    daoHub.filterList = filters.queryAll().toMutableList().also { it.reverse() }
     val gson = GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create()
     return gson.toJson(daoHub)
   }
@@ -24,10 +24,10 @@ class FilterIO {
   fun setOptions(json: String) {
     try {
       val daoHub = Gson().fromJson(json, DaoHub::class.java)
-      Database.getInstance().dropFilters()
+      database.dropFilters()
       for (filter in daoHub.filterList) {
         val f = Filter(filter.getName()!!, filter.getFilter()!!)
-        Filters.getInstance().create(f)
+        filters.create(f)
       }
     } catch (e: Exception) {
       errWithStackTrace(e)

@@ -41,6 +41,6 @@ class CustomParagraphView(element: Element) : ParagraphView(element) {
   }
 
   companion object {
-    private const val MAX_VIEW_SIZE = 100
+    private val MAX_VIEW_SIZE = 100
   }
 }

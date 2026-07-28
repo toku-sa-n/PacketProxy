@@ -22,35 +22,34 @@ import packetproxy.http.Http
 import packetproxy.model.Packet
 import packetproxy.util.CharSetUtility
 
-fun copyMethodUrlBody(data: ByteArray, packet: Packet) {
-  copyToClipboard(formatMethodUrlBody(data, packet))
+fun copyMethodUrlBody(data: ByteArray, packet: Packet, charSetUtility: CharSetUtility) {
+  copyToClipboard(formatMethodUrlBody(data, packet, charSetUtility))
 }
 
-fun copyBody(data: ByteArray) {
+fun copyBody(data: ByteArray, charSetUtility: CharSetUtility) {
   val http = Http.create(data)
-  copyToClipboard(decodeHttpBody(http.body))
+  copyToClipboard(decodeHttpBody(http.body, charSetUtility))
 }
 
-fun copyUrl(data: ByteArray, packet: Packet) {
+fun copyUrl(data: ByteArray, packet: Packet, charSetUtility: CharSetUtility) {
   val http = Http.create(data)
   copyToClipboard(http.getURL(packet.getServerPort(), packet.getUseSSL()))
 }
 
-fun formatMethodUrlBody(data: ByteArray, packet: Packet): String {
+fun formatMethodUrlBody(data: ByteArray, packet: Packet, charSetUtility: CharSetUtility): String {
   val http = Http.create(data)
   return http.method +
     "\t" +
     http.getURL(packet.getServerPort(), packet.getUseSSL()) +
     "\t" +
-    decodeHttpBody(http.body)
+    decodeHttpBody(http.body, charSetUtility)
 }
 
-private fun decodeHttpBody(body: ByteArray): String {
-  val charsetUtility = CharSetUtility.getInstance()
-  if (charsetUtility.isAuto()) {
-    charsetUtility.setGuessedCharSet(body)
+private fun decodeHttpBody(body: ByteArray, charSetUtility: CharSetUtility): String {
+  if (charSetUtility.isAuto()) {
+    charSetUtility.setGuessedCharSet(body)
   }
-  return String(body, Charset.forName(charsetUtility.getCharSet()))
+  return String(body, Charset.forName(charSetUtility.getCharSet()))
 }
 
 private fun copyToClipboard(text: String) {

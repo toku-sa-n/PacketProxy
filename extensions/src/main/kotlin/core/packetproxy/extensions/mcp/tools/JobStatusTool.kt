@@ -2,12 +2,14 @@ package packetproxy.extensions.mcp.tools
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import packetproxy.model.Configs
 import packetproxy.model.Packet
 import packetproxy.model.Packets
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 /** ジョブの状況を取得するツール */
-class JobStatusTool : AuthenticatedMCPTool() {
+class JobStatusTool(private val packets: Packets, configs: Configs) :
+  AuthenticatedMCPTool(configs) {
 
   override fun getName(): String = "get_job_status"
 
@@ -49,7 +51,7 @@ class JobStatusTool : AuthenticatedMCPTool() {
     log("JobStatusTool: Getting detail for job $jobId")
 
     // job_idが一致するパケットを取得
-    var allPackets = Packets.getInstance().queryAll()
+    var allPackets = packets.queryAll()
     var jobPackets = ArrayList<Packet>()
 
     log("JobStatusTool: Searching for job $jobId in " + allPackets.size + " total packets")
@@ -162,7 +164,7 @@ class JobStatusTool : AuthenticatedMCPTool() {
     log("JobStatusTool: Getting status for all jobs")
 
     // 全パケットからjob_idが設定されているものを取得
-    var allPackets = Packets.getInstance().queryAll()
+    var allPackets = packets.queryAll()
     var jobs = HashMap<String, JobSummary>()
 
     log("JobStatusTool: Total packets in database: " + allPackets.size)

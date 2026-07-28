@@ -2,8 +2,10 @@ package packetproxy.extensions.mcp.tools
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import packetproxy.CoreServices
+import packetproxy.gui.GUIResender
 
-class ToolRegistry {
+class ToolRegistry(private val coreServices: CoreServices, private val guiResender: GUIResender) {
 
   private val tools: MutableMap<String, MCPTool>
 
@@ -14,17 +16,29 @@ class ToolRegistry {
 
   private fun registerDefaultTools() {
     // 基本的なツールを登録
-    registerTool(HistoryTool())
-    registerTool(PacketDetailTool())
-    registerTool(LogTool())
-    registerTool(ConfigTool())
-    registerTool(UpdateConfigTool())
-    registerTool(RestoreConfigTool())
-    registerTool(ResendPacketTool())
-    registerTool(BulkSendTool())
-    registerTool(VulCheckHelperTool())
-    registerTool(JobStatusTool())
-    registerTool(CreateResenderTabHttp2Tool())
+    val configs = coreServices.modelServices.configs
+    registerTool(HistoryTool(coreServices.modelServices.packets, configs))
+    registerTool(PacketDetailTool(coreServices.modelServices.packets, configs))
+    registerTool(LogTool(configs))
+    registerTool(ConfigTool(configs))
+    registerTool(UpdateConfigTool(configs))
+    registerTool(RestoreConfigTool(configs))
+    registerTool(
+      ResendPacketTool(coreServices.modelServices.packets, coreServices.resendController, configs)
+    )
+    registerTool(
+      BulkSendTool(coreServices.modelServices.packets, coreServices.resendController, configs)
+    )
+    registerTool(
+      VulCheckHelperTool(
+        coreServices.modelServices.packets,
+        coreServices.vulCheckerManager,
+        coreServices.resendController,
+        configs,
+      )
+    )
+    registerTool(JobStatusTool(coreServices.modelServices.packets, configs))
+    registerTool(CreateResenderTabHttp2Tool(coreServices.uniqueId, guiResender, configs))
   }
 
   fun registerTool(tool: MCPTool) {

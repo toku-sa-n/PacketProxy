@@ -4,16 +4,15 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import fi.iki.elonen.NanoHTTPD
 import javax.swing.JOptionPane
+import packetproxy.common.*
 import packetproxy.common.ConfigDaoHub
-import packetproxy.common.I18nString
-import packetproxy.model.Database
-import packetproxy.model.ListenPorts
-import packetproxy.model.Modifications
-import packetproxy.model.SSLPassThroughs
-import packetproxy.model.Servers
 
-class ConfigHttpServer(hostname: String, port: Int, private val allowedAccessToken: String) :
-  NanoHTTPD(hostname, port) {
+class ConfigHttpServer(
+  hostname: String,
+  port: Int,
+  private val main: GUIMain,
+  private val allowedAccessToken: String,
+) : NanoHTTPD(hostname, port) {
   override fun serve(session: IHTTPSession): Response {
     if (session.method == Method.OPTIONS && session.uri == "/config") {
       return newFixedLengthResponse(Response.Status.OK, MIME_HTML, null).apply {
@@ -38,10 +37,10 @@ class ConfigHttpServer(hostname: String, port: Int, private val allowedAccessTok
     try {
       val daoHub =
         ConfigDaoHub().apply {
-          listenPortList = ListenPorts.getInstance().queryAll()
-          serverList = Servers.getInstance().queryAll()
-          modificationList = Modifications.getInstance().queryAll()
-          sslPassThroughList = SSLPassThroughs.getInstance().queryAll()
+          listenPortList = main.modelServices.listenPorts.queryAll()
+          serverList = main.modelServices.servers.queryAll()
+          modificationList = main.modelServices.modifications.queryAll()
+          sslPassThroughList = main.modelServices.sslPassThroughs.queryAll()
         }
       fixUp(daoHub)
       newFixedLengthResponse(
@@ -62,11 +61,11 @@ class ConfigHttpServer(hostname: String, port: Int, private val allowedAccessTok
       val map = HashMap<String, String>()
       session.parseBody(map)
       val daoHub = Gson().fromJson(map["postData"], ConfigDaoHub::class.java)
-      Database.getInstance().dropConfigs()
-      daoHub.listenPortList.forEach { ListenPorts.getInstance().create(it) }
-      daoHub.serverList.forEach { Servers.getInstance().create(it) }
-      daoHub.modificationList.forEach { Modifications.getInstance().create(it) }
-      daoHub.sslPassThroughList.forEach { SSLPassThroughs.getInstance().create(it) }
+      main.modelServices.database.dropConfigs()
+      daoHub.listenPortList.forEach { main.modelServices.listenPorts.create(it) }
+      daoHub.serverList.forEach { main.modelServices.servers.create(it) }
+      daoHub.modificationList.forEach { main.modelServices.modifications.create(it) }
+      daoHub.sslPassThroughList.forEach { main.modelServices.sslPassThroughs.create(it) }
       newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}").apply {
         addHeader("Access-Control-Allow-Origin", "*")
       }
@@ -76,15 +75,15 @@ class ConfigHttpServer(hostname: String, port: Int, private val allowedAccessTok
   }
 
   private fun confirmOverwrite(): Boolean {
-    val gui = GUIMain.getInstance()
+    val gui = main
     gui.isAlwaysOnTop = true
     gui.isVisible = true
     gui.tabbedPane.selectedIndex = GUIMain.Panes.OPTIONS.ordinal
     val option =
       JOptionPane.showConfirmDialog(
         gui,
-        I18nString.get("Do you want to overwrite config?"),
-        I18nString.get("Loading config"),
+        i18nString("Do you want to overwrite config?"),
+        i18nString("Loading config"),
         JOptionPane.YES_NO_OPTION,
         JOptionPane.WARNING_MESSAGE,
       )

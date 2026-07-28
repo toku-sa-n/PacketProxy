@@ -16,7 +16,7 @@
 package packetproxy.extensions.randomness.test
 
 import javax.swing.JComboBox
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class RandomnessTestManager {
   private var testMap = HashMap<String, RandomnessTest>()
@@ -81,13 +81,5 @@ class RandomnessTestManager {
       errWithStackTrace(e)
     }
     return res
-  }
-
-  companion object {
-    @Volatile private var instance: RandomnessTestManager? = null
-
-    @JvmStatic
-    fun getInstance(): RandomnessTestManager =
-      instance ?: synchronized(this) { instance ?: RandomnessTestManager().also { instance = it } }
   }
 }

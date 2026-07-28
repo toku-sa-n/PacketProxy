@@ -30,7 +30,7 @@ import com.mobius.software.mqtt.parser.header.impl.Unsubscribe
 import io.netty.buffer.Unpooled
 import packetproxy.http.Http
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class EncodeMQTTWebSocket @Throws(Exception::class) constructor(ALPN: String?) :
   EncodeHTTPWebSocket(ALPN) {

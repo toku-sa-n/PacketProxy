@@ -36,25 +36,15 @@ import java.io.IOException
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import packetproxy.model.OpenVPNForwardPorts
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class OpenVPN private constructor() {
+class OpenVPN(private val openVPNForwardPorts: OpenVPNForwardPorts) {
   companion object {
-    private var instance: OpenVPN? = null
-    private const val imageName = "alekslitvinenk/openvpn"
-    private const val containerName = "packetproxy_ovpn"
-    private const val volumeName = "packetproxy_ovpn_volume"
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): OpenVPN {
-      if (instance == null) {
-        instance = OpenVPN()
-      }
-      return instance!!
-    }
+    private val imageName = "alekslitvinenk/openvpn"
+    private val containerName = "packetproxy_ovpn"
+    private val volumeName = "packetproxy_ovpn_volume"
   }
 
   private var pulling = false
@@ -203,7 +193,7 @@ class OpenVPN private constructor() {
 
   fun patchContainer(client: DockerClient, localIp: String, proto: String) {
     try {
-      val forwardPorts = OpenVPNForwardPorts.getInstance().queryAll()
+      val forwardPorts = openVPNForwardPorts.queryAll()
       for (forwardPort in forwardPorts) {
         val command =
           "/sbin/iptables -t nat -A PREROUTING -p " +

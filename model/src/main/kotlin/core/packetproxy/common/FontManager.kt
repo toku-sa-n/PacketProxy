@@ -22,12 +22,13 @@ import org.apache.commons.collections4.keyvalue.MultiKey
 import org.apache.commons.collections4.map.MultiKeyMap
 import packetproxy.model.ConfigInteger
 import packetproxy.model.ConfigString
+import packetproxy.model.Configs
 
-class FontManager private constructor() {
-  private val configUIFontName = ConfigString("UIFontName")
-  private val configUIFontSize = ConfigInteger("UIFontSize")
-  private val configFontName = ConfigString("FontName")
-  private val configFontSize = ConfigInteger("FontSize")
+class FontManager(private val configs: Configs) {
+  private val configUIFontName = ConfigString(configs, "UIFontName")
+  private val configUIFontSize = ConfigInteger(configs, "UIFontSize")
+  private val configFontName = ConfigString(configs, "FontName")
+  private val configFontSize = ConfigInteger(configs, "FontSize")
 
   private lateinit var storedUIFont: Font
   private lateinit var storedUICaptionFont: Font
@@ -112,7 +113,7 @@ class FontManager private constructor() {
       os = "Mac"
     }
     var lang = "en"
-    if (I18nString.locale.language == "ja") {
+    if (i18nLocale.language == "ja") {
       lang = "ja"
     }
     return defaultFonts[os, lang]!!
@@ -160,17 +161,4 @@ class FontManager private constructor() {
   private class FontStyle(val fontName: String, val fontSize: Int)
 
   private class LocaleFontStyles(val uiFont: FontStyle, val font: FontStyle)
-
-  companion object {
-    private var instance: FontManager? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): FontManager {
-      if (instance == null) {
-        instance = FontManager()
-      }
-      return instance!!
-    }
-  }
 }

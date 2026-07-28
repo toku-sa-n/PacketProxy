@@ -23,21 +23,27 @@ import java.util.Arrays
 import java.util.Base64
 import javax.swing.JMenuItem
 import javax.swing.JPopupMenu
+import packetproxy.common.*
 import packetproxy.common.FontManager
-import packetproxy.common.I18nString
 import packetproxy.common.Utils
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.CharSetUtility
+import packetproxy.util.PacketProxyUtility
+import packetproxy.util.errWithStackTrace
 
-class BinaryTextPane : ExtendedTextPane() {
+class BinaryTextPane(
+  fontManager: FontManager,
+  charSetUtility: CharSetUtility,
+  packetProxyUtility: PacketProxyUtility,
+) : ExtendedTextPane(fontManager, charSetUtility, packetProxyUtility) {
   private val editor = WrapEditorKit(ByteArray(0))
   private var data = ByteArray(0)
 
   init {
     editorKit = editor
-    font = FontManager.getInstance().getFont()
+    font = fontManager.getFont()
     var menu = JPopupMenu()
-    var titleEncoders = JMenuItem(I18nString.get("Encoders"))
-    titleEncoders.font = FontManager.getInstance().getUICaptionFont()
+    var titleEncoders = JMenuItem(i18nString("Encoders"))
+    titleEncoders.font = fontManager.getUICaptionFont()
     titleEncoders.isEnabled = false
     menu.add(titleEncoders)
 

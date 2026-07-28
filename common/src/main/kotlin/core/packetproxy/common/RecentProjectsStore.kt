@@ -4,14 +4,13 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-object RecentProjectsStore {
-  private const val MAX_RECENTS = 10
+class RecentProjectsStore {
+  private val MAX_RECENTS = 10
   private val recentFile: Path =
     Paths.get(System.getProperty("user.home"), ".packetproxy", "recent_projects")
 
-  @JvmStatic
   fun load(): List<String> {
     return try {
       if (!Files.exists(recentFile)) {
@@ -26,7 +25,6 @@ object RecentProjectsStore {
     }
   }
 
-  @JvmStatic
   fun add(path: Path) {
     try {
       val deduplicated = linkedSetOf(path.toString()).apply { addAll(load()) }
@@ -36,7 +34,6 @@ object RecentProjectsStore {
     }
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun save(recents: List<String>) {
     recentFile.parent?.let { Files.createDirectories(it) }

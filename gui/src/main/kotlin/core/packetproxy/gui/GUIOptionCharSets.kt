@@ -2,13 +2,11 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JFrame
 import packetproxy.model.CharSet
-import packetproxy.model.CharSets
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionCharSets(owner: JFrame) : GUIOptionComponentBase<CharSet>(owner) {
-  private val charsets = CharSets.getInstance()
+class GUIOptionCharSets(owner: GUIMain) : GUIOptionComponentBase<CharSet>(owner) {
+  private val charsets = owner.modelServices.charSets
   private val charsetList = mutableListOf<CharSet>()
 
   init {

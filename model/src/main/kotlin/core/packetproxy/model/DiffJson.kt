@@ -18,12 +18,11 @@ package packetproxy.model
 import difflib.Delta
 import difflib.DiffUtils
 import java.util.Arrays
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class DiffJson private constructor() : DiffBase() {
+class DiffJson() : DiffBase() {
   // static public void main(String[] args) {
   // try {
-  // DiffJson diff = Diff.getInstance();
   // diff.markAsOriginal("hello\nw orld\naaaa\nhoge".getBytes());
   // diff.markAsTarget("hello\nworld\nhoge".getBytes());
   // diff.diff(new DiffEventAdapter() {
@@ -47,16 +46,6 @@ class DiffJson private constructor() : DiffBase() {
   // }
 
   companion object {
-    private var instance: DiffJson? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): DiffJson {
-      if (instance == null) {
-        instance = DiffJson()
-      }
-      return instance!!
-    }
 
     @JvmStatic
     @Throws(Exception::class)

@@ -25,31 +25,40 @@ import java.nio.file.Files
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.concurrent.ConcurrentHashMap
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
 import packetproxy.model.ListenPorts
 import packetproxy.model.Server
 import packetproxy.model.Servers
 
-class GrpcServiceRegistryStore private constructor() {
+class GrpcServiceRegistryStore(
+  private val database: Database? = null,
+  private val servers: Servers? = null,
+  private val listenPorts: ListenPorts? = null,
+) {
   private val cache = ConcurrentHashMap<String, GrpcServiceRegistry>()
 
   /** Transparent proxy では authority がリスナーアドレスになるため、Servers → ListenPort の順でフォールバックする */
   fun getByAuthority(authority: String?): GrpcServiceRegistry? {
     if (authority.isNullOrBlank()) return null
     return try {
+      val database = requireNotNull(database) { "Database is required to resolve a gRPC authority" }
+      val servers = requireNotNull(servers) { "Servers is required to resolve a gRPC authority" }
+      val listenPorts =
+        requireNotNull(listenPorts) { "ListenPorts is required to resolve a gRPC authority" }
       val parsed = parseAuthorityHostPort(authority.trim()) ?: return null
       val (host, port) = parsed
-      var server = Servers.getInstance().queryByHostNameAndPort(host, port)
+      var server = servers.queryByHostNameAndPort(host, port)
       if (server == null) {
         try {
           val addr = InetSocketAddress(host, port)
-          server = Servers.getInstance().queryByAddress(addr)
+          server = servers.queryByAddress(addr)
         } catch (_: Exception) {
           // unresolved hostname / invalid socket
         }
       }
       if (server == null) {
-        server = tryResolveServerViaListenPort(port, ListenPorts.getInstance())
+        server = tryResolveServerViaListenPort(port, listenPorts, database)
       }
       if (server == null) return null
       val path = server.getDescriptorPath()?.trim().takeUnless { it.isNullOrEmpty() } ?: return null
@@ -61,10 +70,14 @@ class GrpcServiceRegistryStore private constructor() {
     }
   }
 
-  internal fun tryResolveServerViaListenPort(port: Int, listenPorts: ListenPorts): Server? {
+  internal fun tryResolveServerViaListenPort(
+    port: Int,
+    listenPorts: ListenPorts,
+    database: Database,
+  ): Server? {
     return try {
       val listenPort = listenPorts.queryEnabledByPort(ListenPort.Protocol.TCP, port) ?: return null
-      listenPort.getServer()
+      listenPort.getServer(database)
     } catch (_: Exception) {
       null
     }
@@ -155,11 +168,5 @@ class GrpcServiceRegistryStore private constructor() {
 
   fun invalidateAll() {
     cache.clear()
-  }
-
-  companion object {
-    private val INSTANCE = GrpcServiceRegistryStore()
-
-    @JvmStatic fun getInstance(): GrpcServiceRegistryStore = INSTANCE
   }
 }

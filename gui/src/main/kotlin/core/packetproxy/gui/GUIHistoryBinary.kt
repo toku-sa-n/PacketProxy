@@ -34,11 +34,11 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Binary
-import packetproxy.common.FontManager
 import packetproxy.common.StringUtils
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIHistoryBinary : GUIHistoryPanel(), ExtendedTextPane.DataChangedListener {
+class GUIHistoryBinary(private val owner: GUIMain) :
+  GUIHistoryPanel(), ExtendedTextPane.DataChangedListener {
 
   private val TRIMMING_SIZE = 100000
   private val DEFAULT_SHOW_SIZE = 2000
@@ -56,9 +56,14 @@ class GUIHistoryBinary : GUIHistoryPanel(), ExtendedTextPane.DataChangedListener
   override fun getTextPane(): JTextPane = hexText
 
   init {
-    hexText = BinaryTextPane()
+    hexText =
+      BinaryTextPane(
+        owner.modelServices.fontManager,
+        owner.modelServices.charSetUtility,
+        owner.coreServices.packetProxyUtility,
+      )
     hexText.addDataChangedListener(this)
-    hexText.font = FontManager.getInstance().getFont()
+    hexText.font = owner.modelServices.fontManager.getFont()
     hexText.addMouseListener(
       object : MouseListener {
         override fun mouseClicked(e: MouseEvent) {
@@ -110,7 +115,7 @@ class GUIHistoryBinary : GUIHistoryPanel(), ExtendedTextPane.DataChangedListener
     val scrollpane3 = JScrollPane(hexText)
 
     asciiText = JTextPane()
-    asciiText.font = FontManager.getInstance().getFont()
+    asciiText.font = owner.modelServices.fontManager.getFont()
     asciiText.addMouseListener(
       object : MouseListener {
         override fun mouseClicked(e: MouseEvent) {
@@ -137,7 +142,7 @@ class GUIHistoryBinary : GUIHistoryPanel(), ExtendedTextPane.DataChangedListener
     scrollpane4.verticalScrollBar.model = scrollpane3.verticalScrollBar.model
 
     searchText = JTextField()
-    searchText.font = FontManager.getInstance().getFont()
+    searchText.font = owner.modelServices.fontManager.getFont()
     searchText.addKeyListener(
       object : KeyListener {
         override fun keyReleased(e: KeyEvent) {
@@ -171,9 +176,9 @@ class GUIHistoryBinary : GUIHistoryPanel(), ExtendedTextPane.DataChangedListener
 
   private fun setData(data: ByteArray, trimming: Boolean) {
     try {
-      hexText.font = FontManager.getInstance().getFont()
-      asciiText.font = FontManager.getInstance().getFont()
-      searchText.font = FontManager.getInstance().getFont()
+      hexText.font = owner.modelServices.fontManager.getFont()
+      asciiText.font = owner.modelServices.fontManager.getFont()
+      searchText.font = owner.modelServices.fontManager.getFont()
       hexText.setData(data, false)
       this.data = data
       // データが多いと遅いので長いデータをトリミングする

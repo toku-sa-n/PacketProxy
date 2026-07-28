@@ -20,7 +20,7 @@ import packetproxy.http3.utils.quicMessageOf
 import packetproxy.quic.value.QuicMessages
 import packetproxy.quic.value.StreamId
 import packetproxy.quic.value.VariableLengthInteger
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 open class QpackWriteStream(streamId: StreamId, streamType: StreamType) :
   Stream(streamId, streamType), WriteStream {

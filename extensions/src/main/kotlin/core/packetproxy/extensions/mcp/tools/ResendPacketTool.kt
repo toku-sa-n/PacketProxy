@@ -9,12 +9,17 @@ import java.util.Random
 import java.util.UUID
 import java.util.regex.Pattern
 import packetproxy.controller.ResendController
+import packetproxy.model.Configs
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packets
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 /** パケット再送ツール パケットを指定回数再送し、改変オプションもサポート */
-class ResendPacketTool : AuthenticatedMCPTool() {
+class ResendPacketTool(
+  private val packets: Packets,
+  private val resendController: ResendController,
+  configs: Configs,
+) : AuthenticatedMCPTool(configs) {
 
   override fun getName(): String = "resend_packet"
 
@@ -145,7 +150,7 @@ class ResendPacketTool : AuthenticatedMCPTool() {
     )
 
     // パケットを取得
-    var originalPacket = Packets.getInstance().query(packetId)
+    var originalPacket = packets.query(packetId)
     if (originalPacket == null) {
       throw IllegalArgumentException("Packet with ID $packetId not found")
     }
@@ -176,8 +181,6 @@ class ResendPacketTool : AuthenticatedMCPTool() {
     var failedCount = 0
 
     try {
-      var resendController = ResendController.getInstance()
-
       if (modifications.size() == 0) {
         // 改変なしの場合は単純再送
         log("ResendPacketTool: Simple resend without modifications, count=$count")

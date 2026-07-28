@@ -20,9 +20,9 @@ import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.StringUtils
 import packetproxy.http.Http
 import packetproxy.model.Packets
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class Http1StreamingResponse {
+class Http1StreamingResponse(private val packets: Packets) {
   private val clientInput = ByteArrayOutputStream()
   private val serverInput = ByteArrayOutputStream()
   private val buffer = ByteArrayOutputStream()
@@ -91,13 +91,13 @@ class Http1StreamingResponse {
       val guiHistoryUpdater = Thread {
         try {
           if (http.getBody() != null && http.getBody().isNotEmpty()) {
-            val packets =
-              Packets.getInstance().queryFullText(http.getFirstHeader("X-PacketProxy-HTTP1-UUID"))
-            for (packet in packets) {
-              val p = Packets.getInstance().query(packet.getId()) ?: return@Thread
+            val matchingPackets =
+              packets.queryFullText(http.getFirstHeader("X-PacketProxy-HTTP1-UUID"))
+            for (packet in matchingPackets) {
+              val p = packets.query(packet.getId()) ?: return@Thread
               p.setDecodedData(http.toByteArray())
               p.setModifiedData(http.toByteArray())
-              Packets.getInstance().update(p)
+              packets.update(p)
             }
           }
         } catch (e: Exception) {

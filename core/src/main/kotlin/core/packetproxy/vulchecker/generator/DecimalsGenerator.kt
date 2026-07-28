@@ -15,10 +15,10 @@
  */
 package packetproxy.vulchecker.generator
 
-import packetproxy.common.I18nString
+import packetproxy.common.*
 
 open class DecimalsGenerator : Generator() {
-  override fun getName(): String = I18nString.get("Decimals: 0.5")
+  override fun getName(): String = i18nString("Decimals: 0.5")
 
   override fun generateOnStart(): Boolean = true
 

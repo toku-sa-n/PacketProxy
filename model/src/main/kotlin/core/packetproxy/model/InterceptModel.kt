@@ -20,7 +20,7 @@ import java.beans.PropertyChangeSupport
 import packetproxy.model.PropertyChangeEventType.INTERCEPT_DATA
 import packetproxy.model.PropertyChangeEventType.INTERCEPT_MODE
 
-class InterceptModel private constructor() {
+class InterceptModel() {
   private val pcs = PropertyChangeSupport(this)
 
   private var data: ByteArray? = null
@@ -78,18 +78,5 @@ class InterceptModel private constructor() {
     this.data = null
     this.client_packet = null
     this.server_packet = null
-  }
-
-  companion object {
-    private var instance: InterceptModel? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): InterceptModel {
-      if (instance == null) {
-        instance = InterceptModel()
-      }
-      return instance!!
-    }
   }
 }

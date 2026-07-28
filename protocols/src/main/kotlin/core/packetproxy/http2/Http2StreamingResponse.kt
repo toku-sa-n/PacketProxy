@@ -22,29 +22,28 @@ import java.util.Queue
 import org.eclipse.jetty.http2.hpack.HpackEncoder
 import packetproxy.common.UniqueID
 import packetproxy.http.Http
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.DataFrame
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameUtils
 import packetproxy.http2.frames.HeadersFrame
 import packetproxy.model.Packet
 import packetproxy.model.Packets
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-open class Http2StreamingResponse : FramesBase {
+open class Http2StreamingResponse(private val packets: Packets, private val uniqueId: UniqueID) :
+  FramesBase() {
   private val clientStreamManager = StreamManager()
   private val serverStreamManager = StreamManager()
   private val stream = StreamManager()
   private val frameQueue: Queue<Frame> = ArrayDeque()
   private val groupMap: MutableMap<Long, Long> = HashMap()
 
-  @Throws(Exception::class) constructor() : super()
-
   @Throws(Exception::class)
   override fun passThroughServerResponse(): ByteArray {
     val out = ByteArrayOutputStream()
     if (!alreadySentClientRequestEpilogue) {
-      out.write(FrameUtils.SETTINGS)
-      out.write(FrameUtils.WINDOW_UPDATE)
+      out.write(SETTINGS)
+      out.write(WINDOW_UPDATE)
       alreadySentClientRequestEpilogue = true
     }
     for (frame in serverFrameManager.readControlFrames()) {
@@ -73,14 +72,13 @@ open class Http2StreamingResponse : FramesBase {
               }
               val http = Http.create(data.toByteArray())
               if (http.body.isNotEmpty()) {
-                val packets =
-                  Packets.getInstance()
-                    .queryFullText(http.getFirstHeader("X-PacketProxy-HTTP2-UUID"))
-                for (packet in packets) {
-                  val p = Packets.getInstance().query(packet.getId())!!
+                val matchingPackets =
+                  packets.queryFullText(http.getFirstHeader("X-PacketProxy-HTTP2-UUID"))
+                for (packet in matchingPackets) {
+                  val p = packets.query(packet.getId())!!
                   p.setDecodedData(http.toByteArray())
                   p.setModifiedData(http.toByteArray())
-                  Packets.getInstance().update(p)
+                  packets.update(p)
                 }
               }
             } catch (e: Exception) {
@@ -117,7 +115,7 @@ open class Http2StreamingResponse : FramesBase {
       }
       if ((frame.flags and 0x01) > 0) {
         val streamFrames = streamManager.read(frame.streamId)
-        return FrameUtils.toByteArray(streamFrames!!)
+        return toByteArray(streamFrames!!)
       }
     }
     return null
@@ -134,7 +132,7 @@ open class Http2StreamingResponse : FramesBase {
   @Throws(Exception::class)
   private fun decodeFromFrames(frames: ByteArray): ByteArray {
     val out = ByteArrayOutputStream()
-    for (frame in FrameUtils.parseFrames(frames)) {
+    for (frame in parseFrames(frames)) {
       if (frame is HeadersFrame) {
         out.write(frame.getHttp())
       } else if (frame is DataFrame) {
@@ -184,7 +182,7 @@ open class Http2StreamingResponse : FramesBase {
       if (groupMap.containsKey(streamId)) {
         packet.setGroup(groupMap[streamId]!!)
       } else {
-        val groupId = UniqueID.getInstance().createId()
+        val groupId = uniqueId.createId()
         groupMap[streamId] = groupId
         packet.setGroup(groupId)
       }

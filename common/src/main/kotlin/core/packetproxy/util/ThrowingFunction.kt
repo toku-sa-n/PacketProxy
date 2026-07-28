@@ -7,7 +7,7 @@ fun interface ThrowingFunction<T, R> : Function<T, R> {
     try {
       return apply0(t)
     } catch (ex: Throwable) {
-      Throwing.sneakyThrow<RuntimeException>(ex)
+      sneakyThrow<RuntimeException>(ex)
       throw IllegalStateException("Unreachable")
     }
   }

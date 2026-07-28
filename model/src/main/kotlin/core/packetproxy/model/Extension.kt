@@ -66,6 +66,8 @@ open class Extension {
     return null
   }
 
+  open fun historyClickHandler(packetProvider: () -> Packet): JMenuItem? = historyClickHandler()
+
   open fun getEncoders(): Map<String, Class<*>> {
     // Please override this
     return HashMap()

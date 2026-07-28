@@ -29,7 +29,7 @@ import javax.swing.JTextField
 import org.apache.commons.codec.binary.Hex
 import packetproxy.common.Binary
 import packetproxy.common.StringUtils
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GUIHexCalc {
   private lateinit var intBefore: JTextField

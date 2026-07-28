@@ -23,16 +23,22 @@ import javax.net.ssl.SSLSocket
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Endpoint
 import packetproxy.common.SocketEndpoint
-import packetproxy.http.Https.createSSLContext
-import packetproxy.http.Https.createSSLSocketFactory
+import packetproxy.http.Https
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.model.Resolutions
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class ProxyXmppSSLForward(
   private val listen_socket: ServerSocket,
   private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
+  private val https: Https,
+  private val database: Database,
+  private val resolutions: Resolutions,
 ) : Proxy() {
   private var finishFlag = false
 
@@ -43,16 +49,21 @@ class ProxyXmppSSLForward(
         log("accept")
 
         val server = Socket()
-        server.connect(listen_info.getServer()!!.getAddress())
+        server.connect(listen_info.getServer(database)!!.getAddress(resolutions))
 
         skipDataUntilSSLConnectionStarted(client, server)
 
         val clientSSLSocket =
-          createSSLContext(listen_info.getServer()!!.getIp()!!, listen_info.getCA().get())
+          https
+            .createSSLContext(
+              listen_info.getServer(database)!!.getIp()!!,
+              listen_info.getCA().get(),
+            )
             .socketFactory
             .createSocket(client, null as InputStream?, true) as SSLSocket
         val serverSSLSocket =
-          createSSLSocketFactory().createSocket(server, null as InputStream?, true) as SSLSocket
+          https.createSSLSocketFactory().createSocket(server, null as InputStream?, true)
+            as SSLSocket
         clientSSLSocket.useClientMode = false
         serverSSLSocket.useClientMode = true
         createConnection(SocketEndpoint(clientSSLSocket), SocketEndpoint(serverSSLSocket))
@@ -125,9 +136,13 @@ class ProxyXmppSSLForward(
   @Throws(Exception::class)
   fun createConnection(client: Endpoint, server: Endpoint) {
     val duplex =
-      DuplexFactory.createDuplexAsync(client, server, listen_info.getServer()!!.getEncoder()!!)
+      duplexFactory.createDuplexAsync(
+        client,
+        server,
+        listen_info.getServer(database)!!.getEncoder()!!,
+      )
     duplex.start()
-    DuplexManager.getInstance().registerDuplex(duplex)
+    duplexManager.registerDuplex(duplex)
   }
 
   @Throws(Exception::class)

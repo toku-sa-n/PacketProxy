@@ -23,7 +23,7 @@ import org.eclipse.jetty.http3.qpack.QpackException
 import org.eclipse.jetty.io.ByteBufferPool
 import org.eclipse.jetty.io.MappedByteBufferPool
 import packetproxy.http3.utils.readSimpleBytes
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.rethrow
 
 open class Http3HeaderEncoder(capacity: Long) {
   private val bufferPool: ByteBufferPool = MappedByteBufferPool()

@@ -32,10 +32,11 @@ import javax.swing.SwingUtilities
 import javax.swing.SwingWorker
 import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.table.DefaultTableModel
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.grpc.GrpcServiceRegistryStore
 import packetproxy.grpc.ProtoFileSet
 import packetproxy.grpc.ProtocRunner
+import packetproxy.model.ModelServices
 
 data class GrpcDescriptorDialogOutcome(
   @get:JvmName("isApplied") val applied: Boolean,
@@ -50,7 +51,14 @@ class GUIOptionGrpcDescriptorDialog(
   private val frameOwner: JFrame?,
   private val serverId: Int?,
   initialPath: String?,
-) : JDialog(frameOwner, I18nString.get("gRPC descriptor"), true) {
+  private val modelServices: ModelServices,
+) : JDialog(frameOwner, i18nString("gRPC descriptor"), true) {
+  private val registryStore =
+    GrpcServiceRegistryStore(
+      modelServices.database,
+      modelServices.servers,
+      modelServices.listenPorts,
+    )
 
   private var workingPath: String? = initialPath?.trim()?.takeIf { it.isNotEmpty() }
   private var outcome = GrpcDescriptorDialogOutcome(false, null)
@@ -80,15 +88,15 @@ class GUIOptionGrpcDescriptorDialog(
 
     // --- .proto file section ---
     val protoPanel = JPanel(BorderLayout(4, 4))
-    protoPanel.border = BorderFactory.createTitledBorder(I18nString.get(".proto files"))
+    protoPanel.border = BorderFactory.createTitledBorder(i18nString(".proto files"))
 
     val protoButtons = JPanel()
     protoButtons.layout = BoxLayout(protoButtons, BoxLayout.X_AXIS)
-    val addFile = JButton(I18nString.get("Add .proto file..."))
+    val addFile = JButton(i18nString("Add .proto file..."))
     addFile.addActionListener { addProtoFiles() }
-    val addDir = JButton(I18nString.get("Add directory..."))
+    val addDir = JButton(i18nString("Add directory..."))
     addDir.addActionListener { addProtoDirectory() }
-    val removeProto = JButton(I18nString.get("Remove item"))
+    val removeProto = JButton(i18nString("Remove item"))
     removeProto.addActionListener { removeSelectedProto() }
     protoButtons.add(addFile)
     protoButtons.add(addDir)
@@ -101,11 +109,11 @@ class GUIOptionGrpcDescriptorDialog(
 
     // --- Action buttons ---
     val actionRow = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 0))
-    val generate = JButton(I18nString.get("Generate .desc"))
+    val generate = JButton(i18nString("Generate .desc"))
     generate.addActionListener { runGenerate() }
-    val browse = JButton(I18nString.get("Browse .desc..."))
+    val browse = JButton(i18nString("Browse .desc..."))
     browse.addActionListener { browseDescFile() }
-    val remove = JButton(I18nString.get("Unregister"))
+    val remove = JButton(i18nString("Unregister"))
     remove.addActionListener { removeDescriptor() }
     actionRow.add(generate)
     actionRow.add(browse)
@@ -116,7 +124,7 @@ class GUIOptionGrpcDescriptorDialog(
     val serviceTable = JTable(serviceTableModel)
     serviceTable.preferredScrollableViewportSize = Dimension(520, 160)
     val serviceScroll = JScrollPane(serviceTable)
-    serviceScroll.border = BorderFactory.createTitledBorder(I18nString.get("Services / methods"))
+    serviceScroll.border = BorderFactory.createTitledBorder(i18nString("Services / methods"))
     center.add(serviceScroll)
 
     root.add(center, BorderLayout.CENTER)
@@ -124,13 +132,13 @@ class GUIOptionGrpcDescriptorDialog(
     // --- Footer ---
     val footer = JPanel()
     footer.layout = BoxLayout(footer, BoxLayout.X_AXIS)
-    val ok = JButton(I18nString.get("OK"))
+    val ok = JButton(i18nString("OK"))
     ok.addActionListener {
       val p = workingPath?.trim()?.takeIf { it.isNotEmpty() }
       outcome = GrpcDescriptorDialogOutcome(true, p)
       dispose()
     }
-    val cancel = JButton(I18nString.get("Cancel"))
+    val cancel = JButton(i18nString("Cancel"))
     cancel.addActionListener {
       outcome = GrpcDescriptorDialogOutcome(false, null)
       dispose()
@@ -149,9 +157,9 @@ class GUIOptionGrpcDescriptorDialog(
     val p = workingPath?.trim()?.takeIf { it.isNotEmpty() }
     pathLabel.text =
       if (p == null) {
-        I18nString.get("No descriptor loaded")
+        i18nString("No descriptor loaded")
       } else {
-        "<html><b>${I18nString.get("Current .desc:")}</b><br/>${escapeHtml(p)}</html>"
+        "<html><b>${i18nString("Current .desc:")}</b><br/>${escapeHtml(p)}</html>"
       }
   }
 
@@ -163,7 +171,7 @@ class GUIOptionGrpcDescriptorDialog(
   private fun addProtoFiles() {
     try {
       val chooser = NativeFileChooser()
-      chooser.setDialogTitle(I18nString.get("Select .proto files"))
+      chooser.setDialogTitle(i18nString("Select .proto files"))
       chooser.addChoosableFileFilter(FileNameExtensionFilter("Protocol Buffers (*.proto)", "proto"))
       chooser.setAcceptAllFileFilterUsed(false)
       if (chooser.showOpenDialog(this) == NativeFileChooser.APPROVE_OPTION) {
@@ -176,7 +184,7 @@ class GUIOptionGrpcDescriptorDialog(
       JOptionPane.showMessageDialog(
         this,
         ex.message,
-        I18nString.get("Error"),
+        i18nString("Error"),
         JOptionPane.ERROR_MESSAGE,
       )
     }
@@ -185,7 +193,7 @@ class GUIOptionGrpcDescriptorDialog(
   private fun addProtoDirectory() {
     try {
       val chooser = NativeFileChooser()
-      chooser.setDialogTitle(I18nString.get("Select directory"))
+      chooser.setDialogTitle(i18nString("Select directory"))
       if (chooser.showDirectoryDialog(this) == NativeFileChooser.APPROVE_OPTION) {
         val dir = chooser.getSelectedFile()
         if (dir != null && dir.isDirectory) {
@@ -193,8 +201,8 @@ class GUIOptionGrpcDescriptorDialog(
           if (n == 0) {
             JOptionPane.showMessageDialog(
               this,
-              I18nString.get("No .proto files found in the selected directory."),
-              I18nString.get("Info"),
+              i18nString("No .proto files found in the selected directory."),
+              i18nString("Info"),
               JOptionPane.INFORMATION_MESSAGE,
             )
           } else {
@@ -209,7 +217,7 @@ class GUIOptionGrpcDescriptorDialog(
       JOptionPane.showMessageDialog(
         this,
         ex.message,
-        I18nString.get("Error"),
+        i18nString("Error"),
         JOptionPane.ERROR_MESSAGE,
       )
     }
@@ -226,7 +234,7 @@ class GUIOptionGrpcDescriptorDialog(
         JOptionPane.showMessageDialog(
           this,
           ex.message,
-          I18nString.get("Error"),
+          i18nString("Error"),
           JOptionPane.ERROR_MESSAGE,
         )
       }
@@ -240,8 +248,8 @@ class GUIOptionGrpcDescriptorDialog(
     if (protos.isEmpty()) {
       JOptionPane.showMessageDialog(
         this,
-        I18nString.get("Add at least one .proto file."),
-        I18nString.get("Error"),
+        i18nString("Add at least one .proto file."),
+        i18nString("Error"),
         JOptionPane.WARNING_MESSAGE,
       )
       return
@@ -253,7 +261,7 @@ class GUIOptionGrpcDescriptorDialog(
         override fun doInBackground(): Void? {
           ProtocRunner.checkProtocOnPath()
           val includes = protoSet.includePaths()
-          val r = ProtocRunner.run(protos, includes, serverId)
+          val r = ProtocRunner.run(modelServices.database, protos, includes, serverId)
           if (!r.ok) {
             throw Exception(if (r.stderr.isEmpty()) "exit ${r.exitCode}" else r.stderr)
           }
@@ -273,7 +281,7 @@ class GUIOptionGrpcDescriptorDialog(
             JOptionPane.showMessageDialog(
               dialog,
               c.message,
-              I18nString.get("protoc failed"),
+              i18nString("protoc failed"),
               JOptionPane.ERROR_MESSAGE,
             )
           }
@@ -285,7 +293,7 @@ class GUIOptionGrpcDescriptorDialog(
   private fun browseDescFile() {
     try {
       val chooser = NativeFileChooser()
-      chooser.setDialogTitle(I18nString.get("Select descriptor file"))
+      chooser.setDialogTitle(i18nString("Select descriptor file"))
       workingPath
         ?.let { File(it).parentFile }
         ?.takeIf { it.isDirectory }
@@ -304,7 +312,7 @@ class GUIOptionGrpcDescriptorDialog(
       JOptionPane.showMessageDialog(
         this,
         ex.message,
-        I18nString.get("Error"),
+        i18nString("Error"),
         JOptionPane.ERROR_MESSAGE,
       )
     }
@@ -315,7 +323,7 @@ class GUIOptionGrpcDescriptorDialog(
     val prev = workingPath?.trim()?.takeIf { it.isNotEmpty() }
     if (prev != null) {
       try {
-        GrpcServiceRegistryStore.getInstance().invalidate(File(prev))
+        registryStore.invalidate(File(prev))
       } catch (_: Exception) {}
     }
     workingPath = null
@@ -330,12 +338,12 @@ class GUIOptionGrpcDescriptorDialog(
       val f = File(p)
       if (!f.isFile) {
         try {
-          GrpcServiceRegistryStore.getInstance().invalidate(f)
+          registryStore.invalidate(f)
         } catch (_: Exception) {}
         JOptionPane.showMessageDialog(
           this,
-          I18nString.get("Descriptor file does not exist."),
-          I18nString.get("Error"),
+          i18nString("Descriptor file does not exist."),
+          i18nString("Error"),
           JOptionPane.WARNING_MESSAGE,
         )
         return
@@ -343,8 +351,8 @@ class GUIOptionGrpcDescriptorDialog(
       // Drop in-memory parse so this dialog and encoders re-read the file from disk (same path may
       // have
       // been replaced outside PacketProxy, e.g. another protoc run).
-      GrpcServiceRegistryStore.getInstance().invalidate(f)
-      val registry = GrpcServiceRegistryStore.getInstance().get(f)
+      registryStore.invalidate(f)
+      val registry = registryStore.get(f)
       for ((service, method) in registry.getServiceMethodEntries()) {
         serviceTableModel.addRow(arrayOf(service, method))
       }
@@ -352,7 +360,7 @@ class GUIOptionGrpcDescriptorDialog(
       JOptionPane.showMessageDialog(
         this,
         ex.message,
-        I18nString.get("Error"),
+        i18nString("Error"),
         JOptionPane.ERROR_MESSAGE,
       )
     }

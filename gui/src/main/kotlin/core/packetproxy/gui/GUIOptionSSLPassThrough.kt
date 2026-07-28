@@ -3,14 +3,12 @@ package packetproxy.gui
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.beans.PropertyChangeEvent
-import javax.swing.JFrame
 import packetproxy.model.PropertyChangeEventType.SSL_PASS_THROUGHS
 import packetproxy.model.SSLPassThrough
-import packetproxy.model.SSLPassThroughs
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionSSLPassThrough(owner: JFrame) : GUIOptionComponentBase<SSLPassThrough>(owner) {
-  private val sslPassThroughs = SSLPassThroughs.getInstance()
+class GUIOptionSSLPassThrough(owner: GUIMain) : GUIOptionComponentBase<SSLPassThrough>(owner) {
+  private val sslPassThroughs = owner.modelServices.sslPassThroughs
   private val tableList = mutableListOf<SSLPassThrough>()
 
   init {

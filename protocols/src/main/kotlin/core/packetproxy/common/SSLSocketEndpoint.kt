@@ -39,10 +39,10 @@ open class SSLSocketEndpoint : Endpoint {
   }
 
   @Throws(Exception::class)
-  constructor(addr: InetSocketAddress, SNIServerName: String?, alpn: String?) {
+  constructor(https: Https, addr: InetSocketAddress, SNIServerName: String?, alpn: String?) {
     server_name = SNIServerName
     this.alpn = alpn
-    socket = Https.createClientSSLSocket(addr, SNIServerName, alpn)
+    socket = https.createClientSSLSocket(addr, SNIServerName, alpn)
   }
 
   @Throws(Exception::class) override fun getInputStream(): InputStream = socket.getInputStream()

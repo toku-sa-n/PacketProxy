@@ -21,23 +21,23 @@ import javax.swing.JRadioButton
 import javax.swing.JTextField
 import packetproxy.DNSSpoofingIPGetter
 import packetproxy.PrivateDNS
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.ConfigBoolean
 import packetproxy.model.Configs
 import packetproxy.model.PropertyChangeEventType.CONFIGS
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionPrivateDNS : PropertyChangeListener, packetproxy.DnsSpoofingConfig {
-  private val privateDns = PrivateDNS.getInstance()
-  private val checkBox = JCheckBox(I18nString.get("Use private DNS server"))
+class GUIOptionPrivateDNS(private val privateDns: PrivateDNS, private val configs: Configs) :
+  PropertyChangeListener, packetproxy.DnsSpoofingConfig {
+  private val checkBox = JCheckBox(i18nString("Use private DNS server"))
   private val ipv4 = JTextField()
   private val ipv6 = JTextField()
   private val auto =
     JRadioButton(
-      I18nString.get("Auto (Replace resolved IP with local IP of suitable NIC automatically)"),
+      i18nString("Auto (Replace resolved IP with local IP of suitable NIC automatically)"),
       true,
     )
-  private val manual = JRadioButton(I18nString.get("Manual"))
+  private val manual = JRadioButton(i18nString("Manual"))
   private lateinit var interfaces: JComboBox<String>
   private lateinit var port: JTextField
   private lateinit var setPort: JButton
@@ -74,7 +74,7 @@ class GUIOptionPrivateDNS : PropertyChangeListener, packetproxy.DnsSpoofingConfi
     panel.add(auto)
     panel.add(manualRow)
     panel.alignmentX = Component.LEFT_ALIGNMENT
-    Configs.getInstance().addPropertyChangeListener(this)
+    configs.addPropertyChangeListener(this)
     updateState()
   }
 
@@ -90,7 +90,7 @@ class GUIOptionPrivateDNS : PropertyChangeListener, packetproxy.DnsSpoofingConfi
 
   fun updateState() {
     try {
-      checkBox.isSelected = ConfigBoolean("PrivateDNS").getState()
+      checkBox.isSelected = ConfigBoolean(configs, "PrivateDNS").getState()
       port.text = privateDns.getConfiguredPort().toString()
       if (checkBox.isSelected && !privateDns.start(DNSSpoofingIPGetter(this))) {
         checkBox.isSelected = false
@@ -133,25 +133,25 @@ class GUIOptionPrivateDNS : PropertyChangeListener, packetproxy.DnsSpoofingConfi
       background = Color.WHITE
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       add(interfaces)
-      add(JLabel(I18nString.get("will be used for Binding Interface")))
+      add(JLabel(i18nString("will be used for Binding Interface")))
     }
   }
 
   private fun portPanel(): JPanel {
     port = JTextField(privateDns.getConfiguredPort().toString())
     port.maximumSize = Dimension(100, port.minimumSize.height)
-    setPort = JButton(I18nString.get("Set"))
+    setPort = JButton(i18nString("Set"))
     setPort.addActionListener {
       port.text.toIntOrNull()?.let { privateDns.setPort(it, DNSSpoofingIPGetter(this)) }
     }
     return JPanel().apply {
       background = Color.WHITE
       layout = BoxLayout(this, BoxLayout.X_AXIS)
-      add(JLabel(I18nString.get("Port")))
+      add(JLabel(i18nString("Port")))
       add(Box.createHorizontalStrut(4))
       add(port)
       add(setPort)
-      add(JLabel(I18nString.get("will be used for Binding Port")))
+      add(JLabel(i18nString("will be used for Binding Port")))
     }
   }
 
@@ -187,10 +187,8 @@ class GUIOptionPrivateDNS : PropertyChangeListener, packetproxy.DnsSpoofingConfi
   private fun showError() {
     JOptionPane.showMessageDialog(
       panel,
-      I18nString.get(
-        "Failed to start private DNS server. Please check permissions and listen port."
-      ),
-      I18nString.get("Error"),
+      i18nString("Failed to start private DNS server. Please check permissions and listen port."),
+      i18nString("Error"),
       JOptionPane.ERROR_MESSAGE,
     )
   }

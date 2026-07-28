@@ -7,11 +7,10 @@ import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class ResenderPackets private constructor() : PropertyChangeListener {
+class ResenderPackets(private val database: Database) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
-  private var database = Database.getInstance()
   private var dao: Dao<ResenderPacket, Int> = database.createTable(ResenderPacket::class.java, this)
 
   fun initTable(restore: Boolean) {
@@ -66,12 +65,10 @@ class ResenderPackets private constructor() : PropertyChangeListener {
         DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(ResenderPacket::class.java, this)
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(ResenderPacket::class.java, this)
         }
       }
@@ -101,17 +98,5 @@ class ResenderPackets private constructor() : PropertyChangeListener {
     }
     database.dropTable(ResenderPacket::class.java)
     dao = database.createTable(ResenderPacket::class.java, this)
-  }
-
-  companion object {
-    private var instance: ResenderPackets? = null
-
-    @JvmStatic
-    fun getInstance(): ResenderPackets {
-      if (instance == null) {
-        instance = ResenderPackets()
-      }
-      return instance!!
-    }
   }
 }

@@ -2,10 +2,9 @@ package packetproxy.gui
 
 import javax.swing.*
 import javax.swing.table.TableRowSorter
-import packetproxy.common.FontManager
 import packetproxy.model.OptionTableModel
 import packetproxy.model.RegexParam
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GUIRegexParamsTableDialog(
   private var owner: JFrame,
@@ -43,7 +42,7 @@ class GUIRegexParamsTableDialog(
     table =
       JTable(model).apply {
         rowSorter = TableRowSorter(model)
-        rowHeight = FontManager.getInstance().getUIFontHeight(this)
+        rowHeight = owner.modelServices.fontManager.getUIFontHeight(this)
       }
     var buttons = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     buttons.add(

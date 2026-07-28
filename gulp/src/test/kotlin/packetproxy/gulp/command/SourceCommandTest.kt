@@ -29,11 +29,11 @@ import packetproxy.gulp.output.BufferedOutput
 
 class SourceCommandTest {
   @TempDir lateinit var tempDir: Path
+  private lateinit var chainedSource: ChainedSource
 
   @BeforeEach
   fun setUp() {
-    // ChainedSourceの状態をクリア
-    clearChainedSource()
+    chainedSource = ChainedSource()
   }
 
   @AfterEach
@@ -57,7 +57,7 @@ class SourceCommandTest {
     try {
       // すべてのソースを読み取ってクリーンアップ
       while (true) {
-        val line = ChainedSource.readLine() ?: break
+        val line = chainedSource.readLine() ?: break
         // 読み取った行は無視（クリーンアップのため）
       }
     } catch (e: Exception) {
@@ -123,15 +123,15 @@ class SourceCommandTest {
 
     val scriptSource = ScriptSource(scriptFile.absolutePath)
 
-    ChainedSource.push(mockTerminal)
-    ChainedSource.push(scriptSource)
-    ChainedSource.open()
+    chainedSource.push(mockTerminal)
+    chainedSource.push(scriptSource)
+    chainedSource.open()
 
     // コマンドを1つずつ読み取って実行をシミュレート
     val commands = mutableListOf<String>()
     while (true) {
-      val line = ChainedSource.readLine() ?: break
-      val parsed = CommandParser.parse(line)
+      val line = chainedSource.readLine() ?: break
+      val parsed = CommandParser().parse(line)
       if (parsed != null && parsed.cmd.isNotEmpty()) {
         commands.add(parsed.cmd)
       }
@@ -171,21 +171,21 @@ class SourceCommandTest {
 
     val outerScriptSource = ScriptSource(outerScriptFile.absolutePath)
 
-    ChainedSource.push(mockTerminal)
-    ChainedSource.push(outerScriptSource)
-    ChainedSource.open()
+    chainedSource.push(mockTerminal)
+    chainedSource.push(outerScriptSource)
+    chainedSource.open()
 
     val commands = mutableListOf<String>()
-    val ctx = CommandContext(BufferedOutput())
+    val ctx = CommandContext(BufferedOutput(), chainedSource)
 
     while (true) {
-      val line = ChainedSource.readLine() ?: break
-      val parsed = CommandParser.parse(line) ?: continue
+      val line = chainedSource.readLine() ?: break
+      val parsed = CommandParser().parse(line) ?: continue
 
       when (parsed.cmd) {
         "" -> continue
         ".",
-        "source" -> SourceCommand(parsed, ctx)
+        "source" -> SourceCommand()(parsed, ctx)
 
         else -> commands.add(parsed.cmd)
       }
@@ -239,22 +239,22 @@ class SourceCommandTest {
     // モックのLineSourceを作成（ターミナルをシミュレート）
     val mockTerminal = createMockTerminal()
 
-    ChainedSource.push(mockTerminal)
-    ChainedSource.push(layer0ScriptSource)
-    ChainedSource.open()
+    chainedSource.push(mockTerminal)
+    chainedSource.push(layer0ScriptSource)
+    chainedSource.open()
 
     val commands = mutableListOf<String>()
-    val ctx = CommandContext(BufferedOutput())
+    val ctx = CommandContext(BufferedOutput(), chainedSource)
 
     while (true) {
-      val line = ChainedSource.readLine() ?: break
-      val parsed = CommandParser.parse(line) ?: continue
+      val line = chainedSource.readLine() ?: break
+      val parsed = CommandParser().parse(line) ?: continue
 
       when (parsed.cmd) {
         "" -> continue
         "exit" -> break
         ".",
-        "source" -> SourceCommand(parsed, ctx)
+        "source" -> SourceCommand()(parsed, ctx)
 
         else -> commands.add(parsed.cmd)
       }
@@ -320,7 +320,7 @@ class SourceCommandTest {
       )
 
     // CommandParserでパースすると、コメントが削除されることを確認
-    val parsedCommands = lines.mapNotNull { CommandParser.parse(it ?: "") }
+    val parsedCommands = lines.mapNotNull { CommandParser().parse(it ?: "") }
     assertThat(parsedCommands.map { it.cmd }).containsExactly("command1", "command2", "command3")
   }
 
@@ -354,7 +354,7 @@ class SourceCommandTest {
       .containsExactly("command1 # コメント", " # コメント", "command2", "#これは、　コメントです！", "command3")
 
     // CommandParserでパースすると、コメントが削除されることを確認
-    val parsedCommands = lines.mapNotNull { CommandParser.parse(it ?: "") }
+    val parsedCommands = lines.mapNotNull { CommandParser().parse(it ?: "") }
     assertThat(parsedCommands.map { it.cmd }).containsExactly("command1", "command2", "command3")
   }
 }

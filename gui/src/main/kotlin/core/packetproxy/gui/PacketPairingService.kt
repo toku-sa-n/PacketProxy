@@ -24,8 +24,8 @@ import java.util.HashMap
  */
 class PacketPairingService {
   private companion object {
-    private const val NO_RESPONSE_PACKET_ID = -1
-    private const val NO_REQUEST_PACKET_ID = -1
+    private val NO_RESPONSE_PACKET_ID = -1
+    private val NO_REQUEST_PACKET_ID = -1
   }
 
   // グループIDと行番号のマッピング（リクエスト行を追跡）

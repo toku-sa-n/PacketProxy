@@ -19,10 +19,14 @@ import packetproxy.quic.utils.Constants.PnSpaceType.*
 import packetproxy.quic.value.ConnectionId
 import packetproxy.quic.value.Token
 import packetproxy.quic.value.frame.NewConnectionIdFrame
-import packetproxy.util.Logging.err
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.err
+import packetproxy.util.rethrow
 
-class ServerHandshake(val conn: Connection, private val ca: CA) : Handshake {
+class ServerHandshake(
+  val conn: Connection,
+  private val ca: CA,
+  private val certCacheManager: CertCacheManager,
+) : Handshake {
   private val sniQueue = LinkedBlockingQueue<String>()
   val clientTransportParams = TransportParameters(Constants.Role.CLIENT)
   private var sniName: Optional<String> = Optional.empty()
@@ -30,7 +34,7 @@ class ServerHandshake(val conn: Connection, private val ca: CA) : Handshake {
 
   @Throws(Exception::class)
   fun startHandshake(sni: String) {
-    val ks = CertCacheManager.getInstance().getKeyStore(sni, arrayOf(sni), ca)
+    val ks = certCacheManager.getKeyStore(sni, arrayOf(sni), ca)
     val key = ks.getKey("newalias", "testtest".toCharArray()) as RSAPrivateKey
     val certs = ks.getCertificateChain("newalias").map { it as java.security.cert.X509Certificate }
     engine =

@@ -29,7 +29,7 @@ import com.mobius.software.mqtt.parser.header.impl.Unsuback
 import com.mobius.software.mqtt.parser.header.impl.Unsubscribe
 import io.netty.buffer.Unpooled
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class EncodeMQTT @Throws(Exception::class) constructor(ALPN: String?) : Encoder(ALPN) {
   override fun getName(): String = "MQTTv3.1"

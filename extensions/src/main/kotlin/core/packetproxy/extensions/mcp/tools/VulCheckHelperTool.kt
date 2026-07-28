@@ -9,14 +9,20 @@ import java.util.regex.Pattern
 import packetproxy.VulCheckerManager
 import packetproxy.common.Range
 import packetproxy.controller.ResendController
+import packetproxy.model.Configs
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packets
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 import packetproxy.vulchecker.VulChecker
 import packetproxy.vulchecker.generator.Generator
 
 /** VulCheck脆弱性テストヘルパーツール 指定されたパケットにVulCheckテストケースを適用して連続送信を実行 */
-class VulCheckHelperTool : AuthenticatedMCPTool() {
+class VulCheckHelperTool(
+  private val packets: Packets,
+  private val vulCheckerManager: VulCheckerManager,
+  private val resendController: ResendController,
+  configs: Configs,
+) : AuthenticatedMCPTool(configs) {
 
   override fun getName(): String = "call_vulcheck_helper"
 
@@ -179,7 +185,7 @@ class VulCheckHelperTool : AuthenticatedMCPTool() {
     )
 
     // パケットを取得
-    var originalPacket = Packets.getInstance().query(packetId)
+    var originalPacket = packets.query(packetId)
     if (originalPacket == null) {
       throw IllegalArgumentException("Packet with ID $packetId not found")
     }
@@ -199,7 +205,7 @@ class VulCheckHelperTool : AuthenticatedMCPTool() {
     }
 
     // VulCheckerを取得
-    var vulChecker = VulCheckerManager.getInstance().createInstance(vulCheckType)
+    var vulChecker = vulCheckerManager.createInstance(vulCheckType)
     if (vulChecker == null) {
       throw IllegalArgumentException(
         "VulCheck type '$vulCheckType' not found. Use 'list' to see available types."
@@ -296,7 +302,7 @@ class VulCheckHelperTool : AuthenticatedMCPTool() {
   /** 利用可能なVulCheckタイプを取得 */
   @Throws(Exception::class)
   private fun getAvailableVulCheckTypes(): JsonObject {
-    var manager = VulCheckerManager.getInstance()
+    var manager = vulCheckerManager
     var vulCheckerNames = manager.getVulCheckerNameList()
 
     var result = JsonObject()
@@ -516,7 +522,6 @@ class VulCheckHelperTool : AuthenticatedMCPTool() {
 
     // VulCheckのジェネレータを取得してペイロードを生成
     var generators: ImmutableList<Generator> = vulChecker.getGenerators()
-    var resendController = ResendController.getInstance()
 
     var payloadCount = 0
     var sentCount = 0

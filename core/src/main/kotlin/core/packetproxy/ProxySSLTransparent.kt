@@ -22,25 +22,36 @@ import java.net.ServerSocket
 import java.net.Socket
 import javax.net.ssl.SNIServerName
 import org.apache.commons.lang3.ArrayUtils
+import packetproxy.common.*
 import packetproxy.common.EndpointFactory
-import packetproxy.common.I18nString
 import packetproxy.common.SSLCapabilities
-import packetproxy.common.SSLExplorer
 import packetproxy.common.SSLSocketEndpoint
 import packetproxy.common.SocketEndpoint
 import packetproxy.common.WrapEndpoint
 import packetproxy.encode.EncodeHTTPBase
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
+import packetproxy.model.Resolutions
 import packetproxy.model.SSLPassThroughs
 import packetproxy.model.Server
 import packetproxy.model.Servers
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class ProxySSLTransparent
 @Throws(Exception::class)
-constructor(private val listen_socket: ServerSocket, private val listen_info: ListenPort) :
-  Proxy() {
+constructor(
+  private val listen_socket: ServerSocket,
+  private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
+  private val endpointFactory: EndpointFactory,
+  private val encoderManager: EncoderManager,
+  private val servers: Servers,
+  private val sslPassThroughs: SSLPassThroughs,
+  private val resolutions: Resolutions,
+  private val database: Database,
+) : Proxy() {
   @Throws(Exception::class)
   override fun close() {
     listen_socket.close()
@@ -76,8 +87,8 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
     val capabilities: SSLCapabilities?
 
     // Read the header of TLS record
-    while (position < SSLExplorer.RECORD_HEADER_SIZE) {
-      val count = SSLExplorer.RECORD_HEADER_SIZE - position
+    while (position < RECORD_HEADER_SIZE) {
+      val count = RECORD_HEADER_SIZE - position
       val n = ins.read(buffer, position, count)
       if (n < 0) {
         throw Exception("unexpected end of stream!")
@@ -86,7 +97,7 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
     }
 
     // Get the required size to explore the SSL capabilities
-    val recordLength = SSLExplorer.getRequiredSize(buffer, 0, position)
+    val recordLength = getRequiredSize(buffer, 0, position)
     if (buffer.size < recordLength) {
       buffer = buffer.copyOf(recordLength)
     }
@@ -101,7 +112,7 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
     }
 
     // Explore
-    capabilities = SSLExplorer.explore(buffer, 0, recordLength)
+    capabilities = explore(buffer, 0, recordLength)
     if (capabilities == null) {
       throw Exception("capabilities not found.")
     }
@@ -112,7 +123,7 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
       /* クライアントわたすサーバ証明書は、宛先がわからないので packetproxy.com とする */
       val bais = ByteArrayInputStream(buffer, 0, position)
       val client_e =
-        EndpointFactory.createClientEndpointFromSNIServerName(
+        endpointFactory.createClientEndpointFromSNIServerName(
           client,
           "packetproxy.com",
           listen_info.getCA().get(),
@@ -131,18 +142,19 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
         serverName = matcher.group(1)
         log("[SSL-forward!] %s", serverName)
       } else {
-        throw Exception(I18nString.get("[Error] SNI header was not found in SSL packets."))
+        throw Exception(i18nString("[Error] SNI header was not found in SSL packets."))
       }
       val wep_e = WrapEndpoint(client_e, ArrayUtils.subarray(buff, 0, length))
-      val serverAddr = InetSocketAddress(PrivateDNSClient.getByName(serverName), proxyPort)
+      val serverAddr =
+        InetSocketAddress(PrivateDNSClient().getByName(serverName, resolutions), proxyPort)
       // SNIヘッダが無い場合、SSLPassThroughは使えない
-      val server = Servers.getInstance().queryByHostNameAndPort(serverName, proxyPort)
-      val server_e = SSLSocketEndpoint(serverAddr, serverName, null)
+      val server = servers.queryByHostNameAndPort(serverName, proxyPort)
+      val server_e = endpointFactory.createSslEndpoint(serverAddr, serverName, null)
       createConnection(wep_e, server_e, server)
     } else {
       for (serverE in serverNames) {
         val serverName = String(serverE.encoded) // 接続先サーバを取得
-        if (listen_info.getServer() != null) { // upstream proxy
+        if (listen_info.getServer(database) != null) { // upstream proxy
           log("[SSL-forward through upstream proxy! using SNI] %s", serverName)
         } else {
           log("[SSL-forward! using SNI] %s", serverName)
@@ -153,30 +165,29 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
         var serverAddr: InetSocketAddress
         try {
           serverAddr =
-            if (listen_info.getServer() != null) { // upstream proxy
-              listen_info.getServer()!!.getAddress()
+            if (listen_info.getServer(database) != null) { // upstream proxy
+              listen_info.getServer(database)!!.getAddress(resolutions)
             } else {
-              InetSocketAddress(PrivateDNSClient.getByName(serverName), proxyPort)
+              InetSocketAddress(PrivateDNSClient().getByName(serverName, resolutions), proxyPort)
             }
           val s = Socket()
           s.connect(serverAddr, 500) /* timeout: 500ms */
           s.close()
         } catch (e: Exception) {
           /* listenポート番号と同じポート番号へアクセスできないので443番にフォールバックする */
-          serverAddr = InetSocketAddress(PrivateDNSClient.getByName(serverName), 443)
+          serverAddr = InetSocketAddress(PrivateDNSClient().getByName(serverName, resolutions), 443)
           log("[Fallback port] %d -> 443", proxyPort)
         }
 
-        if (SSLPassThroughs.getInstance().includes(serverName, listen_info.getPort())) {
+        if (sslPassThroughs.includes(serverName, listen_info.getPort())) {
           val server_e = SocketEndpoint(serverAddr)
           val client_e = SocketEndpoint(client, bais)
           val duplex = DuplexAsync(client_e, server_e)
           duplex.start()
         } else {
-          val server =
-            Servers.getInstance().queryByHostNameAndPort(serverName, serverAddr.getPort())
+          val server = servers.queryByHostNameAndPort(serverName, serverAddr.getPort())
           val eps =
-            EndpointFactory.createBothSideSSLEndpoints(
+            endpointFactory.createBothSideSSLEndpoints(
               client,
               bais,
               serverAddr,
@@ -197,21 +208,21 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
     if (server == null) {
       duplex =
         if (alpn == "h2" || alpn == "http/1.1" || alpn == "http/1.0") {
-          DuplexFactory.createDuplexAsync(client_e, server_e, "HTTP", alpn)
+          duplexFactory.createDuplexAsync(client_e, server_e, "HTTP", alpn)
         } else {
-          DuplexFactory.createDuplexAsync(client_e, server_e, "Sample", alpn)
+          duplexFactory.createDuplexAsync(client_e, server_e, "Sample", alpn)
         }
     } else {
       if (alpn.isNullOrEmpty()) {
-        val encoder = EncoderManager.getInstance().createInstance(server.getEncoder()!!, "")
+        val encoder = encoderManager.createInstance(server.getEncoder()!!, "")
         if (encoder is EncodeHTTPBase) {
           /* The client does not support ALPN. It seems to be an old HTTP client */
           alpn = "http/1.1"
         }
       }
-      duplex = DuplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder()!!, alpn)
+      duplex = duplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder()!!, alpn)
     }
     duplex.start()
-    DuplexManager.getInstance().registerDuplex(duplex)
+    duplexManager.registerDuplex(duplex)
   }
 }

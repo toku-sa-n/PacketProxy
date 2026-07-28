@@ -4,7 +4,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.ImageIcon
 import javax.swing.JLabel
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 class GUIHistoryAutoScroll : JLabel(disabledIcon) {
   private var autoScrollEnabled = false

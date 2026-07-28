@@ -16,34 +16,46 @@
 package packetproxy.common
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import packetproxy.model.CharSets
+import packetproxy.model.Database
 import packetproxy.util.CharSetUtility
 
 class CharSetUtilityTest {
+  private lateinit var utility: CharSetUtility
+
+  @BeforeEach
+  fun setUp() {
+    val database = Database()
+    database.createDB()
+    utility = CharSetUtility(CharSets(database))
+  }
+
   @Test
   fun testCountChar() {
     val header =
       "HTTP/1.1 302 Moved Temporarily\nContent-Type: text/html; charset=utf-8\nConnection: keep-alive\n"
-    val a = CharSetUtility.getInstance().guessCharSetFromHttpHeader(header.toByteArray())
+    val a = utility.guessCharSetFromHttpHeader(header.toByteArray())
     assertEquals("utf-8", a)
     val header2 = "HTTP/1.1 302 Moved Temporarily\nContent-Type: text/html; charset=utf-8"
-    val a2 = CharSetUtility.getInstance().guessCharSetFromHttpHeader(header2.toByteArray())
+    val a2 = utility.guessCharSetFromHttpHeader(header2.toByteArray())
     assertEquals("utf-8", a2)
 
     val html5 = "<html>\n<head>\n<meta charset=\"UTF-8\">\n<title>test</title></head></html>"
-    val b = CharSetUtility.getInstance().guessCharSetFromMetatag(html5.toByteArray())
+    val b = utility.guessCharSetFromMetatag(html5.toByteArray())
     assertEquals("UTF-8", b)
     val html4 =
       "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<title>test</title></head></html>"
-    val c = CharSetUtility.getInstance().guessCharSetFromMetatag(html4.toByteArray())
+    val c = utility.guessCharSetFromMetatag(html4.toByteArray())
     assertEquals("UTF-8", c)
     val html4_2 =
       "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8;\">\n<title>test</title></head></html>"
-    val c2 = CharSetUtility.getInstance().guessCharSetFromMetatag(html4_2.toByteArray())
+    val c2 = utility.guessCharSetFromMetatag(html4_2.toByteArray())
     assertEquals("UTF-8", c2)
     val html4_3 =
       "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"charset=UTF-8;text/html\">\n<title>test</title></head></html>"
-    val c3 = CharSetUtility.getInstance().guessCharSetFromMetatag(html4_2.toByteArray())
+    val c3 = utility.guessCharSetFromMetatag(html4_2.toByteArray())
     assertEquals("UTF-8", c3)
   }
 }

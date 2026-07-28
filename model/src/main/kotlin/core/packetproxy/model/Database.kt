@@ -30,11 +30,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class Database private constructor() {
+class Database {
   private val changes = PropertyChangeSupport(this)
   private var databaseDir = Paths.get(System.getProperty("user.home") + "/.packetproxy/db")
   private var databasePath = Paths.get(databaseDir.toString() + "/resources.sqlite3")
@@ -53,7 +53,6 @@ class Database private constructor() {
   fun dropFilters() {
     firePropertyChange(DatabaseMessage.DISCONNECT_NOW)
     dropTable(Filter::class.java)
-    createTable(Filter::class.java, Filters.getInstance())
     firePropertyChange(DatabaseMessage.RECONNECT)
   }
 
@@ -63,31 +62,16 @@ class Database private constructor() {
     dropTable(Server::class.java)
     dropTable(Modification::class.java)
     dropTable(SSLPassThrough::class.java)
-    createTable(ListenPort::class.java, ListenPorts.getInstance())
-    createTable(Server::class.java, Servers.getInstance())
-    createTable(Modification::class.java, Modifications.getInstance())
-    createTable(SSLPassThrough::class.java, SSLPassThroughs.getInstance())
     firePropertyChange(DatabaseMessage.RECONNECT)
   }
 
   fun dropPacketTableFaster() {
-    val src =
-      Paths.get(instance!!.getDatabasePath().parent.toAbsolutePath().toString() + "/tmp.sqlite3")
-    val dst = instance!!.getDatabasePath().toAbsolutePath()
+    val src = Paths.get(getDatabasePath().parent.toAbsolutePath().toString() + "/tmp.sqlite3")
+    val dst = getDatabasePath().toAbsolutePath()
     firePropertyChange(DatabaseMessage.DISCONNECT_NOW)
     source.readWriteConnection.close()
     Files.move(dst, src, StandardCopyOption.REPLACE_EXISTING)
     createDB()
-    createTable(Filter::class.java, Filters.getInstance())
-    createTable(ListenPort::class.java, ListenPorts.getInstance())
-    createTable(Config::class.java, Configs.getInstance())
-    createTable(Server::class.java, Servers.getInstance())
-    createTable(ClientCertificate::class.java, ClientCertificates.getInstance())
-    createTable(InterceptOption::class.java, InterceptOptions.getInstance())
-    createTable(Modification::class.java, Modifications.getInstance())
-    createTable(SSLPassThrough::class.java, SSLPassThroughs.getInstance())
-    createTable(CharSet::class.java, CharSets.getInstance())
-    createTable(ResenderPacket::class.java, ResenderPackets.getInstance())
     firePropertyChange(DatabaseMessage.RECREATE)
     migrateTableWithoutHistory(src, dst)
     firePropertyChange(DatabaseMessage.RECONNECT)
@@ -176,7 +160,7 @@ class Database private constructor() {
   fun isAlertFileSize(): Boolean =
     File(databasePath.toString()).length() / 1048576 > ALERT_DB_FILE_SIZE_MB
 
-  private fun createDB() {
+  fun createDB() {
     if (!Files.exists(databaseDir)) {
       log("%s directory is not found...", databaseDir.toAbsolutePath())
       log("creating the directory...")
@@ -211,17 +195,7 @@ class Database private constructor() {
   }
 
   companion object {
-    private const val ALERT_DB_FILE_SIZE_MB = 1536
-    private var instance: Database? = null
-
-    @JvmStatic
-    fun getInstance(): Database {
-      if (instance == null) {
-        instance = Database()
-        instance!!.createDB()
-      }
-      return instance!!
-    }
+    private val ALERT_DB_FILE_SIZE_MB = 1536
 
     private fun migrateTableWithoutHistory(srcDBPath: Path, dstDBPath: Path) {
       try {

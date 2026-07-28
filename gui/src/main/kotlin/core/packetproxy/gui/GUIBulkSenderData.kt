@@ -3,9 +3,13 @@ package packetproxy.gui
 import java.util.function.Consumer
 import javax.swing.*
 import javax.swing.event.ChangeListener
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIBulkSenderData(owner: JFrame?, type: Type, private var onChanged: Consumer<ByteArray>) {
+class GUIBulkSenderData(
+  private val owner: GUIMain,
+  type: Type,
+  private var onChanged: Consumer<ByteArray>,
+) {
   enum class Type {
     CLIENT,
     SERVER,
@@ -19,8 +23,8 @@ class GUIBulkSenderData(owner: JFrame?, type: Type, private var onChanged: Consu
 
   fun createPanel(): JComponent {
     mainPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
-    rawPanel = GUIBulkSenderDataRaw(Consumer { onChanged.accept(it) })
-    binaryPanel = GUIHistoryBinary()
+    rawPanel = GUIBulkSenderDataRaw(owner, Consumer { onChanged.accept(it) })
+    binaryPanel = GUIHistoryBinary(owner)
     dataPane =
       JTabbedPane().apply {
         addTab("Raw", rawPanel.createPanel())

@@ -24,17 +24,16 @@ import packetproxy.PrivateDNSClient
 import packetproxy.http.Https
 import packetproxy.model.CAs.CA
 import packetproxy.model.OneShotPacket
+import packetproxy.model.Resolutions
 import packetproxy.model.Server
 import packetproxy.quic.service.connection.ServerConnection
 import packetproxy.quic.value.ConnectionIdPair
 
-object EndpointFactory {
-  @JvmStatic
+class EndpointFactory(private val https: Https, private val resolutions: Resolutions) {
   @Throws(Exception::class)
   fun createClientEndpoint(socket: Socket, lookaheadBuffer: InputStream): Endpoint =
     SocketEndpoint(socket, lookaheadBuffer)
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createBothSideSSLEndpoints(
     clientSocket: Socket,
@@ -48,7 +47,7 @@ object EndpointFactory {
     val endpoints: Array<SSLSocketEndpoint>
     if (upstreamProxyAddr != null) {
       sslSockets =
-        Https.createBothSideSSLSockets(
+        https.createBothSideSSLSockets(
           clientSocket,
           lookahead,
           serverAddr,
@@ -61,7 +60,7 @@ object EndpointFactory {
       endpoints = arrayOf(clientEndpoint, serverEndpoint)
     } else {
       sslSockets =
-        Https.createBothSideSSLSockets(clientSocket, lookahead, serverAddr, null, serverName, ca)
+        https.createBothSideSSLSockets(clientSocket, lookahead, serverAddr, null, serverName, ca)
       val clientEndpoint = SSLSocketEndpoint(sslSockets[0], serverName)
       val serverEndpoint = SSLSocketEndpoint(sslSockets[1], serverName)
       endpoints = arrayOf(clientEndpoint, serverEndpoint)
@@ -69,7 +68,6 @@ object EndpointFactory {
     return endpoints
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createClientEndpointFromSNIServerName(
     socket: Socket,
@@ -77,26 +75,29 @@ object EndpointFactory {
     ca: CA,
     input: InputStream,
   ): SSLSocketEndpoint {
-    val ssl_client = Https.convertToServerSSLSocket(socket, serverName, ca, input)
+    val ssl_client = https.convertToServerSSLSocket(socket, serverName, ca, input)
     return SSLSocketEndpoint(ssl_client, serverName)
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createFromURI(uri: String): Endpoint {
     val u = URI(uri)
     val host = u.host
     val port = if (u.getPort() > 0) u.port else 80
     return if (u.scheme.equals("https", ignoreCase = true)) {
-      SSLSocketEndpoint(InetSocketAddress(PrivateDNSClient.getByName(host), port), host, null)
+      SSLSocketEndpoint(
+        https,
+        InetSocketAddress(PrivateDNSClient().getByName(host, resolutions), port),
+        host,
+        null,
+      )
     } else if (u.scheme.equals("http", ignoreCase = true)) {
-      SocketEndpoint(InetSocketAddress(PrivateDNSClient.getByName(host), port))
+      SocketEndpoint(InetSocketAddress(PrivateDNSClient().getByName(host, resolutions), port))
     } else {
       throw Exception(String.format("[Error] Unknown scheme!%s", u.scheme))
     }
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createFromOneShotPacket(packet: OneShotPacket): Endpoint {
     return if (packet.getAlpn() == "h3") {
@@ -105,26 +106,32 @@ object EndpointFactory {
         ConnectionIdPair.generateRandom(),
         packet.getServerName()!!,
         packet.getServerPort(),
+        resolutions,
       )
     } else if (packet.getUseSSL()) {
-      SSLSocketEndpoint(packet.getServer(), packet.getServerName(), packet.getAlpn())
+      SSLSocketEndpoint(https, packet.getServer(), packet.getServerName(), packet.getAlpn())
     } else {
       // nc など複数同時接続を受け付けないconnection用に10秒でtimeoutする
       SocketEndpoint(packet.getServer(), 10 * 1000)
     }
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createFromServer(server: Server): Endpoint {
     return if (server.getUseSSL()) {
-      SSLSocketEndpoint(server.getAddress(), server.getIp(), null)
+      SSLSocketEndpoint(https, server.getAddress(resolutions), server.getIp(), null)
     } else {
-      SocketEndpoint(server.getAddress())
+      SocketEndpoint(server.getAddress(resolutions))
     }
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createServerEndpoint(addr: InetSocketAddress): Endpoint = SocketEndpoint(addr)
+
+  @Throws(Exception::class)
+  fun createSslEndpoint(
+    addr: InetSocketAddress,
+    serverName: String?,
+    alpn: String?,
+  ): SSLSocketEndpoint = SSLSocketEndpoint(https, addr, serverName, alpn)
 }

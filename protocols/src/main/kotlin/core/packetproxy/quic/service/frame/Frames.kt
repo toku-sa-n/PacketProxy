@@ -6,7 +6,7 @@ import java.util.ArrayList
 import java.util.Optional
 import packetproxy.quic.value.frame.AckFrame
 import packetproxy.quic.value.frame.Frame
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class Frames(val frames: List<Frame>) : Iterable<Frame> {
   fun isAckEliciting() = frames.any { it.isAckEliciting() }
@@ -29,7 +29,8 @@ class Frames(val frames: List<Frame>) : Iterable<Frame> {
     fun parse(buffer: ByteBuffer): Frames =
       try {
         val l = ArrayList<Frame>()
-        while (buffer.hasRemaining()) l.add(FrameParser.create(buffer))
+        val frameParser = FrameParser()
+        while (buffer.hasRemaining()) l.add(frameParser.create(buffer))
         Frames(l)
       } catch (e: Exception) {
         errWithStackTrace(e)

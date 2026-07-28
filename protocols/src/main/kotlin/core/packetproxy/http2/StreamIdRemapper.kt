@@ -17,8 +17,8 @@ package packetproxy.http2
 
 import java.util.HashMap
 import org.apache.commons.lang3.ArrayUtils
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameUtils
 
 /**
  * Remaps HTTP/2 stream IDs between the client-facing and the server-facing connection.
@@ -69,11 +69,11 @@ open class StreamIdRemapper {
     var pos = 0
     while (pos < out.size) {
       val remaining = ArrayUtils.subarray(out, pos, out.size)
-      val delim = FrameUtils.checkDelimiter(remaining)
+      val delim = checkDelimiter(remaining)
       if (delim <= 0) {
         break
       }
-      if (!FrameUtils.isPreface(remaining)) {
+      if (!isPreface(remaining)) {
         val type = out[pos + 3].toInt() and 0xff
         if (type == TYPE_HEADERS || type == TYPE_DATA) {
           val serverStreamId = readStreamId(out, pos)

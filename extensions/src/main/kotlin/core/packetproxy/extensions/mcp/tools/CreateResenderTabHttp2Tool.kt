@@ -7,15 +7,20 @@ import javax.swing.SwingUtilities
 import packetproxy.common.StringUtils
 import packetproxy.common.UniqueID
 import packetproxy.gui.GUIResender
+import packetproxy.model.Configs
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 /**
  * Creates a Resender tab with an arbitrary HTTP/2 request (staging only, does not send). Mirrors
  * Burp MCP's create_repeater_tab_http2.
  */
-class CreateResenderTabHttp2Tool : AuthenticatedMCPTool() {
+class CreateResenderTabHttp2Tool(
+  private val uniqueId: UniqueID,
+  private val guiResender: GUIResender,
+  configs: Configs,
+) : AuthenticatedMCPTool(configs) {
 
   override fun getName(): String = "create_resender_tab_http2"
 
@@ -130,10 +135,10 @@ class CreateResenderTabHttp2Tool : AuthenticatedMCPTool() {
         "h2",
         Packet.Direction.CLIENT,
         0,
-        UniqueID.getInstance().createId(),
+        uniqueId.createId(),
       )
 
-    SwingUtilities.invokeAndWait { GUIResender.getInstance().addResends(oneShot) }
+    SwingUtilities.invokeAndWait { guiResender.addResends(oneShot) }
 
     var result = JsonObject()
     result.addProperty("success", true)
@@ -212,8 +217,8 @@ class CreateResenderTabHttp2Tool : AuthenticatedMCPTool() {
   }
 
   companion object {
-    private const val HEADERS_TYPE = 1
-    private const val FLAG_END_STREAM = 0x01
-    private const val FLAG_END_HEADERS = 0x04
+    private val HEADERS_TYPE = 1
+    private val FLAG_END_STREAM = 0x01
+    private val FLAG_END_HEADERS = 0x04
   }
 }

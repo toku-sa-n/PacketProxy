@@ -22,7 +22,7 @@ import org.apache.commons.codec.binary.Hex
 import packetproxy.http3.utils.parseVarInt
 import packetproxy.http3.utils.readSimpleBytes
 import packetproxy.quic.value.VariableLengthInteger
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class DataFrame private constructor(frameData: ByteArray) : Frame {
   private val type: Long = TYPE

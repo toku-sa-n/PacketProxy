@@ -26,7 +26,6 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JTextArea
 import org.apache.commons.codec.binary.Hex
-import packetproxy.common.DialogParents
 
 open class JWTHeaderAddSpecifiedJKUGenerator : Generator() {
   override fun getName(): String = "Header: jku: ユーザが指定したjkuを注入"
@@ -38,17 +37,12 @@ open class JWTHeaderAddSpecifiedJKUGenerator : Generator() {
   @Throws(Exception::class)
   override fun generate(inputData: String): String {
     cancelClicked = false
-    val dlg = JDialog(DialogParents.mainFrame)
+    val dlg = JDialog()
 
-    val rect = DialogParents.mainFrame!!.bounds
     val width = 400
     val height = 300
-    dlg.setBounds(
-      rect.x + rect.width / 2 - width / 2,
-      rect.y + rect.height / 2 - height / 2,
-      width,
-      height,
-    ) /* ド真ん中 */
+    dlg.setSize(width, height)
+    dlg.setLocationRelativeTo(null)
 
     val labels = JPanel()
     labels.layout = BoxLayout(labels, BoxLayout.X_AXIS)

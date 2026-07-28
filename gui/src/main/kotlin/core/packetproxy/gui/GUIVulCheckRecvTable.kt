@@ -4,7 +4,7 @@ import java.util.function.Consumer
 import javax.swing.*
 import packetproxy.model.OneShotPacket
 import packetproxy.model.OptionTableModel
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GUIVulCheckRecvTable(private var onSelected: Consumer<Int>) {
   private lateinit var model: OptionTableModel
@@ -19,7 +19,7 @@ class GUIVulCheckRecvTable(private var onSelected: Consumer<Int>) {
     table =
       JTable(model).apply {
         autoCreateRowSorter = true
-        TableHeaderStyle.apply(this, names.size)
+        apply(this, names.size)
       }
     table.selectionModel.addListSelectionListener {
       try {

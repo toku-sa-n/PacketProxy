@@ -34,7 +34,6 @@ import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JDialog
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JOptionPane
@@ -44,11 +43,12 @@ import javax.swing.JTextField
 import javax.swing.UIManager
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
-import packetproxy.common.I18nString
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.common.*
+import packetproxy.util.errWithStackTrace
 
-class GUIProjectChooserDialog(private val owner: JFrame) {
-  private val projects = Projects()
+class GUIProjectChooserDialog(private val owner: GUIMain) {
+  private val projects =
+    Projects(owner.modelServices.database, owner.modelServices.recentProjectsStore)
 
   @Throws(Exception::class)
   fun chooseAndSetup(): Boolean {
@@ -57,7 +57,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
       val decided = booleanArrayOf(false)
       val shouldExit = booleanArrayOf(false)
       val dialog =
-        JDialog(owner, I18nString.get("Welcome"), true).apply {
+        JDialog(owner, i18nString("Welcome"), true).apply {
           defaultCloseOperation = JDialog.DO_NOTHING_ON_CLOSE
           addWindowListener(
             object : WindowAdapter() {
@@ -70,7 +70,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
         }
       val content = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
       content.add(
-        button(I18nString.get("Temporary project")) {
+        button(i18nString("Temporary project")) {
           try {
             projects.createTemporaryProject()
             result[0] = false
@@ -82,7 +82,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
         }
       )
       content.add(
-        button(I18nString.get("Create new project")) {
+        button(i18nString("Create new project")) {
           try {
             if (!setupNewProject(dialog)) return@button
             result[0] = false
@@ -94,7 +94,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
         }
       )
       content.add(
-        button(I18nString.get("Open previous project")) {
+        button(i18nString("Open previous project")) {
           try {
             if (!openByFileChooser(dialog)) return@button
             result[0] = true
@@ -125,7 +125,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
     if (recentProjects.isEmpty()) return
     content.add(
       wrap(
-        JLabel(I18nString.get("Recent Projects")).apply {
+        JLabel(i18nString("Recent Projects")).apply {
           font = font.deriveFont(Font.BOLD, 13f)
           border = BorderFactory.createEmptyBorder(10, 5, 5, 5)
         }
@@ -211,7 +211,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
         anchor = GridBagConstraints.WEST
         insets = Insets(5, 5, 5, 5)
       }
-    panel.add(JLabel("${I18nString.get("Enter project name")}:"), constraints)
+    panel.add(JLabel("${i18nString("Enter project name")}:"), constraints)
     val textField = JTextField(20)
     constraints.apply {
       gridy = 1
@@ -220,7 +220,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
     }
     panel.add(textField, constraints)
     val optionPane = JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION)
-    val dialog = optionPane.createDialog(parent, I18nString.get("Create Project"))
+    val dialog = optionPane.createDialog(parent, i18nString("Create Project"))
     findOkButton(optionPane)?.let { okButton ->
       okButton.isEnabled = false
       textField.document.addDocumentListener(
@@ -271,8 +271,8 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
     errWithStackTrace(exception)
     JOptionPane.showMessageDialog(
       parent,
-      "${I18nString.get("Failed to open project")}\n${exception.message}",
-      I18nString.get("Error"),
+      "${i18nString("Failed to open project")}\n${exception.message}",
+      i18nString("Error"),
       JOptionPane.ERROR_MESSAGE,
     )
   }
@@ -305,7 +305,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
           gridwidth = 1
           weightx = 0.0
         }
-        add(JLabel("${I18nString.get("Path")}: ").apply { foreground = Color.GRAY }, constraints)
+        add(JLabel("${i18nString("Path")}: ").apply { foreground = Color.GRAY }, constraints)
         constraints.apply {
           gridx = 1
           weightx = 1.0
@@ -317,7 +317,7 @@ class GUIProjectChooserDialog(private val owner: JFrame) {
           weightx = 0.0
         }
         add(
-          JLabel("${I18nString.get("Last modified")}: ").apply { foreground = Color.GRAY },
+          JLabel("${i18nString("Last modified")}: ").apply { foreground = Color.GRAY },
           constraints,
         )
         constraints.apply {

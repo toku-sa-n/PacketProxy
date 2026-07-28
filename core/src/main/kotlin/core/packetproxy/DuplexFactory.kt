@@ -33,8 +33,16 @@ import packetproxy.model.Packet
 import packetproxy.model.Packets
 import packetproxy.model.Servers
 
-object DuplexFactory {
-  @JvmStatic
+class DuplexFactory(
+  private val packets: Packets,
+  private val servers: Servers,
+  private val modifications: Modifications,
+  private val encoderManager: EncoderManager,
+  private val interceptController: () -> InterceptController,
+  private val uniqueId: UniqueID,
+  private val endpointFactory: EndpointFactory,
+  private val packetHistory: DuplexPacketHistory,
+) {
   @Throws(Exception::class)
   fun createDuplexSync(
     client_endpoint: Endpoint,
@@ -47,7 +55,6 @@ object DuplexFactory {
     return duplex
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createDuplexAsync(
     client_endpoint: Endpoint,
@@ -59,7 +66,6 @@ object DuplexFactory {
     return duplex
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createDuplexAsync(
     client_endpoint: Endpoint,
@@ -72,12 +78,10 @@ object DuplexFactory {
     return duplex
   }
 
-  @JvmStatic
   @Throws(Exception::class)
   fun createDuplexSyncFromOneShotPacket(oneshot: OneShotPacket): DuplexSync {
-    var duplex = DuplexSync(EndpointFactory.createFromOneShotPacket(oneshot))
-    var encoder =
-      EncoderManager.getInstance().createInstance(oneshot.getEncoder() ?: "", oneshot.getAlpn())
+    var duplex = DuplexSync(endpointFactory.createFromOneShotPacket(oneshot))
+    var encoder = encoderManager.createInstance(oneshot.getEncoder() ?: "", oneshot.getAlpn())
     duplex.addDuplexEventListener(
       duplexEventListener(encoder, createOneShotHandlers(duplex.hashCode(), oneshot, encoder))
     )
@@ -94,12 +98,10 @@ object DuplexFactory {
   // 2. client_packetの作成タイミング変更
   // 従来版: sendメソッド → onClientChunkSendで作成
   // 本実装: onServerChunkReceivedで作成（sendメソッド未使用のため）
-  @JvmStatic
   @Throws(Exception::class)
   fun createDuplexSyncForSinglePacketAttack(oneshot: OneShotPacket): DuplexSync {
-    var duplex = DuplexSync(EndpointFactory.createFromOneShotPacket(oneshot))
-    var encoder =
-      EncoderManager.getInstance().createInstance(oneshot.getEncoder() ?: "", oneshot.getAlpn())
+    var duplex = DuplexSync(endpointFactory.createFromOneShotPacket(oneshot))
+    var encoder = encoderManager.createInstance(oneshot.getEncoder() ?: "", oneshot.getAlpn())
     duplex.addDuplexEventListener(
       duplexEventListener(encoder, createSpaHandlers(duplex.hashCode(), oneshot, encoder))
     )
@@ -107,12 +109,10 @@ object DuplexFactory {
   }
 
   // original_duplexと接続を共有しているが、イベントリスナーは再送用のものに差し替えたDuplexを返す
-  @JvmStatic
   @Throws(Exception::class)
   fun createDuplexFromOriginalDuplex(original_duplex: Duplex, oneshot: OneShotPacket): Duplex {
     var duplex = original_duplex.createSameConnectionDuplex()!!
-    var encoder =
-      EncoderManager.getInstance().createInstance(oneshot.getEncoder() ?: "", oneshot.getAlpn())
+    var encoder = encoderManager.createInstance(oneshot.getEncoder() ?: "", oneshot.getAlpn())
     duplex.addDuplexEventListener(
       duplexEventListener(
         encoder,
@@ -134,7 +134,7 @@ object DuplexFactory {
     var server_addr = server_endpoint.getAddress()
     var use_ssl =
       server_endpoint is SSLSocketEndpoint || server_endpoint is HttpsProxySocketEndpoint
-    var encoder = EncoderManager.getInstance().createInstance(encoder_name, ALPN)
+    var encoder = encoderManager.createInstance(encoder_name, ALPN)
 
     duplex.addDuplexEventListener(
       duplexEventListener(
@@ -163,8 +163,6 @@ object DuplexFactory {
     alpn: String,
     encoder: Encoder,
   ): DuplexEventHandlers {
-    var packets = Packets.getInstance()
-    var mods = Modifications.getInstance()
     var client_packet: Packet? = null
     var server_packet: Packet? = null
 
@@ -186,7 +184,7 @@ object DuplexFactory {
       onClientPacketReceived = { data -> encoder.checkRequestDelimiter(data) },
       onServerPacketReceived = { data -> encoder.checkResponseDelimiter(data) },
       onClientChunkReceived = clientChunkReceived@{ data ->
-          var initialGroupId = UniqueID.getInstance().createId()
+          var initialGroupId = uniqueId.createId()
           client_packet = newPacket(Packet.Direction.CLIENT, initialGroupId)
           client_packet!!.setReceivedData(data)
           var decoded_data = encoder.decodeClientRequest(client_packet!!)
@@ -194,15 +192,15 @@ object DuplexFactory {
           // groupIdはencoder.setGroupId()で変更される可能性があるため、
           // GUIHistoryへの通知（packets.update）はgroupId確定後に行う
           encoder.setGroupId(client_packet!!) /* 実行するのはsetDecodedDataのあと */
-          DuplexPacketHistory.updateIfSmall(packets, client_packet!!, data.size)
+          packetHistory.updateIfSmall(packets, client_packet!!, data.size)
 
-          var server = Servers.getInstance().queryByAddress(server_addr)
-          decoded_data = mods.replaceOnRequest(decoded_data, server, client_packet!!)
+          var server = servers.queryByAddress(server_addr)
+          decoded_data = modifications.replaceOnRequest(decoded_data, server, client_packet!!)
 
           var decoded_hash = CryptUtils.sha1(decoded_data)
 
           var intercepted_data = runBlocking {
-            InterceptController.getInstance().received(decoded_data, server, client_packet!!).fold({
+            interceptController().received(decoded_data, server, client_packet!!).fold({
               ByteArray(0)
             }) {
               it
@@ -214,7 +212,7 @@ object DuplexFactory {
           if (intercepted_data.isNotEmpty() && !Arrays.equals(decoded_hash, intercepted_hash)) {
             client_packet!!.setModified()
           }
-          DuplexPacketHistory.updateIfSmall(packets, client_packet!!, data.size)
+          packetHistory.updateIfSmall(packets, client_packet!!, data.size)
           if (intercepted_data.isEmpty()) {
             /* drop */
             client_packet!!.setModified()
@@ -224,25 +222,25 @@ object DuplexFactory {
           intercepted_data
         },
       onServerChunkReceived = serverChunkReceived@{ data ->
-          var group_id = DuplexPacketHistory.groupIdOrNew(client_packet)
+          var group_id = packetHistory.groupIdOrNew(client_packet)
           server_packet = newPacket(Packet.Direction.SERVER, group_id)
           packets.update(server_packet!!)
           server_packet!!.setReceivedData(data)
-          DuplexPacketHistory.updateIfSmall(packets, server_packet!!, data.size)
+          packetHistory.updateIfSmall(packets, server_packet!!, data.size)
           var decoded_data = encoder.decodeServerResponse(client_packet, server_packet!!)
           server_packet!!.setDecodedData(decoded_data)
           encoder.setGroupId(server_packet!!) /* 実行するのはsetDecodedDataのあと */
           server_packet!!.setContentType(encoder.getContentType(client_packet, server_packet!!))
-          DuplexPacketHistory.updateIfSmall(packets, server_packet!!, data.size)
-          DuplexPacketHistory.syncContentTypeToClient(packets, client_packet, server_packet!!)
+          packetHistory.updateIfSmall(packets, server_packet!!, data.size)
+          packetHistory.syncContentTypeToClient(packets, client_packet, server_packet!!)
 
-          var server = Servers.getInstance().queryByAddress(server_addr)
-          decoded_data = mods.replaceOnResponse(decoded_data, server, server_packet!!)
+          var server = servers.queryByAddress(server_addr)
+          decoded_data = modifications.replaceOnResponse(decoded_data, server, server_packet!!)
 
           var decoded_hash = CryptUtils.sha1(decoded_data)
 
           var intercepted_data = runBlocking {
-            InterceptController.getInstance()
+            interceptController()
               .received(decoded_data, server, client_packet!!, server_packet!!)
               .fold({ ByteArray(0) }) { it }
           }
@@ -252,7 +250,7 @@ object DuplexFactory {
           if (intercepted_data.isNotEmpty() && !Arrays.equals(decoded_hash, intercepted_hash)) {
             server_packet!!.setModified()
           }
-          DuplexPacketHistory.updateIfSmall(packets, server_packet!!, data.size)
+          packetHistory.updateIfSmall(packets, server_packet!!, data.size)
           if (intercepted_data.isEmpty()) {
             /* drop */
             server_packet!!.setModified()
@@ -287,33 +285,32 @@ object DuplexFactory {
         encoded_data
       },
       onClientChunkSendForced = { data ->
-        var forcedClientPacket =
-          newPacket(Packet.Direction.CLIENT, UniqueID.getInstance().createId())
+        var forcedClientPacket = newPacket(Packet.Direction.CLIENT, uniqueId.createId())
         packets.update(forcedClientPacket)
         forcedClientPacket.setModified()
         forcedClientPacket.setDecodedData(data)
-        DuplexPacketHistory.updateIfSmall(packets, forcedClientPacket, data.size)
+        packetHistory.updateIfSmall(packets, forcedClientPacket, data.size)
         forcedClientPacket.setModifiedData(data)
         forcedClientPacket.setModifiedData(
           encoder.procBeforeResendClientRequest(forcedClientPacket)
         )
-        DuplexPacketHistory.updateIfSmall(packets, forcedClientPacket, data.size)
+        packetHistory.updateIfSmall(packets, forcedClientPacket, data.size)
         var encoded_data = encoder.encodeClientRequest(forcedClientPacket)
         forcedClientPacket.setSentData(encoded_data)
         packets.update(forcedClientPacket)
         encoded_data
       },
       onServerChunkSendForced = { data ->
-        var group_id = DuplexPacketHistory.groupIdOrNew(client_packet)
+        var group_id = packetHistory.groupIdOrNew(client_packet)
         var forcedServerPacket = newPacket(Packet.Direction.SERVER, group_id)
         packets.update(forcedServerPacket)
         forcedServerPacket.setDecodedData(data)
-        DuplexPacketHistory.updateIfSmall(packets, forcedServerPacket, data.size)
+        packetHistory.updateIfSmall(packets, forcedServerPacket, data.size)
         forcedServerPacket.setModifiedData(data)
         forcedServerPacket.setModifiedData(
           encoder.procBeforeResendServerResponse(forcedServerPacket)
         )
-        DuplexPacketHistory.updateIfSmall(packets, forcedServerPacket, data.size)
+        packetHistory.updateIfSmall(packets, forcedServerPacket, data.size)
         var encoded_data = encoder.encodeServerResponse(client_packet, forcedServerPacket)
         forcedServerPacket.setSentData(encoded_data)
         packets.update(forcedServerPacket)
@@ -327,7 +324,6 @@ object DuplexFactory {
     oneshot: OneShotPacket,
     encoder: Encoder,
   ): DuplexEventHandlers {
-    var packets = Packets.getInstance()
     var client_packet: Packet? = null
     var server_packet: Packet? = null
 
@@ -339,7 +335,7 @@ object DuplexFactory {
         data
       },
       onServerChunkReceived = { data ->
-        var group_id = DuplexPacketHistory.groupIdOrNew(client_packet)
+        var group_id = packetHistory.groupIdOrNew(client_packet)
         server_packet =
           Packet(
             0,
@@ -356,7 +352,7 @@ object DuplexFactory {
         // OneShotPacketからjob_idとtemporary_idを引き継ぎ
         server_packet!!.setJobId(oneshot.getJobId())
         server_packet!!.setTemporaryId(oneshot.getTemporaryId())
-        DuplexPacketHistory.decodeAndRecordServerResponse(
+        packetHistory.decodeAndRecordServerResponse(
           packets,
           encoder,
           client_packet,
@@ -376,7 +372,7 @@ object DuplexFactory {
             oneshot.getAlpn() ?: "",
             Packet.Direction.CLIENT,
             connectionId,
-            UniqueID.getInstance().createId(),
+            uniqueId.createId(),
           )
         // OneShotPacketからjob_idとtemporary_idを引き継ぎ
         client_packet!!.setJobId(oneshot.getJobId())
@@ -385,10 +381,10 @@ object DuplexFactory {
         client_packet!!.setReceivedData(data)
         client_packet!!.setDecodedData(data)
         client_packet!!.setModifiedData(data)
-        DuplexPacketHistory.updateIfSmall(packets, client_packet!!, data.size)
+        packetHistory.updateIfSmall(packets, client_packet!!, data.size)
         var encoded_data = encoder.encodeClientRequest(client_packet!!)
         client_packet!!.setSentData(encoded_data)
-        DuplexPacketHistory.applyOmitIfTooLarge(client_packet!!, data, oneshot.getEncoder())
+        packetHistory.applyOmitIfTooLarge(client_packet!!, data, oneshot.getEncoder())
         packets.update(client_packet!!)
         encoded_data
       },
@@ -403,7 +399,6 @@ object DuplexFactory {
     oneshot: OneShotPacket,
     encoder: Encoder,
   ): DuplexEventHandlers {
-    var packets = Packets.getInstance()
     var client_packet: Packet? = null
     var server_packet: Packet? = null
 
@@ -423,7 +418,7 @@ object DuplexFactory {
             oneshot.getAlpn() ?: "",
             Packet.Direction.CLIENT,
             connectionId,
-            UniqueID.getInstance().createId(),
+            uniqueId.createId(),
           )
         client_packet!!.setDecodedData(oneshot.getData())
         client_packet!!.setModifiedData(oneshot.getData())
@@ -447,7 +442,7 @@ object DuplexFactory {
             connectionId,
             group_id,
           )
-        DuplexPacketHistory.decodeAndRecordServerResponse(
+        packetHistory.decodeAndRecordServerResponse(
           packets,
           encoder,
           client_packet,
@@ -478,7 +473,6 @@ object DuplexFactory {
     oneshot: OneShotPacket,
     encoder: Encoder,
   ): DuplexEventHandlers {
-    var packets = Packets.getInstance()
     var client_packet: Packet? = null
     var server_packet: Packet? = null
 
@@ -490,7 +484,7 @@ object DuplexFactory {
         data
       },
       onServerChunkReceived = { data ->
-        var group_id = DuplexPacketHistory.groupIdOrNew(client_packet)
+        var group_id = packetHistory.groupIdOrNew(client_packet)
         server_packet =
           Packet(
             0,
@@ -507,7 +501,7 @@ object DuplexFactory {
         // OneShotPacketからjob_idとtemporary_idを引き継ぎ
         server_packet!!.setJobId(oneshot.getJobId())
         server_packet!!.setTemporaryId(oneshot.getTemporaryId())
-        DuplexPacketHistory.decodeAndRecordServerResponse(
+        packetHistory.decodeAndRecordServerResponse(
           packets,
           encoder,
           client_packet,
@@ -527,7 +521,7 @@ object DuplexFactory {
             oneshot.getAlpn() ?: "",
             Packet.Direction.CLIENT,
             connectionId,
-            UniqueID.getInstance().createId(),
+            uniqueId.createId(),
           )
         // OneShotPacketからjob_idとtemporary_idを引き継ぎ
         client_packet!!.setJobId(oneshot.getJobId())
@@ -536,7 +530,7 @@ object DuplexFactory {
         client_packet!!.setModified()
         client_packet!!.setDecodedData(data)
         client_packet!!.setModifiedData(data)
-        DuplexPacketHistory.updateIfSmall(packets, client_packet!!, data.size)
+        packetHistory.updateIfSmall(packets, client_packet!!, data.size)
         var encoded_data = encoder.encodeClientRequest(client_packet!!)
         client_packet!!.setSentData(encoded_data)
         packets.update(client_packet!!)

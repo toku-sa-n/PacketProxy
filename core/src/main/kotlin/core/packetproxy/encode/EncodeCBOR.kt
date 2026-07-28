@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory
 import packetproxy.http.Http
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class EncodeCBOR @Throws(Exception::class) constructor(ALPN: String?) : EncodeHTTPBase(ALPN) {
   private var cborMapper: ObjectMapper

@@ -19,20 +19,27 @@ import java.net.ServerSocket
 import packetproxy.common.Endpoint
 import packetproxy.common.EndpointFactory
 import packetproxy.common.SocketEndpoint
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class ProxyForward(private val listen_socket: ServerSocket, private val listen_info: ListenPort) :
-  Proxy() {
+class ProxyForward(
+  private val listen_socket: ServerSocket,
+  private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
+  private val endpointFactory: EndpointFactory,
+  private val database: Database,
+) : Proxy() {
   override fun run() {
     while (!listen_socket.isClosed) {
       try {
         val client = listen_socket.accept()
         log("accept")
 
-        val server = listen_info.getServer()!!
-        val server_e = EndpointFactory.createFromServer(server)
+        val server = listen_info.getServer(database)!!
+        val server_e = endpointFactory.createFromServer(server)
         createConnection(SocketEndpoint(client), server_e)
       } catch (e: Exception) {
         errWithStackTrace(e)
@@ -43,9 +50,13 @@ class ProxyForward(private val listen_socket: ServerSocket, private val listen_i
   @Throws(Exception::class)
   fun createConnection(client: Endpoint, server: Endpoint) {
     val duplex =
-      DuplexFactory.createDuplexAsync(client, server, listen_info.getServer()!!.getEncoder()!!)
+      duplexFactory.createDuplexAsync(
+        client,
+        server,
+        listen_info.getServer(database)!!.getEncoder()!!,
+      )
     duplex.start()
-    DuplexManager.getInstance().registerDuplex(duplex)
+    duplexManager.registerDuplex(duplex)
   }
 
   @Throws(Exception::class)

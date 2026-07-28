@@ -63,7 +63,7 @@ interface OutputStyle {
  * Note: Logging.ktではorg.jline.jansi.Ansiのビルダーパターンを使用しているが、
  * OutputStyleインターフェース（文字列プロパティベース）とは設計が異なる。 ANSIエスケープコード自体は標準仕様のため、独自に定数を定義する。
  */
-object AnsiStyle : OutputStyle {
+class AnsiStyle : OutputStyle {
   override val reset = "\u001B[0m"
   override val bold = "\u001B[1m"
 
@@ -78,7 +78,7 @@ object AnsiStyle : OutputStyle {
 }
 
 /** 色なしスタイル（全て空文字列） バッファ出力（BufferedOutput）や内部連携で使用 */
-object PlainStyle : OutputStyle {
+data class PlainStyle(private val marker: Unit = Unit) : OutputStyle {
   override val reset = ""
   override val bold = ""
 

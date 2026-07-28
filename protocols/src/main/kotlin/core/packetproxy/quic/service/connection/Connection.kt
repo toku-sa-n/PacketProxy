@@ -29,8 +29,8 @@ import packetproxy.quic.value.SimpleBytes
 import packetproxy.quic.value.packet.longheader.pnspace.HandshakePacket
 import packetproxy.quic.value.packet.longheader.pnspace.InitialPacket
 import packetproxy.quic.value.packet.shortheader.ShortHeaderPacket
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.rethrow
 
 abstract class Connection(
   val role: Constants.Role,

@@ -19,6 +19,8 @@ class Binary {
   }
 
   private var hexarray: ByteArray
+  private var intToAsciiString = arrayOfNulls<String>(256)
+  private var intToHexString = arrayOfNulls<String>(256)
 
   constructor(hexArray: ByteArray) {
     hexarray = hexArray
@@ -93,10 +95,5 @@ class Binary {
     if (intToAsciiString[255] != null) return
     for (i in 0 until 256) intToAsciiString[i] =
       if (i < 20 || i > 0x7f) "." else i.toChar().toString()
-  }
-
-  companion object {
-    private var intToAsciiString = arrayOfNulls<String>(256)
-    private var intToHexString = arrayOfNulls<String>(256)
   }
 }

@@ -29,14 +29,14 @@ import javax.swing.text.StyleConstants
 import packetproxy.common.FontManager
 import packetproxy.common.Range
 
-class SearchBox : JPanel() {
+class SearchBox(private val fontManager: FontManager) : JPanel() {
   private var baseText: JTextPane? = null
   private var emphasisArea: Range? = null
   private val searchText = JTextField()
   private val searchCount = JLabel("Not found")
 
   init {
-    searchText.font = FontManager.getInstance().getFont()
+    searchText.font = fontManager.getFont()
     searchText.addKeyListener(
       object : KeyAdapter() {
         private var previousWord: String? = null
@@ -44,7 +44,7 @@ class SearchBox : JPanel() {
 
         override fun keyReleased(event: KeyEvent) {
           try {
-            searchText.font = FontManager.getInstance().getFont()
+            searchText.font = fontManager.getFont()
             updateSearchText()
 
             if (event.keyChar != '\n') return
@@ -206,6 +206,6 @@ class SearchBox : JPanel() {
   }
 
   companion object {
-    private const val MAX_TEXT_LENGTH_FOR_HIGHLIGHTING = 1_000_000
+    private val MAX_TEXT_LENGTH_FOR_HIGHLIGHTING = 1_000_000
   }
 }

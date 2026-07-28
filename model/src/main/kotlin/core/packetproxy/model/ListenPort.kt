@@ -101,7 +101,7 @@ open class ListenPort {
     this.ca_name = ca.getName()
   }
 
-  fun getCA(): Optional<CA> = CAFactory.find(this.ca_name)
+  fun getCA(): Optional<CA> = CAFactory().find(this.ca_name)
 
   fun getPort(): Int = this.port
 
@@ -116,7 +116,8 @@ open class ListenPort {
   }
 
   @Throws(Exception::class)
-  open fun getServer(): Server? = Servers.getInstance().query(this.server_id)
+  open fun getServer(database: Database): Server? =
+    database.createTable(Server::class.java).queryForId(this.server_id)
 
   fun getProtocol(): Protocol {
     if (this.protocol == null) {

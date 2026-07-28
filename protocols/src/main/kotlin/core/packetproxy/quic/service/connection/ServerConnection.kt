@@ -5,19 +5,25 @@ import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.PrivateDNSClient
+import packetproxy.model.Resolutions
 import packetproxy.quic.service.handshake.ClientHandshake
 import packetproxy.quic.utils.AwaitingException
 import packetproxy.quic.utils.Constants
 import packetproxy.quic.value.ConnectionIdPair
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class ServerConnection(connIdPair: ConnectionIdPair, val serverName: String, serverPort: Int) :
+class ServerConnection(
+  connIdPair: ConnectionIdPair,
+  val serverName: String,
+  serverPort: Int,
+  resolutions: Resolutions,
+) :
   Connection(
     Constants.Role.CLIENT,
     connIdPair,
     connIdPair.destConnId,
     DatagramSocket(),
-    InetSocketAddress(PrivateDNSClient.getByName(serverName), serverPort),
+    InetSocketAddress(PrivateDNSClient().getByName(serverName, resolutions), serverPort),
   ) {
   override val handshake = ClientHandshake(this)
 

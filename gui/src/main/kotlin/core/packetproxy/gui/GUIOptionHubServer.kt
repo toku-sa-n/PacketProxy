@@ -8,19 +8,17 @@ import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
 import org.apache.commons.lang3.RandomStringUtils
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.ConfigBoolean
 import packetproxy.model.ConfigString
-import packetproxy.model.Configs
 import packetproxy.model.PropertyChangeEventType.CONFIGS
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionHubServer(private val frame: JFrame) : PropertyChangeListener {
+class GUIOptionHubServer(private val frame: GUIMain) : PropertyChangeListener {
   private val panel = JPanel()
   private lateinit var checkBox: JCheckBox
   private lateinit var token: JTextField
@@ -32,11 +30,15 @@ class GUIOptionHubServer(private val frame: JFrame) : PropertyChangeListener {
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     panel.add(createCheckBox())
     panel.add(createTokenPanel())
-    Configs.getInstance().addPropertyChangeListener(this)
+    frame.modelServices.configs.addPropertyChangeListener(this)
   }
 
   fun createPanel(): JComponent {
-    if (ConfigString("SharingConfigsAccessToken").getString().isEmpty()) generateAccessToken()
+    if (
+      ConfigString(frame.modelServices.configs, "SharingConfigsAccessToken").getString().isEmpty()
+    ) {
+      generateAccessToken()
+    }
     refresh()
     return panel
   }
@@ -46,10 +48,10 @@ class GUIOptionHubServer(private val frame: JFrame) : PropertyChangeListener {
   }
 
   private fun createCheckBox(): JCheckBox {
-    checkBox = JCheckBox(I18nString.get("Enabled"))
+    checkBox = JCheckBox(i18nString("Enabled"))
     checkBox.addActionListener {
       try {
-        ConfigBoolean("SharingConfigs").setState(checkBox.isSelected)
+        ConfigBoolean(frame.modelServices.configs, "SharingConfigs").setState(checkBox.isSelected)
       } catch (e: Exception) {
         errWithStackTrace(e)
       }
@@ -67,7 +69,7 @@ class GUIOptionHubServer(private val frame: JFrame) : PropertyChangeListener {
     token.isEditable = false
     token.maximumSize = Dimension(Short.MAX_VALUE.toInt(), token.minimumSize.height)
     row.add(token)
-    regenerate = JButton(I18nString.get("Regenerate"))
+    regenerate = JButton(i18nString("Regenerate"))
     regenerate.addActionListener {
       try {
         generateAccessToken()
@@ -81,13 +83,14 @@ class GUIOptionHubServer(private val frame: JFrame) : PropertyChangeListener {
 
   private fun refresh() {
     try {
-      token.text = ConfigString("SharingConfigsAccessToken").getString()
-      checkBox.isSelected = ConfigBoolean("SharingConfigs").getState()
+      token.text =
+        ConfigString(frame.modelServices.configs, "SharingConfigsAccessToken").getString()
+      checkBox.isSelected = ConfigBoolean(frame.modelServices.configs, "SharingConfigs").getState()
       if (checkBox.isSelected) {
         token.isEnabled = true
         regenerate.isEnabled = true
         if (server?.isAlive != true) {
-          server = ConfigHttpServer("localhost", 32349, token.text)
+          server = ConfigHttpServer("localhost", 32349, frame, token.text)
           server!!.start()
         }
       } else {
@@ -102,6 +105,7 @@ class GUIOptionHubServer(private val frame: JFrame) : PropertyChangeListener {
   }
 
   private fun generateAccessToken() {
-    ConfigString("SharingConfigsAccessToken").setString(RandomStringUtils.randomAlphabetic(20))
+    ConfigString(frame.modelServices.configs, "SharingConfigsAccessToken")
+      .setString(RandomStringUtils.randomAlphabetic(20))
   }
 }

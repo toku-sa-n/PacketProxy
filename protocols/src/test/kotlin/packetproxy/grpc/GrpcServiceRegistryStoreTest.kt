@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
 import packetproxy.model.ListenPorts
 import packetproxy.model.Server
@@ -41,8 +42,8 @@ class GrpcServiceRegistryStoreTest {
     return File(u.toURI())
   }
 
-  private val store: GrpcServiceRegistryStore
-    get() = GrpcServiceRegistryStore.getInstance()
+  private val database = Database()
+  private val store = GrpcServiceRegistryStore()
 
   @AfterEach
   fun clearDescriptorCache() {
@@ -152,8 +153,8 @@ class GrpcServiceRegistryStoreTest {
     val server = mock(Server::class.java)
     val listenPort = mock(ListenPort::class.java)
     `when`(listenPorts.queryEnabledByPort(ListenPort.Protocol.TCP, 59999)).thenReturn(listenPort)
-    `when`(listenPort.getServer()).thenReturn(server)
-    val out = store.tryResolveServerViaListenPort(59999, listenPorts)
+    `when`(listenPort.getServer(database)).thenReturn(server)
+    val out = store.tryResolveServerViaListenPort(59999, listenPorts, database)
     assertSame(server, out)
   }
 
@@ -161,6 +162,6 @@ class GrpcServiceRegistryStoreTest {
   fun tryResolveServerViaListenPort_returnsNullWhenNoMatchingListenPort() {
     val listenPorts = mock(ListenPorts::class.java)
     `when`(listenPorts.queryEnabledByPort(ListenPort.Protocol.TCP, 59999)).thenReturn(null)
-    assertNull(store.tryResolveServerViaListenPort(59999, listenPorts))
+    assertNull(store.tryResolveServerViaListenPort(59999, listenPorts, database))
   }
 }

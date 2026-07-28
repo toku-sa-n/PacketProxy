@@ -18,12 +18,21 @@ package packetproxy
 import java.net.InetSocketAddress
 import packetproxy.common.UDPServerSocket
 import packetproxy.common.UDPSocketEndpoint
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.model.Resolutions
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class ProxyUDPForward @Throws(Exception::class) constructor(private val listen_info: ListenPort) :
-  Proxy() {
+class ProxyUDPForward
+@Throws(Exception::class)
+constructor(
+  private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
+  private val database: Database,
+  private val resolutions: Resolutions,
+) : Proxy() {
   private val listen_socket = UDPServerSocket(listen_info.getPort())
 
   override fun run() {
@@ -32,17 +41,18 @@ class ProxyUDPForward @Throws(Exception::class) constructor(private val listen_i
         val client_endpoint = listen_socket.accept()
         log("accept")
 
-        val serverAddr: InetSocketAddress = listen_info.getServer()!!.getAddress()
+        val serverAddr: InetSocketAddress =
+          listen_info.getServer(database)!!.getAddress(resolutions)
         val server_endpoint = UDPSocketEndpoint(serverAddr)
 
         val duplex =
-          DuplexFactory.createDuplexAsync(
+          duplexFactory.createDuplexAsync(
             client_endpoint,
             server_endpoint,
-            listen_info.getServer()!!.getEncoder()!!,
+            listen_info.getServer(database)!!.getEncoder()!!,
           )
         duplex.start()
-        DuplexManager.getInstance().registerDuplex(duplex)
+        duplexManager.registerDuplex(duplex)
       }
     } catch (e: Exception) {
       errWithStackTrace(e)

@@ -85,12 +85,5 @@ class PacketProxyUtility {
 
   companion object {
     private val OS = System.getProperty("os.name").lowercase()
-    private var instance: PacketProxyUtility? = null
-
-    @JvmStatic
-    fun getInstance(): PacketProxyUtility {
-      if (instance == null) instance = PacketProxyUtility()
-      return instance!!
-    }
   }
 }

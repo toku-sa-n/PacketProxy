@@ -6,7 +6,7 @@ import packetproxy.common.Range
 import packetproxy.model.OneShotPacket
 import packetproxy.vulchecker.VulChecker
 
-class GUIVulCheckHelper private constructor() {
+class GUIVulCheckHelper(private val main: GUIMain) {
   private var mainPanel = JPanel()
   private var vulCheckTab = CloseButtonTabbedPane()
   private var list = mutableListOf<GUIVulCheckTab>()
@@ -30,17 +30,10 @@ class GUIVulCheckHelper private constructor() {
   fun createPanel(): JComponent = mainPanel
 
   fun addVulCheck(vulChecker: VulChecker, sendPacket: OneShotPacket, range: Range) {
-    var tab = GUIVulCheckTab(vulChecker, sendPacket, range)
+    var tab = GUIVulCheckTab(main, vulChecker, sendPacket, range)
     var panel = tab.createPanel()
     list.add(tab)
     vulCheckTab.addTab(list.size.toString(), panel)
     vulCheckTab.selectedComponent = panel
-  }
-
-  companion object {
-    private var instance: GUIVulCheckHelper? = null
-
-    @JvmStatic
-    fun getInstance(): GUIVulCheckHelper = instance ?: GUIVulCheckHelper().also { instance = it }
   }
 }

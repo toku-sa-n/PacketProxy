@@ -16,8 +16,8 @@
 package packetproxy.gulp.output
 
 /** 標準出力への出力実装（本番用） ANSIエスケープシーケンスによる色付けをサポート */
-object ConsoleOutput : CommandOutput {
-  override val style: OutputStyle = AnsiStyle
+class ConsoleOutput : CommandOutput {
+  override val style: OutputStyle = AnsiStyle()
 
   override fun println(text: String) {
     kotlin.io.println(text)

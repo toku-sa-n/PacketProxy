@@ -29,7 +29,7 @@ class EndpointAggregatorTest {
         createResponsePacket(group = 1L, statusCode = "200", contentType = "application/json"),
       )
 
-    val endpoints = EndpointAggregator.aggregateEndpoints(packets)
+    val endpoints = aggregateEndpoints(packets)
 
     assertEquals(1, endpoints.size)
     val summary = endpoints.values.first()
@@ -62,7 +62,7 @@ class EndpointAggregatorTest {
         createResponsePacket(group = 2L, statusCode = "200", contentType = "application/json"),
       )
 
-    val endpoints = EndpointAggregator.aggregateEndpoints(packets)
+    val endpoints = aggregateEndpoints(packets)
 
     assertEquals(2, endpoints.size)
   }
@@ -89,7 +89,7 @@ class EndpointAggregatorTest {
         createResponsePacket(group = 2L, statusCode = "404", contentType = "text/html"),
       )
 
-    val endpoints = EndpointAggregator.aggregateEndpoints(packets)
+    val endpoints = aggregateEndpoints(packets)
 
     assertEquals(1, endpoints.size)
     val summary = endpoints.values.first()
@@ -107,7 +107,7 @@ class EndpointAggregatorTest {
         createResponsePacket(group = 2L, statusCode = "404", contentType = "text/html"),
       )
 
-    val endpoints = EndpointAggregator.aggregateEndpoints(packets)
+    val endpoints = aggregateEndpoints(packets)
 
     assertEquals(1, endpoints.size)
     val summary = endpoints.values.first()
@@ -127,7 +127,7 @@ class EndpointAggregatorTest {
       createResponsePacket(group = 2L, statusCode = "404", contentType = "text/html")
     val packets = listOf(firstRequest, firstResponse, secondRequest, secondResponse)
 
-    val summary = EndpointAggregator.aggregateEndpoints(packets).values.first()
+    val summary = aggregateEndpoints(packets).values.first()
 
     assertEquals(secondRequest, summary.latestRequestPacket)
     assertEquals(secondResponse, summary.latestResponsePacket)
@@ -138,7 +138,7 @@ class EndpointAggregatorTest {
     val packets =
       listOf(createResponsePacket(group = 1L, statusCode = "200", contentType = "application/json"))
 
-    val endpoints = EndpointAggregator.aggregateEndpoints(packets)
+    val endpoints = aggregateEndpoints(packets)
 
     assertTrue(endpoints.isEmpty())
   }
@@ -159,7 +159,7 @@ class EndpointAggregatorTest {
         ),
       )
 
-    val endpoints = EndpointAggregator.aggregateEndpoints(packets)
+    val endpoints = aggregateEndpoints(packets)
 
     assertTrue(endpoints.isEmpty())
   }
@@ -179,7 +179,7 @@ class EndpointAggregatorTest {
         createResponsePacket(group = 1L, statusCode = "200", contentType = "application/json"),
       )
 
-    val endpoints = EndpointAggregator.aggregateEndpoints(packets)
+    val endpoints = aggregateEndpoints(packets)
 
     assertEquals(1, endpoints.size)
     val summary = endpoints.values.first()
@@ -192,7 +192,7 @@ class EndpointAggregatorTest {
     val request =
       createRequestPacket(group = 10L, method = "POST", host = "example.com", path = "/login")
     val response = createResponsePacket(group = 10L, statusCode = "302", contentType = "text/html")
-    val requestMap = EndpointAggregator.buildRequestMap(listOf(request, response))
+    val requestMap = buildRequestMap(listOf(request, response))
 
     assertEquals(1, requestMap.size)
     assertEquals(request, requestMap[10L])

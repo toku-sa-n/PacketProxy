@@ -6,7 +6,7 @@ package packetproxy.common
 
 import java.math.BigInteger
 import java.util.Random
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 /** An unofficial implementation of the ARC4 cipher algorithm. */
 class ARC4 : Cloneable {

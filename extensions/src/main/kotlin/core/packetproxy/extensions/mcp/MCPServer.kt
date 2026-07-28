@@ -9,13 +9,19 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.PrintWriter
+import packetproxy.CoreServices
 import packetproxy.extensions.mcp.tools.ToolRegistry
-import packetproxy.util.Logging.log
+import packetproxy.gui.GUIResender
+import packetproxy.util.log
 
-class MCPServer(private val logger: (LogLevel, String) -> Unit) {
+class MCPServer(
+  coreServices: CoreServices,
+  guiResender: GUIResender,
+  private val logger: (LogLevel, String) -> Unit,
+) {
 
   private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
-  private val toolRegistry = ToolRegistry()
+  private val toolRegistry = ToolRegistry(coreServices, guiResender)
   private var running = false
   private var reader: BufferedReader = BufferedReader(InputStreamReader(System.`in`))
   private var writer: PrintWriter = PrintWriter(System.out, true)

@@ -10,10 +10,11 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.regex.Pattern
-import packetproxy.util.Logging.getLogText
-import packetproxy.util.Logging.log
+import packetproxy.model.Configs
+import packetproxy.util.getLogText
+import packetproxy.util.log
 
-class LogTool : AuthenticatedMCPTool() {
+class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
 
   private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
   private val dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")

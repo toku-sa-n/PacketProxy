@@ -21,15 +21,14 @@ import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.CHARSET_UPDATED
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class CharSets private constructor() : PropertyChangeListener {
+class CharSets(private val database: Database) : PropertyChangeListener {
   private val pcs = PropertyChangeSupport(this)
 
   private val defaultCharSetList =
     listOf("UTF-8", "Shift_JIS", "x-euc-jp-linux", "ISO-2022-JP", "ISO-8859-1")
 
-  private var database: Database = Database.getInstance()
   private var dao: Dao<CharSet, Int> = database.createTable(CharSet::class.java, this)
 
   @Throws(Exception::class)
@@ -120,30 +119,15 @@ class CharSets private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(CharSet::class.java, this)
           firePropertyChange()
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(CharSet::class.java, this)
         }
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  companion object {
-    private var instance: CharSets? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): CharSets {
-      if (instance == null) {
-        instance = CharSets()
-      }
-      return instance!!
     }
   }
 }

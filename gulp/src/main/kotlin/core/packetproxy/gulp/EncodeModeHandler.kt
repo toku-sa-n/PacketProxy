@@ -24,7 +24,7 @@ import packetproxy.gulp.CommandContext
 import packetproxy.gulp.ParsedCommand
 
 /** Encode Modeのハンドラー */
-object EncodeModeHandler : CLIModeHandler() {
+class EncodeModeHandler : CLIModeHandler() {
   override fun getPrompt(): String {
     return Ansi.ansi().fg(GREEN).a("  B-E > ").reset().toString()
   }
@@ -37,7 +37,7 @@ object EncodeModeHandler : CLIModeHandler() {
   }
 
   override fun getOppositeMode(): CLIModeHandler {
-    return DecodeModeHandler
+    return DecodeModeHandler()
   }
 
   override fun extensionCommand(parsed: ParsedCommand, ctx: CommandContext) {

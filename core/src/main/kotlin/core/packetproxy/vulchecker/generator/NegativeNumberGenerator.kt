@@ -15,10 +15,10 @@
  */
 package packetproxy.vulchecker.generator
 
-import packetproxy.common.I18nString
+import packetproxy.common.*
 
 open class NegativeNumberGenerator : Generator() {
-  override fun getName(): String = I18nString.get("Negative Number: -1")
+  override fun getName(): String = i18nString("Negative Number: -1")
 
   override fun generateOnStart(): Boolean = true
 

@@ -23,44 +23,41 @@ import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.table.TableCellRenderer
 
-object TableHeaderStyle {
-  @JvmStatic
-  fun apply(table: JTable, columnCount: Int) {
-    var defaultHeaderRenderer = table.tableHeader.defaultRenderer
-    var headerRenderer =
-      TableCellRenderer { rendererTable, value, isSelected, hasFocus, row, column ->
-        var component =
-          defaultHeaderRenderer.getTableCellRendererComponent(
-            rendererTable,
-            value,
-            isSelected,
-            hasFocus,
-            row,
-            column,
-          )
-        if (component !is JLabel) {
-          return@TableCellRenderer component
-        }
-
-        var panel = JPanel(BorderLayout())
-        panel.isOpaque = true
-        panel.background = component.background
-
-        var textLabel = JLabel(component.text)
-        textLabel.font = component.getFont()
-        textLabel.foreground = component.foreground
-        var iconLabel = JLabel(component.icon)
-        panel.add(textLabel, BorderLayout.WEST)
-        panel.add(iconLabel, BorderLayout.EAST)
-        panel.border =
-          BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 1, Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(2, 5, 2, 5),
-          )
-        panel
+fun apply(table: JTable, columnCount: Int) {
+  var defaultHeaderRenderer = table.tableHeader.defaultRenderer
+  var headerRenderer =
+    TableCellRenderer { rendererTable, value, isSelected, hasFocus, row, column ->
+      var component =
+        defaultHeaderRenderer.getTableCellRendererComponent(
+          rendererTable,
+          value,
+          isSelected,
+          hasFocus,
+          row,
+          column,
+        )
+      if (component !is JLabel) {
+        return@TableCellRenderer component
       }
-    for (index in 0 until columnCount) {
-      table.columnModel.getColumn(index).headerRenderer = headerRenderer
+
+      var panel = JPanel(BorderLayout())
+      panel.isOpaque = true
+      panel.background = component.background
+
+      var textLabel = JLabel(component.text)
+      textLabel.font = component.getFont()
+      textLabel.foreground = component.foreground
+      var iconLabel = JLabel(component.icon)
+      panel.add(textLabel, BorderLayout.WEST)
+      panel.add(iconLabel, BorderLayout.EAST)
+      panel.border =
+        BorderFactory.createCompoundBorder(
+          BorderFactory.createMatteBorder(0, 0, 1, 1, Color.LIGHT_GRAY),
+          BorderFactory.createEmptyBorder(2, 5, 2, 5),
+        )
+      panel
     }
+  for (index in 0 until columnCount) {
+    table.columnModel.getColumn(index).headerRenderer = headerRenderer
   }
 }

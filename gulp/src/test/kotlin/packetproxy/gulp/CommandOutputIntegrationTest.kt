@@ -36,8 +36,8 @@ class CommandOutputIntegrationTest {
 
   @Test
   fun EncodeModeでstatusコマンドがモード名を出力すること() = runBlocking {
-    ctx.currentHandler = EncodeModeHandler
-    val parsed = CommandParser.parse("status")!!
+    ctx.currentHandler = EncodeModeHandler()
+    val parsed = CommandParser().parse("status")!!
 
     ctx.currentHandler.handleCommand(parsed, ctx)
 
@@ -46,8 +46,8 @@ class CommandOutputIntegrationTest {
 
   @Test
   fun DecodeModeでstatusコマンドがモード名を出力すること() = runBlocking {
-    ctx.currentHandler = DecodeModeHandler
-    val parsed = CommandParser.parse("status")!!
+    ctx.currentHandler = DecodeModeHandler()
+    val parsed = CommandParser().parse("status")!!
 
     ctx.currentHandler.handleCommand(parsed, ctx)
 
@@ -56,8 +56,8 @@ class CommandOutputIntegrationTest {
 
   @Test
   fun helpコマンドがヘルプメッセージを出力すること() = runBlocking {
-    ctx.currentHandler = EncodeModeHandler
-    val parsed = CommandParser.parse("help")!!
+    ctx.currentHandler = EncodeModeHandler()
+    val parsed = CommandParser().parse("help")!!
 
     ctx.currentHandler.handleCommand(parsed, ctx)
 
@@ -70,8 +70,8 @@ class CommandOutputIntegrationTest {
 
   @Test
   fun 未定義コマンドでエラーメッセージが出力されること() = runBlocking {
-    ctx.currentHandler = EncodeModeHandler
-    val parsed = CommandParser.parse("undefined_command_xyz")!!
+    ctx.currentHandler = EncodeModeHandler()
+    val parsed = CommandParser().parse("undefined_command_xyz")!!
 
     ctx.currentHandler.handleCommand(parsed, ctx)
 
@@ -80,8 +80,8 @@ class CommandOutputIntegrationTest {
 
   @Test
   fun 出力にANSIエスケープシーケンスが含まれないこと() = runBlocking {
-    ctx.currentHandler = EncodeModeHandler
-    val parsed = CommandParser.parse("status")!!
+    ctx.currentHandler = EncodeModeHandler()
+    val parsed = CommandParser().parse("status")!!
 
     ctx.currentHandler.handleCommand(parsed, ctx)
 
@@ -92,8 +92,8 @@ class CommandOutputIntegrationTest {
 
   @Test
   fun clearで出力がリセットされること() = runBlocking {
-    ctx.currentHandler = EncodeModeHandler
-    val parsed = CommandParser.parse("status")!!
+    ctx.currentHandler = EncodeModeHandler()
+    val parsed = CommandParser().parse("status")!!
 
     ctx.currentHandler.handleCommand(parsed, ctx)
     assertThat(output.getOutput()).isNotEmpty()

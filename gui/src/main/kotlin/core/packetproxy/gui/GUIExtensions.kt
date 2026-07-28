@@ -20,17 +20,14 @@ import java.net.URLClassLoader
 import java.util.jar.JarFile
 import javax.swing.BoxLayout
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
-import packetproxy.EncoderManager
 import packetproxy.encode.Encoder
 import packetproxy.model.Extension
-import packetproxy.model.Extensions
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIExtensions private constructor() {
+class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistory) {
   private val mainPanel = JPanel()
   private val tabs = JTabbedPane()
   private val extensionMenus = mutableMapOf<String, JMenuItem>()
@@ -43,15 +40,19 @@ class GUIExtensions private constructor() {
 
   @Throws(Exception::class)
   fun addExtension(extension: Extension) {
+    (extension as? GuiServiceExtension)?.initialize(main)
     extension.getEncoders().forEach { (name, encoderClass) ->
       if (Encoder::class.java.isAssignableFrom(encoderClass)) {
-        EncoderManager.getInstance().addEncoder(name, encoderClass.asSubclass(Encoder::class.java))
+        main.coreServices.encoderManager.addEncoder(
+          name,
+          encoderClass.asSubclass(Encoder::class.java),
+        )
       }
     }
 
     extension.createPanel()?.let { tabs.addTab(extension.getName(), it) }
-    extension.historyClickHandler()?.let {
-      GUIHistory.getInstance().addMenu(it)
+    extension.historyClickHandler(guiHistory::getPacket)?.let {
+      guiHistory.addMenu(it)
       extension.getName()?.let { name -> extensionMenus[name] = it }
     }
   }
@@ -60,11 +61,11 @@ class GUIExtensions private constructor() {
   fun removeExtension(extension: Extension) {
     extension.getEncoders().forEach { (name, encoderClass) ->
       if (Encoder::class.java.isAssignableFrom(encoderClass)) {
-        EncoderManager.getInstance().removeEncoder(name)
+        main.coreServices.encoderManager.removeEncoder(name)
       }
     }
     extension.getName()?.let { name ->
-      extensionMenus.remove(name)?.let { GUIHistory.getInstance().removeMenu(it) }
+      extensionMenus.remove(name)?.let { guiHistory.removeMenu(it) }
       tabs.indexOfTab(name).takeIf { it >= 0 }?.let { tabs.removeTabAt(it) }
     }
   }
@@ -94,7 +95,7 @@ class GUIExtensions private constructor() {
               val extension = extensionClass.getConstructor().newInstance() as Extension
               if (extension.getName() == null) extension.setName(className)
               if (extension.getPath() == null) extension.setPath(jarFile.toPath().toString())
-              Extensions.getInstance().create(extension)
+              main.modelServices.extensions.create(extension)
             } catch (exception: Exception) {
               errWithStackTrace(exception)
             }
@@ -102,22 +103,8 @@ class GUIExtensions private constructor() {
         }
       }
     }
-    for (extension in Extensions.getInstance().queryAll()) {
+    for (extension in main.modelServices.extensions.queryAll()) {
       if (extension.isEnabled()) addExtension(extension)
-    }
-  }
-
-  companion object {
-    private var instance: GUIExtensions? = null
-    private var owner: JFrame? = null
-
-    @JvmStatic fun getOwner(): JFrame = requireNotNull(owner)
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): GUIExtensions {
-      if (instance == null) instance = GUIExtensions()
-      return instance!!
     }
   }
 }

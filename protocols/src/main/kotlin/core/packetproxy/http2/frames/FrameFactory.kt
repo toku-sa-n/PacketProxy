@@ -17,38 +17,33 @@ package packetproxy.http2.frames
 
 import org.eclipse.jetty.http2.hpack.HpackDecoder
 import packetproxy.http2.frames.Frame.Type
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
-object FrameFactory {
-  private val frameCreators: Map<Type, (Frame, HpackDecoder?) -> Frame> =
-    mapOf(
-      Type.DATA to { f, _ -> DataFrame(f) },
-      Type.HEADERS to { f, decoder -> HeadersFrame(f, decoder) },
-      Type.SETTINGS to { f, _ -> SettingsFrame(f) },
-      Type.WINDOW_UPDATE to { f, _ -> WindowUpdateFrame(f) },
-      Type.RST_STREAM to { f, _ -> RstStreamFrame(f) },
-      Type.PING to { f, _ -> PingFrame(f) },
-      Type.GOAWAY to { f, _ -> GoawayFrame(f) },
-    )
+private val frameCreators: Map<Type, (Frame, HpackDecoder?) -> Frame> =
+  mapOf(
+    Type.DATA to { f, _ -> DataFrame(f) },
+    Type.HEADERS to { f, decoder -> HeadersFrame(f, decoder) },
+    Type.SETTINGS to { f, _ -> SettingsFrame(f) },
+    Type.WINDOW_UPDATE to { f, _ -> WindowUpdateFrame(f) },
+    Type.RST_STREAM to { f, _ -> RstStreamFrame(f) },
+    Type.PING to { f, _ -> PingFrame(f) },
+    Type.GOAWAY to { f, _ -> GoawayFrame(f) },
+  )
 
-  @JvmStatic
-  @Throws(Exception::class)
-  fun create(type: Type, flags: Int, streamId: Int, payload: ByteArray): Frame =
-    when (type) {
-      Type.DATA -> DataFrame(flags, streamId, payload)
-      else -> throw Exception("create Frames except DataFrame are not implemented yet")
-    }
-
-  @JvmStatic
-  @Throws(Exception::class)
-  fun create(data: ByteArray, decoder: HpackDecoder?): Frame {
-    val f = Frame(data)
-    val creator = frameCreators[f.type]
-    return if (creator != null) creator(f, decoder) else f
+@Throws(Exception::class)
+fun create(type: Type, flags: Int, streamId: Int, payload: ByteArray): Frame =
+  when (type) {
+    Type.DATA -> DataFrame(flags, streamId, payload)
+    else -> throw Exception("create Frames except DataFrame are not implemented yet")
   }
 
-  @JvmStatic
-  fun debug() {
-    log(frameCreators.keys.toString())
-  }
+@Throws(Exception::class)
+fun create(data: ByteArray, decoder: HpackDecoder?): Frame {
+  val f = Frame(data)
+  val creator = frameCreators[f.type]
+  return if (creator != null) creator(f, decoder) else f
+}
+
+fun debug() {
+  log(frameCreators.keys.toString())
 }

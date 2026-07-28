@@ -32,7 +32,10 @@ import packetproxy.http.HttpHeader
  * Detail panel for displaying HTTP headers and security check results. Provides styled text display
  * with color coding for security check results.
  */
-class SecurityHeadersDetailPanel(private val securityChecks: List<SecurityCheck>) {
+class SecurityHeadersDetailPanel(
+  private val securityChecks: List<SecurityCheck>,
+  private val fontManager: FontManager,
+) {
   private val headerPane: JTextPane
   private val detailArea: JTextPane
   private val textStyles: TextStyles
@@ -107,7 +110,7 @@ class SecurityHeadersDetailPanel(private val securityChecks: List<SecurityCheck>
       isEditable = false
       background = Color.WHITE
       setEditorKit(WrapEditorKit(byteArrayOf()))
-      font = FontManager.getInstance().getFont()
+      font = fontManager.getFont()
     }
   }
 

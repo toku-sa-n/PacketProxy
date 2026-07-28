@@ -26,15 +26,15 @@ import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.EXTENSIONS
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class Extensions private constructor() : PropertyChangeListener {
+class Extensions(private val database: Database) : PropertyChangeListener {
   private val pcs = PropertyChangeSupport(this)
+  private var extensionInitializer: ((Extension) -> Unit)? = null
 
   // Extensionではなく、継承先のインスタンスを保持する必要がある
   // enabledになっている際にのみext_instancesに保持されるようにする
   private var ext_instances: MutableMap<String, Extension> = HashMap()
-  private var database: Database = Database.getInstance()
   private var dao: Dao<Extension, String> =
     database.createTable(Extension::class.java, this) as Dao<Extension, String>
   private var cache = DaoQueryCache<Extension>()
@@ -60,6 +60,11 @@ class Extensions private constructor() : PropertyChangeListener {
     pcs.removePropertyChangeListener(listener)
   }
 
+  fun setExtensionInitializer(initializer: (Extension) -> Unit) {
+    extensionInitializer = initializer
+    ext_instances.values.forEach(::initializeExtension)
+  }
+
   // return loaded extension or null
   fun loadExtension(name: String, path: String?): Extension? {
     if (presetExtensions.containsKey(name)) {
@@ -71,7 +76,7 @@ class Extensions private constructor() : PropertyChangeListener {
       } catch (e: Exception) {
         errWithStackTrace(e)
       }
-      return extension
+      return extension?.also(::initializeExtension)
     }
     try {
       val file = File(path!!)
@@ -96,7 +101,7 @@ class Extensions private constructor() : PropertyChangeListener {
       }
       jar.close()
       urlClassLoader.close()
-      return extension
+      return extension?.also(::initializeExtension)
     } catch (e: Exception) {
       errWithStackTrace(e)
       return null
@@ -105,6 +110,7 @@ class Extensions private constructor() : PropertyChangeListener {
 
   @Throws(Exception::class)
   fun create(ext: Extension) {
+    initializeExtension(ext)
     // 存在しないならListに追加
     if (!dao.idExists(ext.getName())) {
       dao.create(ext)
@@ -231,13 +237,11 @@ class Extensions private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
           cache.clear()
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
           cache.clear()
         }
@@ -245,6 +249,10 @@ class Extensions private constructor() : PropertyChangeListener {
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
+  }
+
+  private fun initializeExtension(extension: Extension) {
+    extensionInitializer?.invoke(extension)
   }
 
   @Throws(Exception::class)
@@ -272,8 +280,6 @@ class Extensions private constructor() : PropertyChangeListener {
   }
 
   companion object {
-    private var instance: Extensions? = null
-
     private val presetExtensions: MutableMap<String, Class<*>> = HashMap()
 
     @JvmStatic
@@ -285,15 +291,6 @@ class Extensions private constructor() : PropertyChangeListener {
       } catch (e: Exception) {
         errWithStackTrace(e)
       }
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): Extensions {
-      if (instance == null) {
-        instance = Extensions()
-      }
-      return instance!!
     }
   }
 }

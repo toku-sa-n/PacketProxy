@@ -8,15 +8,21 @@ import packetproxy.model.Modifications
 import packetproxy.model.SSLPassThroughs
 import packetproxy.model.Servers
 
-class ConfigIO {
+class ConfigIO(
+  private val database: Database,
+  private val listenPorts: ListenPorts,
+  private val servers: Servers,
+  private val modifications: Modifications,
+  private val sslPassThroughs: SSLPassThroughs,
+) {
   @Throws(Exception::class)
   fun getOptions(): String {
     val daoHub =
       ConfigDaoHub().apply {
-        listenPortList = ListenPorts.getInstance().queryAll()
-        serverList = Servers.getInstance().queryAll()
-        modificationList = Modifications.getInstance().queryAll()
-        sslPassThroughList = SSLPassThroughs.getInstance().queryAll()
+        listenPortList = listenPorts.queryAll()
+        serverList = servers.queryAll()
+        modificationList = modifications.queryAll()
+        sslPassThroughList = sslPassThroughs.queryAll()
       }
     fixUp(daoHub)
     return GsonBuilder().setPrettyPrinting().create().toJson(daoHub)
@@ -25,11 +31,11 @@ class ConfigIO {
   @Throws(Exception::class)
   fun setOptions(json: String) {
     val daoHub = Gson().fromJson(json, ConfigDaoHub::class.java)
-    Database.getInstance().dropConfigs()
-    daoHub.listenPortList.forEach { ListenPorts.getInstance().create(it) }
-    daoHub.serverList.forEach { Servers.getInstance().create(it) }
-    daoHub.modificationList.forEach { Modifications.getInstance().create(it) }
-    daoHub.sslPassThroughList.forEach { SSLPassThroughs.getInstance().create(it) }
+    database.dropConfigs()
+    daoHub.listenPortList.forEach { listenPorts.create(it) }
+    daoHub.serverList.forEach { servers.create(it) }
+    daoHub.modificationList.forEach { modifications.create(it) }
+    daoHub.sslPassThroughList.forEach { sslPassThroughs.create(it) }
   }
 
   private fun fixUp(daoHub: ConfigDaoHub) {

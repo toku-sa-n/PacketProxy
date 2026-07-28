@@ -20,11 +20,10 @@ import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import packetproxy.model.Database.DatabaseMessage
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class Configs private constructor() : PropertyChangeListener {
+class Configs(private val database: Database) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
-  private var database = Database.getInstance()
   private var dao: Dao<Config, String> =
     database.createTable(Config::class.java, this) as Dao<Config, String>
   private var cache = DaoQueryCache<Config>()
@@ -87,33 +86,19 @@ class Configs private constructor() : PropertyChangeListener {
       when (event.newValue as DatabaseMessage) {
         DatabaseMessage.PAUSE,
         DatabaseMessage.RESUME -> {}
-        DatabaseMessage.DISCONNECT_NOW -> instance = null
+        DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(Config::class.java, this) as Dao<Config, String>
           cache.clear()
           firePropertyChange(PropertyChangeEventType.CONFIGS.toString(), null, event.newValue)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(Config::class.java, this) as Dao<Config, String>
           cache.clear()
         }
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  companion object {
-    private var instance: Configs? = null
-
-    @JvmStatic
-    fun getInstance(): Configs {
-      if (instance == null) {
-        instance = Configs()
-      }
-      return instance!!
     }
   }
 }

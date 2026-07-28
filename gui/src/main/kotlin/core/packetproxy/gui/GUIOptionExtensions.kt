@@ -2,13 +2,11 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JFrame
 import packetproxy.model.Extension
-import packetproxy.model.Extensions
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionExtensions(owner: JFrame) : GUIOptionComponentBase<Extension>(owner) {
-  private val extensions = Extensions.getInstance()
+class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(owner) {
+  private val extensions = owner.modelServices.extensions
   private val extensionList = mutableListOf<Extension>()
 
   init {
@@ -25,9 +23,7 @@ class GUIOptionExtensions(owner: JFrame) : GUIOptionComponentBase<Extension>(own
             val enabled = table.getValueAt(row, 0) as Boolean
             val extension = getSelectedTableContent()
             extension.setEnabled(!enabled)
-            val updated = extensions.update(extension)
-            if (!enabled && updated != null) GUIExtensions.getInstance().addExtension(updated)
-            else if (enabled) GUIExtensions.getInstance().removeExtension(extension)
+            extensions.update(extension)
           } catch (ex: Exception) {
             errWithStackTrace(ex)
           }
@@ -53,7 +49,6 @@ class GUIOptionExtensions(owner: JFrame) : GUIOptionComponentBase<Extension>(own
               updated != null &&
                 (updated.getName() != old.getName() || updated.getPath() != old.getPath())
             ) {
-              GUIExtensions.getInstance().removeExtension(old)
               extensions.delete(old)
               extensions.create(updated)
             }
@@ -64,7 +59,6 @@ class GUIOptionExtensions(owner: JFrame) : GUIOptionComponentBase<Extension>(own
         {
           try {
             val extension = getSelectedTableContent()
-            GUIExtensions.getInstance().removeExtension(extension)
             extensions.delete(extension)
           } catch (e: Exception) {
             errWithStackTrace(e)

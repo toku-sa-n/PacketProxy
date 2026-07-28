@@ -21,7 +21,7 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.util.EventListener
 import javax.swing.event.EventListenerList
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 abstract class Duplex {
   protected var duplexEventListenerList = EventListenerList()

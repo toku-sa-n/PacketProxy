@@ -12,34 +12,30 @@ import javax.swing.ButtonGroup
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JRadioButton
 import javax.swing.JTextField
 import javax.swing.border.LineBorder
 import javax.swing.border.TitledBorder
-import packetproxy.OpenVPN
-import packetproxy.common.FontManager
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.ConfigBoolean
 import packetproxy.model.OpenVPNForwardPort
-import packetproxy.model.OpenVPNForwardPorts
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPort>(owner) {
-  private val forwardPorts = OpenVPNForwardPorts.getInstance()
+class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPort>(owner) {
+  private val forwardPorts = owner.modelServices.openVPNForwardPorts
   private val tableList = mutableListOf<OpenVPNForwardPort>()
-  private val openVPN = OpenVPN.getInstance()
+  private val openVPN = owner.coreServices.openVPN
   private val checkBox = createCheckBox()
   private val vpnProtocol = JComboBox<String>()
   private val textField = createAddressField()
   private val auto =
     JRadioButton(
-      I18nString.get("Auto (Replace resolved IP with local IP of suitable NIC automatically)"),
+      i18nString("Auto (Replace resolved IP with local IP of suitable NIC automatically)"),
       true,
     )
-  private val manual = JRadioButton(I18nString.get("Manual"), false)
+  private val manual = JRadioButton(i18nString("Manual"), false)
   private val base: JPanel
 
   init {
@@ -109,12 +105,12 @@ class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPor
 
   fun updateState() {
     try {
-      checkBox.isSelected = ConfigBoolean("OpenVPN").getState()
+      checkBox.isSelected = ConfigBoolean(owner.modelServices.configs, "OpenVPN").getState()
       if (checkBox.isSelected) {
         val proto = vpnProtocol.selectedItem.toString()
         if (!openVPN.startServer(getSpoofingIP(), proto)) {
           checkBox.isSelected = false
-          ConfigBoolean("OpenVPN").setState(false)
+          ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
         }
       }
     } catch (e: Exception) {
@@ -165,9 +161,9 @@ class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPor
     manualPanel.add(manual)
     manualPanel.add(textField)
 
-    val rewriteRuleBorder = TitledBorder(I18nString.get("Rewrite Rule"))
+    val rewriteRuleBorder = TitledBorder(i18nString("Rewrite Rule"))
     rewriteRuleBorder.border = LineBorder(Color.BLACK, 1)
-    rewriteRuleBorder.titleFont = FontManager.getInstance().getUIFont()
+    rewriteRuleBorder.titleFont = owner.modelServices.fontManager.getUIFont()
     rewriteRuleBorder.titleJustification = TitledBorder.LEFT
     rewriteRuleBorder.titlePosition = TitledBorder.TOP
 
@@ -192,25 +188,25 @@ class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPor
   }
 
   private fun createCheckBox(): JCheckBox {
-    val box = JCheckBox(I18nString.get("Use OpenVPN"))
+    val box = JCheckBox(i18nString("Use OpenVPN"))
     box.addActionListener {
       try {
         if (box.isSelected) {
           val proto = vpnProtocol.selectedItem.toString()
           if (openVPN.startServer(getSpoofingIP(), proto)) {
-            ConfigBoolean("OpenVPN").setState(true)
+            ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(true)
           } else {
             box.isSelected = false
-            ConfigBoolean("OpenVPN").setState(false)
+            ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
           }
         } else {
           openVPN.stopServer()
-          ConfigBoolean("OpenVPN").setState(false)
+          ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
         }
       } catch (e: Exception) {
         box.isSelected = false
         try {
-          ConfigBoolean("OpenVPN").setState(false)
+          ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
         } catch (ex: Exception) {
           errWithStackTrace(ex)
         }
@@ -234,7 +230,7 @@ class GUIOptionOpenVPN(owner: JFrame) : GUIOptionComponentBase<OpenVPNForwardPor
     vpnProtocol.maximumSize =
       Dimension(vpnProtocol.minimumSize.width, vpnProtocol.minimumSize.height)
     panel.add(vpnProtocol)
-    panel.add(JLabel(I18nString.get("will be used for VPN")))
+    panel.add(JLabel(i18nString("will be used for VPN")))
     panel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), panel.maximumSize.height)
     return panel
   }

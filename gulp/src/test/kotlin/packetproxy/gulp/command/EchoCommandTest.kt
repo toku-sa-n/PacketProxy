@@ -41,71 +41,71 @@ class EchoCommandTest {
 
   @Test
   fun 単一の引数を出力できること() = runBlocking {
-    val parsed = CommandParser.parse("echo Hello")!!
+    val parsed = CommandParser().parse("echo Hello")!!
 
-    EchoCommand(parsed, ctx)
+    EchoCommand()(parsed, ctx)
 
     assertThat(output.getOutput()).isEqualTo("Hello\n")
   }
 
   @Test
   fun 複数の引数をスペース区切りで出力できること() = runBlocking {
-    val parsed = CommandParser.parse("echo Hello World")!!
+    val parsed = CommandParser().parse("echo Hello World")!!
 
-    EchoCommand(parsed, ctx)
+    EchoCommand()(parsed, ctx)
 
     assertThat(output.getOutput()).isEqualTo("Hello World\n")
   }
 
   @Test
   fun 引数なしの場合は空行が出力されること() = runBlocking {
-    val parsed = CommandParser.parse("echo")!!
+    val parsed = CommandParser().parse("echo")!!
 
-    EchoCommand(parsed, ctx)
+    EchoCommand()(parsed, ctx)
 
     assertThat(output.getOutput()).isEqualTo("\n")
   }
 
   @Test
   fun 多数の引数を連結して出力できること() = runBlocking {
-    val parsed = CommandParser.parse("echo foo bar baz qux")!!
+    val parsed = CommandParser().parse("echo foo bar baz qux")!!
 
-    EchoCommand(parsed, ctx)
+    EchoCommand()(parsed, ctx)
 
     assertThat(output.getOutput()).isEqualTo("foo bar baz qux\n")
   }
 
   @Test
   fun 複数回のコマンド実行結果を蓄積できること() = runBlocking {
-    val parsed1 = CommandParser.parse("echo first")!!
-    val parsed2 = CommandParser.parse("echo second")!!
-    val parsed3 = CommandParser.parse("echo third")!!
+    val parsed1 = CommandParser().parse("echo first")!!
+    val parsed2 = CommandParser().parse("echo second")!!
+    val parsed3 = CommandParser().parse("echo third")!!
 
-    EchoCommand(parsed1, ctx)
-    EchoCommand(parsed2, ctx)
-    EchoCommand(parsed3, ctx)
+    EchoCommand()(parsed1, ctx)
+    EchoCommand()(parsed2, ctx)
+    EchoCommand()(parsed3, ctx)
 
     assertThat(output.getOutput()).isEqualTo("first\nsecond\nthird\n")
   }
 
   @Test
   fun clearで出力をリセットしてから再度取得できること() = runBlocking {
-    val parsed1 = CommandParser.parse("echo before clear")!!
-    EchoCommand(parsed1, ctx)
+    val parsed1 = CommandParser().parse("echo before clear")!!
+    EchoCommand()(parsed1, ctx)
 
     output.clear()
 
-    val parsed2 = CommandParser.parse("echo after clear")!!
-    EchoCommand(parsed2, ctx)
+    val parsed2 = CommandParser().parse("echo after clear")!!
+    EchoCommand()(parsed2, ctx)
 
     assertThat(output.getOutput()).isEqualTo("after clear\n")
   }
 
   @Test
   fun 出力にANSIエスケープシーケンスが含まれないこと() = runBlocking {
-    val parsed = CommandParser.parse("echo test message")!!
+    val parsed = CommandParser().parse("echo test message")!!
 
-    EchoCommand(parsed, ctx)
+    EchoCommand()(parsed, ctx)
 
     val result = output.getOutput()
     // BufferedOutputはPlainStyleを使用するため、ANSIコードは含まれない
@@ -120,8 +120,8 @@ class EchoCommandTest {
     val internalCtx = CommandContext(internalOutput)
 
     // コマンドを実行
-    val parsed = CommandParser.parse("echo internal message")!!
-    EchoCommand(parsed, internalCtx)
+    val parsed = CommandParser().parse("echo internal message")!!
+    EchoCommand()(parsed, internalCtx)
 
     // 結果をKotlinコードで取得（標準出力には出力されない）
     val result = internalOutput.getOutput().trim()

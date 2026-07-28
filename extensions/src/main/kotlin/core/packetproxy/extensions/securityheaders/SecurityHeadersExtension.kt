@@ -31,6 +31,9 @@ import javax.swing.SortOrder
 import javax.swing.SwingUtilities
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableRowSorter
+import packetproxy.CoreServiceExtension
+import packetproxy.CoreServices
+import packetproxy.common.FontManager
 import packetproxy.extensions.securityheaders.checks.*
 import packetproxy.extensions.securityheaders.exclusion.ExclusionRule
 import packetproxy.extensions.securityheaders.exclusion.ExclusionRuleManager
@@ -38,6 +41,7 @@ import packetproxy.extensions.securityheaders.exclusion.ExclusionRuleType
 import packetproxy.extensions.securityheaders.ui.SecurityHeadersDetailPanel
 import packetproxy.extensions.securityheaders.ui.SecurityHeadersTableRenderer
 import packetproxy.extensions.securityheaders.ui.SecurityHeadersToolbar
+import packetproxy.extensions.securityheaders.ui.fixedColumns
 import packetproxy.http.Http
 import packetproxy.http.HttpHeader
 import packetproxy.model.Extension
@@ -52,7 +56,7 @@ import packetproxy.model.Packets
  * To add a new security check: 1. Create a new class implementing SecurityCheck interface 2. Add
  * the check to the SECURITY_CHECKS list in this class
  */
-class SecurityHeadersExtension : Extension() {
+class SecurityHeadersExtension : Extension(), CoreServiceExtension {
   // ===== Registered Security Checks =====
   // Add new checks here to extend functionality
   companion object {
@@ -75,7 +79,9 @@ class SecurityHeadersExtension : Extension() {
   private val packetMap = mutableMapOf<String, Packet>()
   private val resultsMap = mutableMapOf<String, Map<String, SecurityCheckResult>>()
   private var contextMenu: JPopupMenu? = null
-  private val exclusionRuleManager = ExclusionRuleManager
+  private val exclusionRuleManager = ExclusionRuleManager()
+  private lateinit var packets: Packets
+  private lateinit var fontManager: FontManager
   private var toolbar: SecurityHeadersToolbar? = null
   private var detailPanel: SecurityHeadersDetailPanel? = null
 
@@ -96,7 +102,7 @@ class SecurityHeadersExtension : Extension() {
     panel.add(toolbar!!.panel, BorderLayout.NORTH)
 
     // Create detail panel
-    detailPanel = SecurityHeadersDetailPanel(SECURITY_CHECKS)
+    detailPanel = SecurityHeadersDetailPanel(SECURITY_CHECKS, fontManager)
 
     val tableScrollPane = JScrollPane(table)
     val bottomSplit = detailPanel!!.createPanel()
@@ -108,6 +114,11 @@ class SecurityHeadersExtension : Extension() {
     setupSelectionListener()
 
     return panel
+  }
+
+  override fun initialize(coreServices: CoreServices) {
+    packets = coreServices.modelServices.packets
+    fontManager = coreServices.modelServices.fontManager
   }
 
   private fun initializeTableModel() {
@@ -148,8 +159,7 @@ class SecurityHeadersExtension : Extension() {
     table.columnModel.getColumn(2).preferredWidth = 60 // HTTP Status Code
     // Security check columns
     for (i in SECURITY_CHECKS.indices) {
-      table.columnModel.getColumn(SecurityHeadersTableRenderer.FIXED_COLUMNS + i).preferredWidth =
-        80
+      table.columnModel.getColumn(fixedColumns + i).preferredWidth = 80
     }
 
     // Default sort by URL ascending
@@ -300,10 +310,10 @@ class SecurityHeadersExtension : Extension() {
     Thread {
         try {
           clearTable()
-          val packets = Packets.getInstance().queryAll()
-          val requestMap = buildRequestMap(packets)
+          val history = packets.queryAll()
+          val requestMap = buildRequestMap(history)
 
-          for (p in packets) {
+          for (p in history) {
             if (p.getDirection() != Packet.Direction.SERVER) {
               continue
             }

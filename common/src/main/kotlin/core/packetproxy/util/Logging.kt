@@ -35,11 +35,16 @@ import org.jline.jansi.Ansi
 import org.jline.jansi.Ansi.Color.RED
 import org.slf4j.LoggerFactory
 
-object Logging {
+/**
+ * Application-scoped logging backend.
+ *
+ * UI log sinks are owned by the composition root and injected where they are needed.
+ */
+class Logging {
   private val dtf: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
   private val logger = LoggerFactory.getLogger("")
   private var isGulp: Boolean = false
-  @Volatile private var logSink: LogSink = NoOpLogSink
+  @Volatile private var logSink: LogSink = NoOpLogSink()
 
   // log出力先のファイルの絶対PATH
   private val logFilePath by lazy {
@@ -55,17 +60,15 @@ object Logging {
     logFile
   }
 
-  @JvmStatic
-  fun setLogSink(sink: LogSink) {
+  fun setLogSinkInternal(sink: LogSink) {
     logSink = sink
   }
 
-  @JvmStatic fun createLogPanel(): JComponent = logSink.createPanel()
+  fun createLogPanelInternal(): JComponent = logSink.createPanel()
 
-  @JvmStatic fun getLogText(): String = logSink.getLogText()
+  fun getLogTextInternal(): String = logSink.getLogText()
 
-  @JvmStatic
-  fun init(isGulp: Boolean) {
+  fun initInternal(isGulp: Boolean) {
     this.isGulp = isGulp
     val context = LoggerFactory.getILoggerFactory() as LoggerContext
 
@@ -103,9 +106,8 @@ object Logging {
     rootLogger.level = Level.WARN
   }
 
-  @JvmStatic
   @Throws(IllegalFormatException::class)
-  fun log(format: Any, vararg args: Any?) {
+  fun logInternal(format: Any, vararg args: Any?) {
     val fs = formatString(format, *args)
 
     // WARN未満は出力されないためwarnで出力する
@@ -114,9 +116,8 @@ object Logging {
     logSink.append(fs)
   }
 
-  @JvmStatic
   @Throws(IllegalFormatException::class)
-  fun err(format: Any, vararg args: Any?) {
+  fun errInternal(format: Any, vararg args: Any?) {
     val fs = formatString(format, *args)
 
     logger.error(Ansi.ansi().fg(RED).a(fs).reset().toString())
@@ -125,16 +126,15 @@ object Logging {
   }
 
   /** 別のログが挟まらないように一塊にした上で１度に出力する */
-  @JvmStatic
   @Throws(IllegalFormatException::class)
-  fun errWithStackTrace(e: Throwable) {
+  fun errWithStackTraceInternal(e: Throwable) {
     val sb = StringBuilder()
     sb.append(e.toString())
 
     for (element in e.stackTrace) {
       sb.append("\n$element")
     }
-    err(sb.toString())
+    errInternal(sb.toString())
   }
 
   /** logの継続出力を行う */
@@ -178,4 +178,38 @@ object Logging {
 
     return dateTime + msg.replace("\n", "\n$indent")
   }
+
+  companion object {
+    fun log(format: Any, vararg args: Any?) = packetproxy.util.log(format, *args)
+
+    fun err(format: Any, vararg args: Any?) = packetproxy.util.err(format, *args)
+
+    fun errWithStackTrace(e: Throwable) = packetproxy.util.errWithStackTrace(e)
+  }
 }
+
+/** Process-wide fallback for code paths that have not received an application-scoped [Logging]. */
+fun log(format: Any, vararg args: Any?) {
+  LoggerFactory.getLogger("").warn(formatForFallback(format, *args))
+}
+
+fun err(format: Any, vararg args: Any?) {
+  LoggerFactory.getLogger("")
+    .error(Ansi.ansi().fg(RED).a(formatForFallback(format, *args)).reset().toString())
+}
+
+fun errWithStackTrace(e: Throwable) = err(e.stackTraceToString())
+
+/** A logging sink is application-scoped; callers without one have no retained log text. */
+fun getLogText(): String = ""
+
+private fun formatForFallback(format: Any, vararg args: Any?): String =
+  if (format is String && args.isNotEmpty()) {
+    try {
+      format.format(*args)
+    } catch (_: Exception) {
+      format
+    }
+  } else {
+    format.toString()
+  }

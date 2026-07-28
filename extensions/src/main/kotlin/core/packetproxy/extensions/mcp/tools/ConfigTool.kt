@@ -7,9 +7,10 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-import packetproxy.util.Logging.log
+import packetproxy.model.Configs
+import packetproxy.util.log
 
-class ConfigTool : AuthenticatedMCPTool() {
+class ConfigTool(configs: Configs) : AuthenticatedMCPTool(configs) {
 
   private val gson = Gson()
 

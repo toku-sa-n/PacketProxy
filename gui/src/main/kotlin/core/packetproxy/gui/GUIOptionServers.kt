@@ -2,13 +2,11 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JFrame
 import packetproxy.model.Server
-import packetproxy.model.Servers
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionServers(owner: JFrame) : GUIOptionComponentBase<Server>(owner) {
-  private val servers = Servers.getInstance()
+class GUIOptionServers(owner: GUIMain) : GUIOptionComponentBase<Server>(owner) {
+  private val servers = owner.modelServices.servers
   private val values = mutableListOf<Server>()
 
   init {

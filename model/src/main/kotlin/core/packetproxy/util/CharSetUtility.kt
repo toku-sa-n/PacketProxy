@@ -19,7 +19,7 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import packetproxy.model.CharSets
 
-class CharSetUtility private constructor() {
+class CharSetUtility(private val charSets: CharSets) {
   private var charSetValue = DEFAULT_CHARSET
   private var autoFlag = false
 
@@ -130,7 +130,7 @@ class CharSetUtility private constructor() {
     val result = mutableListOf<String>()
     try {
       result.add(AUTO_CHARSET)
-      for (charset in CharSets.getInstance().queryAll()) {
+      for (charset in charSets.queryAll()) {
         result.add(charset.toString())
       }
     } catch (e: Exception) {
@@ -187,20 +187,14 @@ class CharSetUtility private constructor() {
     return DEFAULT_CHARSET
   }
 
-  companion object {
-    private const val DEFAULT_CHARSET = "UTF-8"
-    private const val AUTO_CHARSET = "AUTO"
-    private var instance: CharSetUtility? = null
-
-    @JvmStatic
-    fun getInstance(): CharSetUtility {
-      if (instance == null) {
-        instance = CharSetUtility()
-        if (!instance!!.getAvailableCharSetList().contains(DEFAULT_CHARSET)) {
-          instance!!.charSetValue = instance!!.getAvailableCharSetList()[0]
-        }
-      }
-      return instance!!
+  init {
+    if (!getAvailableCharSetList().contains(DEFAULT_CHARSET)) {
+      charSetValue = getAvailableCharSetList()[0]
     }
+  }
+
+  companion object {
+    private val DEFAULT_CHARSET = "UTF-8"
+    private val AUTO_CHARSET = "AUTO"
   }
 }

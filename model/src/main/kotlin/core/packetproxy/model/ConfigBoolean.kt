@@ -15,8 +15,7 @@
  */
 package packetproxy.model
 
-class ConfigBoolean(private val key: String) {
-  private val configs = Configs.getInstance()
+class ConfigBoolean(private val configs: Configs, private val key: String) {
   private var config = configs.query(key)
 
   init {

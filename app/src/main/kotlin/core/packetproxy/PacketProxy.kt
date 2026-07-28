@@ -18,29 +18,26 @@ package packetproxy
 import java.io.File
 import java.sql.SQLException
 import javax.swing.JOptionPane
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.common.Utils
 import packetproxy.gui.GUIMain
 import packetproxy.gui.Splash
 import packetproxy.gulp.GulpTerminal
-import packetproxy.model.Database
 import packetproxy.util.Logging
 
-class PacketProxy {
+class PacketProxy(private val app: AppInitializer) {
   @JvmField var gui: GUIMain? = null
   @JvmField var listenPortManager: ListenPortManager? = null
-
-  @Throws(Exception::class) constructor()
 
   @Throws(Exception::class)
   fun start() {
     startGUI()
-    AppInitializer.initComponents()
+    app.initComponents()
   }
 
   @Throws(Exception::class)
   private fun startGUI() {
-    gui = GUIMain.getInstance()
+    gui = GUIMain(app.requireModelServices(), app.requireCoreServices())
     gui!!.isVisible = true
   }
 
@@ -50,28 +47,31 @@ class PacketProxy {
     fun main(args: Array<String>) {
       val gulpMode = getOption("--gulp", args)
       val settingsJson = getOption("--settings-json", args)
-      AppInitializer.setArgs(gulpMode != null, settingsJson)
-      AppInitializer.initCore()
+      val app = AppInitializer.bootstrap()
+      app.setArgs(gulpMode != null, settingsJson)
+      app.initCore()
 
       if (gulpMode != null) {
         try {
-          AppInitializer.initGulp()
-          AppInitializer.initComponents()
+          app.createModelServices(null, false)
+          app.initGulp()
+          app.initComponents()
         } catch (e: Exception) {
           Logging.errWithStackTrace(e)
           System.exit(1)
         }
 
         Logging.log("Gulp Mode: $settingsJson")
-        GulpTerminal.run(settingsJson!!, gulpMode)
+        GulpTerminal()
+          .run(app.requireModelServices(), app.requireCoreServices(), settingsJson, gulpMode)
         System.exit(0)
       }
 
       if (!Utils.supportedJava()) {
         JOptionPane.showMessageDialog(
           null,
-          I18nString.get("PacketProxy can be executed with JDK17 or later"),
-          I18nString.get("Error"),
+          i18nString("PacketProxy can be executed with JDK17 or later"),
+          i18nString("Error"),
           JOptionPane.ERROR_MESSAGE,
         )
         return
@@ -79,26 +79,29 @@ class PacketProxy {
 
       val splash = Splash()
       splash.show()
+      app.createModelServices(null, true)
 
       while (true) {
         try {
-          val proxy = PacketProxy()
+          val proxy = PacketProxy(app)
           proxy.start()
         } catch (e: SQLException) {
           val option =
             JOptionPane.showConfirmDialog(
               null,
-              I18nString.get("Database read error.\nDelete the database and reboot?"),
-              I18nString.get("Database error"),
+              i18nString("Database read error.\nDelete the database and reboot?"),
+              i18nString("Database error"),
               JOptionPane.YES_NO_OPTION,
               JOptionPane.WARNING_MESSAGE,
             )
           if (option == JOptionPane.YES_OPTION) {
             try {
-              val resource = File(Database.getInstance().getDatabasePath().toString())
+              val resource =
+                File(System.getProperty("user.home"), ".packetproxy/db/resources.sqlite3")
               if (resource.exists()) {
                 resource.delete()
               }
+              app.switchProject(resource.absolutePath)
             } catch (e2: Exception) {
               Logging.errWithStackTrace(e2)
             }

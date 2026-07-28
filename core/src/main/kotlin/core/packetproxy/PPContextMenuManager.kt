@@ -13,9 +13,9 @@ import javax.tools.JavaFileObject
 import javax.tools.StandardLocation
 import javax.tools.ToolProvider
 import packetproxy.ppcontextmenu.PPContextMenu
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class PPContextMenuManager private constructor() {
+class PPContextMenuManager {
   private var moduleList = ArrayList<PPContextMenu>()
 
   init {
@@ -51,14 +51,6 @@ class PPContextMenuManager private constructor() {
     klass.getDeclaredConstructor().newInstance()
 
   companion object {
-    private const val ITEM_PACKAGE = "packetproxy.ppcontextmenu"
-    private var instance: PPContextMenuManager? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): PPContextMenuManager {
-      if (instance == null) instance = PPContextMenuManager()
-      return instance!!
-    }
+    private val ITEM_PACKAGE = "packetproxy.ppcontextmenu"
   }
 }

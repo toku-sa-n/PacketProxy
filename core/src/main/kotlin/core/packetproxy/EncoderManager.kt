@@ -19,36 +19,24 @@ import org.apache.commons.io.FilenameUtils
 import packetproxy.encode.Encoder
 import packetproxy.model.Packet
 import packetproxy.model.PacketSummarizer
-import packetproxy.model.PacketSummarizers
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
 
-class EncoderManager private constructor() {
+class EncoderManager {
   private var isDuplicated = false
   private var moduleList = HashMap<String, Class<out Encoder>>()
+  val packetSummarizer =
+    object : PacketSummarizer {
+      override fun summarizeRequest(encoderName: String?, alpn: String?, packet: Packet): String =
+        createSummarizer(encoderName, alpn).getSummarizedRequest(packet)
+
+      override fun summarizeResponse(encoderName: String?, alpn: String?, packet: Packet): String =
+        createSummarizer(encoderName, alpn).getSummarizedResponse(packet)
+    }
 
   init {
     try {
       loadModules()
-      PacketSummarizers.set(
-        object : PacketSummarizer {
-          override fun summarizeRequest(
-            encoderName: String?,
-            alpn: String?,
-            packet: Packet,
-          ): String {
-            return createSummarizer(encoderName, alpn).getSummarizedRequest(packet)
-          }
-
-          override fun summarizeResponse(
-            encoderName: String?,
-            alpn: String?,
-            packet: Packet,
-          ): String {
-            return createSummarizer(encoderName, alpn).getSummarizedResponse(packet)
-          }
-        }
-      )
     } catch (exception: Exception) {
       errWithStackTrace(exception)
     }
@@ -152,14 +140,6 @@ class EncoderManager private constructor() {
 
   companion object {
     private val DEFAULT_PLUGIN_DIR = "${System.getProperty("user.home")}/.packetproxy/plugins"
-    private const val ENCODE_PACKAGE = "packetproxy.encode"
-    private var instance: EncoderManager? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): EncoderManager {
-      if (instance == null) instance = EncoderManager()
-      return instance!!
-    }
+    private val ENCODE_PACKAGE = "packetproxy.encode"
   }
 }

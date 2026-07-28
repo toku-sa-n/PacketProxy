@@ -13,10 +13,10 @@ import javax.tools.DiagnosticCollector
 import javax.tools.JavaFileObject
 import javax.tools.StandardLocation
 import javax.tools.ToolProvider
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 import packetproxy.vulchecker.VulChecker
 
-class VulCheckerManager private constructor() {
+class VulCheckerManager {
   private val vulCheckerMap = HashMap<String, Class<out VulChecker>>()
 
   init {
@@ -62,14 +62,6 @@ class VulCheckerManager private constructor() {
     klass.getConstructor().newInstance()
 
   companion object {
-    private const val VUL_CHECKER_PACKAGE = "packetproxy.vulchecker"
-    private var instance: VulCheckerManager? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): VulCheckerManager {
-      if (instance == null) instance = VulCheckerManager()
-      return instance!!
-    }
+    private val VUL_CHECKER_PACKAGE = "packetproxy.vulchecker"
   }
 }

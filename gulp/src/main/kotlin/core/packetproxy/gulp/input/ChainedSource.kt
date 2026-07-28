@@ -16,7 +16,7 @@
 package packetproxy.gulp.input
 
 /** コマンド入力を受け付けるインスタンスをスタックで管理する */
-object ChainedSource {
+class ChainedSource {
   // 読み取るソースのスタック
   private val sources = ArrayDeque<LineSource>()
 

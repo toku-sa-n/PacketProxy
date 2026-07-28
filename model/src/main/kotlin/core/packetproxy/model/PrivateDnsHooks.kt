@@ -18,9 +18,3 @@ package packetproxy.model
 fun interface PrivateDnsRunningCheck {
   fun isRunning(): Boolean
 }
-
-object PrivateDnsHooks {
-  @Volatile var runningCheck: PrivateDnsRunningCheck? = null
-
-  @JvmStatic fun isRunning(): Boolean = runningCheck?.isRunning() ?: false
-}

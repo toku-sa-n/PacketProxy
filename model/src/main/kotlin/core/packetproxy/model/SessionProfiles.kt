@@ -22,11 +22,10 @@ import java.beans.PropertyChangeSupport
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.SESSION_PROFILES
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class SessionProfiles private constructor() : PropertyChangeListener {
+class SessionProfiles(private val database: Database) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
-  private var database: Database = Database.getInstance()
   private var dao: Dao<SessionProfile, Int> = database.createTable(SessionProfile::class.java, this)
 
   fun create(profile: SessionProfile) {
@@ -75,30 +74,15 @@ class SessionProfiles private constructor() : PropertyChangeListener {
         DatabaseMessage.RESUME -> {}
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(SessionProfile::class.java, this)
           firePropertyChange()
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(SessionProfile::class.java, this)
         }
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  companion object {
-    private var instance: SessionProfiles? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): SessionProfiles {
-      if (instance == null) {
-        instance = SessionProfiles()
-      }
-      return instance!!
     }
   }
 }

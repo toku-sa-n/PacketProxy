@@ -21,7 +21,6 @@ import javax.swing.event.EventListenerList
 abstract class DiffBase {
   // static public void main(String[] args) {
   // try {
-  // Diff diff = Diff.getInstance();
   // diff.markAsOriginal("hello\nw orld\naaaa\nhoge".getBytes());
   // diff.markAsTarget("hello\nworld\nhoge".getBytes());
   // diff.diff(new DiffEventAdapter() {

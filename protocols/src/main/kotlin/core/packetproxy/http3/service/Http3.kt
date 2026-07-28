@@ -30,9 +30,9 @@ import packetproxy.model.Packet
 import packetproxy.quic.utils.Constants
 import packetproxy.quic.value.QuicMessages
 import packetproxy.quic.value.StreamId
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.rethrow
 
-open class Http3 {
+open class Http3(private val uniqueId: UniqueID) {
   private val clientStreamsReader = StreamsReader(Constants.Role.CLIENT)
   private val clientStreamsWriter = StreamsWriter(Constants.Role.CLIENT)
   private val serverStreamsReader = StreamsReader(Constants.Role.SERVER)
@@ -278,7 +278,7 @@ open class Http3 {
       if (groupMap.containsKey(streamId)) {
         packet.setGroup(groupMap[streamId]!!)
       } else {
-        val groupId = UniqueID.getInstance().createId()
+        val groupId = uniqueId.createId()
         groupMap[streamId] = groupId
         packet.setGroup(groupId)
       }

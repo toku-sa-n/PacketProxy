@@ -1,13 +1,11 @@
 package packetproxy.gui
 
 import java.awt.event.MouseAdapter
-import javax.swing.JFrame
 import packetproxy.model.InterceptOption
-import packetproxy.model.InterceptOptions
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionIntercepts(owner: JFrame) : GUIOptionComponentBase<InterceptOption>(owner) {
-  private val interceptOptions = InterceptOptions.getInstance()
+class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOption>(owner) {
+  private val interceptOptions = owner.modelServices.interceptOptions
   private val tableList = mutableListOf<InterceptOption>()
 
   init {
@@ -55,7 +53,7 @@ class GUIOptionIntercepts(owner: JFrame) : GUIOptionComponentBase<InterceptOptio
         value.getRelationshipAsString(),
         value.getMethodAsString(),
         value.getPattern(),
-        value.getServerName(),
+        value.getServerName(owner.modelServices.database),
       )
     )
   }

@@ -16,8 +16,8 @@
 package packetproxy.common
 
 import org.apache.commons.lang3.ArrayUtils
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class BinaryBuffer {
   private var buffer_capacity = 4096

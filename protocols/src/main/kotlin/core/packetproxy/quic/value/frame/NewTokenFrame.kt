@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 import packetproxy.quic.value.SimpleBytes
 import packetproxy.quic.value.Token
 import packetproxy.quic.value.VariableLengthInteger
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 data class NewTokenFrame(val token: Token) : Frame() {
   override fun getBytes() = byteArrayOf(TYPE)

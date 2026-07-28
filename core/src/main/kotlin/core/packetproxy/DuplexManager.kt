@@ -16,15 +16,6 @@
 package packetproxy
 
 class DuplexManager {
-  companion object {
-    @Volatile private var instance: DuplexManager? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): DuplexManager =
-      instance ?: synchronized(this) { instance ?: DuplexManager().also { instance = it } }
-  }
-
   private val duplex_list: MutableMap<Int, Duplex> = HashMap()
 
   @Throws(Exception::class)

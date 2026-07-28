@@ -34,13 +34,14 @@ import packetproxy.extensions.securityheaders.SecurityCheckResult
  * Custom table renderers for security headers extension. Provides header renderer and cell renderer
  * for security check results.
  */
-object SecurityHeadersTableRenderer {
-  const val FIXED_COLUMNS = 3 // Method, URL, Code
-  private val COLOR_FAIL = Color(200, 0, 0)
-  private val COLOR_WARN = Color(220, 130, 0)
-  private val COLOR_OK = Color(0, 100, 0)
-  private val COLOR_FAIL_BG = Color(255, 240, 240)
-  private val COLOR_WARN_BG = Color(255, 250, 230)
+val fixedColumns = 3 // Method, URL, Code
+private val colorFail = Color(200, 0, 0)
+private val colorWarn = Color(220, 130, 0)
+private val colorOk = Color(0, 100, 0)
+private val colorFailBg = Color(255, 240, 240)
+private val colorWarnBg = Color(255, 250, 230)
+
+class SecurityHeadersTableRenderer {
 
   /** Custom header renderer: left-aligned text with sort icon on the right */
   class HeaderRenderer(table: JTable) : JPanel(BorderLayout()), TableCellRenderer {
@@ -153,8 +154,8 @@ object SecurityHeadersTableRenderer {
 
       c.background =
         when {
-          hasFail -> COLOR_FAIL_BG
-          hasWarn -> COLOR_WARN_BG
+          hasFail -> colorFailBg
+          hasWarn -> colorWarnBg
           else -> Color.WHITE
         }
     }
@@ -170,12 +171,12 @@ object SecurityHeadersTableRenderer {
         return
       }
 
-      if (column < FIXED_COLUMNS) {
+      if (column < fixedColumns) {
         c.foreground = Color.BLACK
         return
       }
 
-      val checkIndex = column - FIXED_COLUMNS
+      val checkIndex = column - fixedColumns
       if (checkIndex < securityChecks.size && results != null) {
         val check = securityChecks[checkIndex]
         val result = results[check.name]
@@ -193,15 +194,15 @@ object SecurityHeadersTableRenderer {
 
       when {
         result.isFail -> {
-          c.foreground = COLOR_FAIL
+          c.foreground = colorFail
           c.font = c.font.deriveFont(Font.BOLD)
         }
         result.isWarn -> {
-          c.foreground = COLOR_WARN
+          c.foreground = colorWarn
           c.font = c.font.deriveFont(Font.BOLD)
         }
         result.isOk -> {
-          c.foreground = COLOR_OK
+          c.foreground = colorOk
         }
         else -> {
           c.foreground = Color.BLACK

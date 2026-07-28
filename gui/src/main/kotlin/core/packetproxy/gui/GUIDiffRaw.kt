@@ -6,9 +6,9 @@ import javax.swing.JLabel
 import packetproxy.model.Diff
 import packetproxy.model.DiffEventAdapter
 import packetproxy.model.DiffSet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIDiffRaw : GUIDiffBase() {
+class GUIDiffRaw(owner: GUIMain) : GUIDiffBase(owner) {
   private var jcCh = JCheckBox("Character based (default: Line based)")
 
   init {
@@ -33,7 +33,8 @@ class GUIDiffRaw : GUIDiffBase() {
 
   override fun update() {
     var ds =
-      if (jc.isSelected) sortUniq(Diff.getInstance().getSet()!!) else Diff.getInstance().getSet()!!
+      if (jc.isSelected) sortUniq(owner.modelServices.diff.getSet()!!)
+      else owner.modelServices.diff.getSet()!!
     textOrig.setData(ds.getOriginal()!!, false)
     textTarg.setData(ds.getTarget()!!, false)
     docOrig = textOrig.getStyledDocument()

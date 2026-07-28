@@ -13,7 +13,7 @@ import packetproxy.quic.service.handshake.HandshakeState.State.*
 import packetproxy.quic.service.transportparameter.TransportParameters
 import packetproxy.quic.utils.Constants
 import packetproxy.quic.utils.Constants.PnSpaceType.*
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 class ClientHandshake(private val conn: Connection) : Handshake {
   private val engine: TlsClientEngine

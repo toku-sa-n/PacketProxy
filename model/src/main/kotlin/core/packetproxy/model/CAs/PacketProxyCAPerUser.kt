@@ -42,7 +42,6 @@ import org.bouncycastle.crypto.util.PrivateKeyFactory
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder
-import packetproxy.CertCacheManager
 import packetproxy.common.Utils
 
 class PacketProxyCAPerUser @Throws(Exception::class) constructor() : CA() {
@@ -64,7 +63,6 @@ class PacketProxyCAPerUser @Throws(Exception::class) constructor() : CA() {
     File(ksPath).delete()
     generateKeyStore(ksPath)
     super.load(ksPath)
-    CertCacheManager.clearCache()
   }
 
   @Throws(Exception::class)
@@ -156,7 +154,6 @@ class PacketProxyCAPerUser @Throws(Exception::class) constructor() : CA() {
     val kf = KeyFactory.getInstance("RSA")
     registerCertificateAndPrivateKeyToKeyStore(certificate, kf.generatePrivate(keySpec))
     super.load(ksPath)
-    CertCacheManager.clearCache()
   }
 
   @Throws(Exception::class)
@@ -170,7 +167,6 @@ class PacketProxyCAPerUser @Throws(Exception::class) constructor() : CA() {
     val kf = KeyFactory.getInstance("RSA")
     registerCertificateAndPrivateKeyToKeyStore(certificate, kf.generatePrivate(keySpec))
     super.load(ksPath)
-    CertCacheManager.clearCache()
   }
 
   @Throws(Exception::class)
@@ -183,7 +179,6 @@ class PacketProxyCAPerUser @Throws(Exception::class) constructor() : CA() {
     val privateKey = ks.getKey(alias, password) as PrivateKey
     registerCertificateAndPrivateKeyToKeyStore(certificate, privateKey)
     super.load(ksPath)
-    CertCacheManager.clearCache()
   }
 
   override fun isExportable(): Boolean = true
@@ -256,8 +251,8 @@ class PacketProxyCAPerUser @Throws(Exception::class) constructor() : CA() {
   }
 
   companion object {
-    private const val name = "PacketProxy per-user CA"
-    private const val desc = "PacketProxy per-user CA"
+    private val name = "PacketProxy per-user CA"
+    private val desc = "PacketProxy per-user CA"
     private val password = "testtest".toCharArray()
     private val ksPath =
       Paths.get(System.getProperty("user.home") + "/.packetproxy/certs/user.ks").toString()

@@ -6,19 +6,16 @@ import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JDialog
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JTextField
-import packetproxy.common.I18nString
-import packetproxy.model.CAFactory
+import packetproxy.common.*
 import packetproxy.model.ListenPort
 import packetproxy.model.Server
-import packetproxy.model.Servers
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionListenPortDialog(owner: JFrame) : JDialog(owner) {
+class GUIOptionListenPortDialog(private val owner: GUIMain) : JDialog(owner) {
   private val port = JTextField()
   private val servers = JComboBox<String>()
   private val types = JComboBox<String>()
@@ -27,19 +24,19 @@ class GUIOptionListenPortDialog(owner: JFrame) : JDialog(owner) {
   private var lastServer: String? = null
 
   init {
-    title = I18nString.get("Listenning Port Setting")
+    title = i18nString("Listenning Port Setting")
     val rect = owner.bounds
     setBounds(rect.x + rect.width / 2 - 300, rect.y + rect.height / 2 - 200, 600, 400)
     val panel = JPanel()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     panel.add(labeled("Listen Port:", port))
     panel.add(labeled("Type:", types))
-    panel.add(labeled(I18nString.get("Forward to:"), servers))
-    panel.add(labeled(I18nString.get("CA certificate to sign:"), cas))
+    panel.add(labeled(i18nString("Forward to:"), servers))
+    panel.add(labeled(i18nString("CA certificate to sign:"), cas))
     val buttons = JPanel()
     buttons.layout = BoxLayout(buttons, BoxLayout.X_AXIS)
-    val cancel = JButton(I18nString.get("Cancel"))
-    val save = JButton(I18nString.get("Save"))
+    val cancel = JButton(i18nString("Cancel"))
+    val save = JButton(i18nString("Save"))
     buttons.add(cancel)
     buttons.add(save)
     panel.add(buttons)
@@ -68,7 +65,7 @@ class GUIOptionListenPortDialog(owner: JFrame) : JDialog(owner) {
       )
         lastServer = it.item as? String
     }
-    CAFactory.queryAll().forEach { cas.addItem(it.getUTF8Name()) }
+    owner.modelServices.caFactory.queryAll().forEach { cas.addItem(it.getUTF8Name()) }
     cas.selectedItem = "PacketProxy per-user CA"
     updateNextHopList("HTTP_PROXY")
     cancel.addActionListener {
@@ -79,14 +76,15 @@ class GUIOptionListenPortDialog(owner: JFrame) : JDialog(owner) {
       try {
         val type = ListenPort.TYPE.valueOf(types.selectedItem as String)
         val ca =
-          CAFactory.findByUTF8Name(cas.selectedItem as String)
+          owner.modelServices.caFactory
+            .findByUTF8Name(cas.selectedItem as String)
             .map { it.getName() ?: "Error" }
             .orElse("Error")
         result =
           ListenPort(
             port.text.toInt(),
             type,
-            Servers.getInstance().queryByString((servers.selectedItem as? String) ?: ""),
+            owner.modelServices.servers.queryByString((servers.selectedItem as? String) ?: ""),
             ca,
           )
         dispose()
@@ -100,7 +98,7 @@ class GUIOptionListenPortDialog(owner: JFrame) : JDialog(owner) {
   fun showDialog(preset: ListenPort): ListenPort? {
     port.text = preset.getPort().toString()
     types.selectedItem = preset.getType().toString()
-    preset.getServer()?.let { servers.selectedItem = it.toString() }
+    preset.getServer(owner.modelServices.database)?.let { servers.selectedItem = it.toString() }
     cas.selectedItem = preset.getCA().get().getUTF8Name()
     isModal = true
     isVisible = true
@@ -120,22 +118,22 @@ class GUIOptionListenPortDialog(owner: JFrame) : JDialog(owner) {
       val candidates: List<Server> =
         when (type) {
           "HTTP_PROXY" -> {
-            servers.addItem(I18nString.get("Forward to server directly without upstream proxy"))
-            Servers.getInstance().queryHttpProxies()
+            servers.addItem(i18nString("Forward to server directly without upstream proxy"))
+            owner.modelServices.servers.queryHttpProxies()
           }
           "SSL_TRANSPARENT_PROXY" -> {
-            servers.addItem(I18nString.get("Forward to server specified in SNI header"))
-            Servers.getInstance().queryHttpProxies()
+            servers.addItem(i18nString("Forward to server specified in SNI header"))
+            owner.modelServices.servers.queryHttpProxies()
           }
           "HTTP_TRANSPARENT_PROXY" -> {
-            servers.addItem(I18nString.get("Forward to server specified in Hosts header"))
-            Servers.getInstance().queryHttpProxies()
+            servers.addItem(i18nString("Forward to server specified in Hosts header"))
+            owner.modelServices.servers.queryHttpProxies()
           }
           "QUIC_TRANSPARENT_PROXY" -> {
-            servers.addItem(I18nString.get("Forward to server specified in SNI header"))
+            servers.addItem(i18nString("Forward to server specified in SNI header"))
             emptyList()
           }
-          else -> Servers.getInstance().queryNonHttpProxies()
+          else -> owner.modelServices.servers.queryNonHttpProxies()
         }
       if (
         candidates.isEmpty() &&
@@ -149,7 +147,7 @@ class GUIOptionListenPortDialog(owner: JFrame) : JDialog(owner) {
       )
         JOptionPane.showMessageDialog(
           this,
-          I18nString.get("Set server you wish to connect into 'Servers setting' first."),
+          i18nString("Set server you wish to connect into 'Servers setting' first."),
         )
       candidates.forEach { servers.addItem(it.toString()) }
       selected?.let { servers.selectedItem = it }

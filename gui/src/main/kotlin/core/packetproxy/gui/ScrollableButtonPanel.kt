@@ -50,35 +50,33 @@ class ScrollableCenteredPanel : JPanel(FlowLayout(FlowLayout.CENTER)), Scrollabl
   override fun getScrollableTracksViewportHeight(): Boolean = true
 }
 
-object ScrollableButtonPanel {
-  fun createScrollPane(buttonPanel: JPanel): JScrollPane {
-    val scrollPane =
-      object :
-        JScrollPane(
-          buttonPanel,
-          ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
-          ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED,
-        ) {
-        override fun getPreferredSize(): Dimension {
-          val dimension = super.getPreferredSize()
-          val horizontalBar = horizontalScrollBar
-          // スクロールバーが表示されている場合のみ高さを加算することで、
-          // 非表示時の余分なスペースを排除しつつ、表示時はレイアウトを押し下げて領域を確保する
-          if (horizontalBar != null && horizontalBar.isVisible) {
-            dimension.height += horizontalBar.preferredSize.height
-          }
-          return dimension
+fun createScrollPane(buttonPanel: JPanel): JScrollPane {
+  val scrollPane =
+    object :
+      JScrollPane(
+        buttonPanel,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED,
+      ) {
+      override fun getPreferredSize(): Dimension {
+        val dimension = super.getPreferredSize()
+        val horizontalBar = horizontalScrollBar
+        // スクロールバーが表示されている場合のみ高さを加算することで、
+        // 非表示時の余分なスペースを排除しつつ、表示時はレイアウトを押し下げて領域を確保する
+        if (horizontalBar != null && horizontalBar.isVisible) {
+          dimension.height += horizontalBar.preferredSize.height
         }
+        return dimension
       }
-    scrollPane.border = null
-    scrollPane.viewport.addComponentListener(
-      object : ComponentAdapter() {
-        override fun componentResized(e: ComponentEvent) {
-          scrollPane.revalidate()
-          scrollPane.repaint()
-        }
+    }
+  scrollPane.border = null
+  scrollPane.viewport.addComponentListener(
+    object : ComponentAdapter() {
+      override fun componentResized(e: ComponentEvent) {
+        scrollPane.revalidate()
+        scrollPane.repaint()
       }
-    )
-    return scrollPane
-  }
+    }
+  )
+  return scrollPane
 }

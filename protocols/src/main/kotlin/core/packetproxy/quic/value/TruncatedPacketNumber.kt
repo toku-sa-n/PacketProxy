@@ -3,7 +3,7 @@ package packetproxy.quic.value
 import java.nio.ByteBuffer
 import java.util.Arrays
 import org.apache.commons.codec.binary.Hex
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 data class TruncatedPacketNumber(private val truncatedPacketNumber: ByteArray) {
   constructor(

@@ -17,10 +17,10 @@ package packetproxy.http2
 
 import java.io.ByteArrayOutputStream
 import org.apache.commons.lang3.ArrayUtils
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.DataFrame
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameFactory
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 open class FlowControl(val streamId: Int, initialWindowSize: Int) {
   var windowSize: Int = initialWindowSize
@@ -97,7 +97,7 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
       if (empty_data_end_flag) {
         empty_data_end_flag = false
         val flags = DataFrame.FLAG_END_STREAM.toInt()
-        val frame = FrameFactory.create(DataFrame.TYPE, flags, streamId, ByteArray(0))
+        val frame = create(DataFrame.TYPE, flags, streamId, ByteArray(0))
         stream.write(frame)
         return stream
       }
@@ -139,7 +139,7 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
       if (remaining.isEmpty() && end_flag && data.isEmpty()) {
         flags = DataFrame.FLAG_END_STREAM.toInt()
       }
-      val frame = FrameFactory.create(DataFrame.TYPE, flags, streamId, payload)
+      val frame = create(DataFrame.TYPE, flags, streamId, payload)
 
       if (remaining.isEmpty() && data.isEmpty()) {
         this.dataFrameSent = true

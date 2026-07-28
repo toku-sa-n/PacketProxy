@@ -23,7 +23,7 @@ import packetproxy.http3.utils.readSimpleBytes
 import packetproxy.http3.value.Setting
 import packetproxy.http3.value.SettingParam
 import packetproxy.quic.value.VariableLengthInteger
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class SettingsFrame private constructor(private val setting: Setting) : Frame {
   private val type: Long = TYPE

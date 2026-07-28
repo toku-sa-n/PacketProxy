@@ -6,12 +6,14 @@ import com.google.gson.JsonObject
 import java.text.SimpleDateFormat
 import java.util.Comparator
 import javax.swing.RowFilter
+import javax.swing.table.DefaultTableModel
 import packetproxy.gui.FilterTextParser
+import packetproxy.model.Configs
 import packetproxy.model.Packet
 import packetproxy.model.Packets
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
-class HistoryTool : AuthenticatedMCPTool() {
+class HistoryTool(private val packets: Packets, configs: Configs) : AuthenticatedMCPTool(configs) {
 
   private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
   private val gson = Gson()
@@ -80,7 +82,6 @@ class HistoryTool : AuthenticatedMCPTool() {
     }
 
     try {
-      var packets = Packets.getInstance()
       var allPackets = packets.queryAll()
       var filteredPackets = allPackets
 
@@ -143,7 +144,7 @@ class HistoryTool : AuthenticatedMCPTool() {
 
     try {
       // Parse the filter using FilterTextParser
-      var rowFilter = FilterTextParser.parse(filterText)
+      var rowFilter = FilterTextParser.parse(filterText, DefaultTableModel(), this.packets)
 
       for (packet in packets) {
         // Create a mock table entry to test the filter

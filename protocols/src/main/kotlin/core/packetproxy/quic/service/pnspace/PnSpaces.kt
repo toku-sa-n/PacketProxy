@@ -16,7 +16,7 @@ import packetproxy.quic.value.packet.QuicPacket
 import packetproxy.quic.value.packet.longheader.pnspace.HandshakePacket
 import packetproxy.quic.value.packet.longheader.pnspace.InitialPacket
 import packetproxy.quic.value.packet.shortheader.ShortHeaderPacket
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.rethrow
 
 class PnSpaces(private val conn: Connection) {
   private val sendPacketDeque = LinkedBlockingDeque<QuicPacketBuilder>()

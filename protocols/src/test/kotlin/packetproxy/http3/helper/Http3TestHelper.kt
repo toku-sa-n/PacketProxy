@@ -6,8 +6,7 @@ import org.eclipse.jetty.http.HttpVersion
 import org.eclipse.jetty.http.MetaData
 import packetproxy.http.Http
 
-object Http3TestHelper {
-  @JvmStatic
+class Http3TestHelper {
   @Throws(Exception::class)
   fun generateTestMetaData(): MetaData {
     val http =

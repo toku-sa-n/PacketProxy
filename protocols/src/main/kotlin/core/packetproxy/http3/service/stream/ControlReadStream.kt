@@ -26,7 +26,7 @@ import packetproxy.http3.value.frame.GreaseFrame
 import packetproxy.http3.value.frame.SettingsFrame
 import packetproxy.quic.value.QuicMessage
 import packetproxy.quic.value.StreamId
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.rethrow
 
 open class ControlReadStream(streamId: StreamId) :
   Stream(streamId, StreamType.ControlStreamType), ReadStream {

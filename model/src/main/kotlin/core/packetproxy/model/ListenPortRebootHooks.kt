@@ -18,12 +18,3 @@ package packetproxy.model
 fun interface ListenPortRebooter {
   @Throws(Exception::class) fun rebootIfHTTPProxyRunning()
 }
-
-object ListenPortRebootHooks {
-  @Volatile var rebooter: ListenPortRebooter? = null
-
-  @JvmStatic
-  fun rebootIfHTTPProxyRunning() {
-    rebooter?.rebootIfHTTPProxyRunning()
-  }
-}

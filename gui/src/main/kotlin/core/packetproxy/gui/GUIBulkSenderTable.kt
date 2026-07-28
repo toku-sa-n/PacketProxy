@@ -26,7 +26,7 @@ class GUIBulkSenderTable(private var type: Type, private var onSelected: Consume
     table =
       JTable(model).apply {
         autoCreateRowSorter = true
-        TableHeaderStyle.apply(this, names.size)
+        apply(this, names.size)
       }
     table.selectionModel.addListSelectionListener { onSelected.accept(selectedPacketId) }
     return JScrollPane(table)

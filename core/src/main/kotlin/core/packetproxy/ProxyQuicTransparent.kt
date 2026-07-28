@@ -16,18 +16,26 @@
 package packetproxy
 
 import packetproxy.model.ListenPort
+import packetproxy.model.Resolutions
 import packetproxy.model.Servers
 import packetproxy.quic.service.connection.ClientConnections
 import packetproxy.quic.service.connection.ServerConnection
 import packetproxy.quic.value.ConnectionIdPair
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class ProxyQuicTransparent
 @Throws(Exception::class)
-constructor(private val listen_info: ListenPort) : Proxy() {
+constructor(
+  private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
+  private val servers: Servers,
+  certCacheManager: CertCacheManager,
+  private val resolutions: Resolutions,
+) : Proxy() {
   private val clientConnections =
-    ClientConnections(listen_info.getPort(), listen_info.getCA().get())
+    ClientConnections(listen_info.getPort(), listen_info.getCA().get(), certCacheManager)
 
   override fun run() {
     try {
@@ -39,10 +47,15 @@ constructor(private val listen_info: ListenPort) : Proxy() {
         log("[QUIC-forward! using SNI] %s", sniServerName)
 
         val serverConnection =
-          ServerConnection(ConnectionIdPair.generateRandom(), sniServerName, listen_info.getPort())
+          ServerConnection(
+            ConnectionIdPair.generateRandom(),
+            sniServerName,
+            listen_info.getPort(),
+            resolutions,
+          )
 
         var encoder = "HTTP"
-        val server = Servers.getInstance().queryByHostName(sniServerName)
+        val server = servers.queryByHostName(sniServerName)
         if (server != null) {
           val encoderTemp = server.getEncoder()
           if (encoderTemp != null) {
@@ -53,10 +66,10 @@ constructor(private val listen_info: ListenPort) : Proxy() {
         val alpn = if (encoder == "HTTP") "h3" else null
 
         val duplex =
-          DuplexFactory.createDuplexAsync(clientConnection, serverConnection, encoder, alpn)
+          duplexFactory.createDuplexAsync(clientConnection, serverConnection, encoder, alpn)
 
         duplex.start()
-        DuplexManager.getInstance().registerDuplex(duplex)
+        duplexManager.registerDuplex(duplex)
       }
     } catch (e: Exception) {
       errWithStackTrace(e)

@@ -27,8 +27,12 @@ import javax.swing.text.BadLocationException
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
+import packetproxy.CoreServiceExtension
+import packetproxy.CoreServices
+import packetproxy.gui.GUIMain
+import packetproxy.gui.GuiServiceExtension
 import packetproxy.model.Extension
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 enum class LogLevel {
   INFO,
@@ -36,7 +40,9 @@ enum class LogLevel {
   ERROR,
 }
 
-class MCPServerExtension : Extension {
+class MCPServerExtension : Extension, CoreServiceExtension, GuiServiceExtension {
+  private lateinit var coreServices: CoreServices
+  private lateinit var guiMain: GUIMain
   private var server: MCPServer? = null
   private var httpServer: HttpServer? = null
   private var logArea: JTextPane? = null
@@ -122,13 +128,24 @@ class MCPServerExtension : Extension {
     return null // MCP Serverは右クリックメニューに追加しない
   }
 
+  override fun initialize(coreServices: CoreServices) {
+    this.coreServices = coreServices
+  }
+
+  override fun initialize(guiMain: GUIMain) {
+    this.guiMain = guiMain
+  }
+
   private fun startServer() {
     if (isRunning) {
       return
     }
 
     try {
-      server = MCPServer { level, message -> addLog(message, level) }
+      server =
+        MCPServer(coreServices, guiMain.getGuiResender()) { level, message ->
+          addLog(message, level)
+        }
 
       // Start HTTP server for MCP
       httpServer = HttpServer.create(InetSocketAddress(HTTP_PORT), 0)
@@ -341,7 +358,7 @@ class MCPServerExtension : Extension {
   }
 
   companion object {
-    private const val HTTP_PORT = 8765
+    private val HTTP_PORT = 8765
     private val ERROR_BG = Color(240, 150, 150)
     private val WARN_FG = Color(180, 100, 0)
     private val PREFIX_COLOR = Color(100, 100, 100)

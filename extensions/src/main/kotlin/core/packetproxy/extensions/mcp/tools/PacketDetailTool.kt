@@ -5,11 +5,13 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
+import packetproxy.model.Configs
 import packetproxy.model.Packet
 import packetproxy.model.Packets
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
-class PacketDetailTool : AuthenticatedMCPTool() {
+class PacketDetailTool(private val packets: Packets, configs: Configs) :
+  AuthenticatedMCPTool(configs) {
 
   private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
   private val gson = Gson()
@@ -57,7 +59,6 @@ class PacketDetailTool : AuthenticatedMCPTool() {
     var includePair = arguments.has("include_pair") && arguments.get("include_pair").getAsBoolean()
 
     try {
-      var packets = Packets.getInstance()
       var packet = packets.query(packetId)
 
       if (packet == null) {
@@ -162,8 +163,6 @@ class PacketDetailTool : AuthenticatedMCPTool() {
 
   @Throws(Exception::class)
   private fun findPairedPacket(packet: Packet): Packet? {
-    var packets = Packets.getInstance()
-
     // Look for a packet with same group and conn but opposite direction
     var targetDirection =
       if (packet.getDirection() == Packet.Direction.CLIENT) Packet.Direction.SERVER

@@ -29,19 +29,22 @@ import javax.swing.JMenuItem
 import javax.swing.JPopupMenu
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.commons.lang3.StringUtils
-import packetproxy.VulCheckerManager
+import packetproxy.common.*
 import packetproxy.common.FontManager
-import packetproxy.common.I18nString
 import packetproxy.common.Range
 import packetproxy.common.Utils
 import packetproxy.model.Packet
 import packetproxy.util.CharSetUtility
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.PacketProxyUtility
+import packetproxy.util.errWithStackTrace
 
-class RawTextPane : ExtendedTextPane() {
+class RawTextPane(
+  private val owner: GUIMain,
+  fontManager: FontManager,
+  charSetUtility: CharSetUtility,
+  packetProxyUtility: PacketProxyUtility,
+) : ExtendedTextPane(fontManager, charSetUtility, packetProxyUtility) {
   interface DataChangedListener : ExtendedTextPane.DataChangedListener
-
-  private val charSetUtility = CharSetUtility.getInstance()
 
   init {
     addKeyListener(
@@ -173,15 +176,16 @@ class RawTextPane : ExtendedTextPane() {
 
   private fun addVulCheckers(menu: JPopupMenu) {
     menu.add(title("VulCheck Helpers"))
-    for (name in VulCheckerManager.getInstance().getAllVulCheckers().keys) {
-      val checker = VulCheckerManager.getInstance().createInstance(name) ?: continue
+    for (name in owner.coreServices.vulCheckerManager.getAllVulCheckers().keys) {
+      val checker = owner.coreServices.vulCheckerManager.createInstance(name) ?: continue
       menu.add(
         JMenuItem(checker.getName()).apply {
           addActionListener {
             try {
               val range = Range.of(selectionStart, selectionEnd)
-              val packet: Packet = GUIPacket.getInstance().getPacket()
-              GUIVulCheckHelper.getInstance()
+              val packet: Packet = owner.getGuiHistory().getGuiPacket().getPacket()
+              owner
+                .getGuiVulCheckHelper()
                 .addVulCheck(checker, packet.getOneShotPacket(getData()), range)
             } catch (exception: Exception) {
               errWithStackTrace(exception)
@@ -193,8 +197,8 @@ class RawTextPane : ExtendedTextPane() {
   }
 
   private fun title(value: String) =
-    JMenuItem(I18nString.get(value)).apply {
-      font = FontManager.getInstance().getUICaptionFont()
+    JMenuItem(i18nString(value)).apply {
+      font = fontManager.getUICaptionFont()
       isEnabled = false
     }
 
@@ -202,7 +206,7 @@ class RawTextPane : ExtendedTextPane() {
     JMenuItem(name).apply {
       addActionListener {
         try {
-          GUIDecoderDialog().apply {
+          GUIDecoderDialog(owner).apply {
             setData(transform().toByteArray(Charsets.UTF_8))
             showDialog()
           }

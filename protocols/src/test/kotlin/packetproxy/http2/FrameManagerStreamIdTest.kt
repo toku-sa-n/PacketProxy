@@ -34,8 +34,8 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameUtils
 
 class FrameManagerStreamIdTest {
   private fun headersFrame(streamId: Int): ByteArray {
@@ -70,7 +70,7 @@ class FrameManagerStreamIdTest {
     serverFm.putToFlowControlledQueue(headersFrame(23))
 
     val out = readAvailable(serverFm.getFlowControlledInputStream())
-    val frames = FrameUtils.parseFrames(out)
+    val frames = parseFrames(out)
 
     assertEquals(2, frames.size)
     assertEquals(Frame.Type.HEADERS, frames[0].type)
@@ -88,7 +88,7 @@ class FrameManagerStreamIdTest {
     fm.putToFlowControlledQueue(headersFrame(23))
 
     val out = readAvailable(fm.getFlowControlledInputStream())
-    val frames = FrameUtils.parseFrames(out)
+    val frames = parseFrames(out)
 
     assertEquals(25, frames[0].streamId)
     assertEquals(23, frames[1].streamId)

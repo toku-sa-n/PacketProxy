@@ -19,25 +19,24 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.beans.PropertyChangeEvent
 import java.util.function.Supplier
-import javax.swing.JFrame
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.PropertyChangeEventType.SESSION_PROFILES
 import packetproxy.model.SessionProfile
 import packetproxy.model.SessionProfiles
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GUIOptionSessionProfile
 @JvmOverloads
 @Throws(Exception::class)
-constructor(owner: JFrame, private val authorizationSupplier: Supplier<String>? = null) :
+constructor(owner: GUIMain, private val authorizationSupplier: Supplier<String>? = null) :
   GUIOptionComponentBase<SessionProfile>(owner) {
-  private val sessionProfiles: SessionProfiles = SessionProfiles.getInstance()
+  private val sessionProfiles: SessionProfiles = owner.modelServices.sessionProfiles
   private val tableList = mutableListOf<SessionProfile>()
 
   init {
     sessionProfiles.addPropertyChangeListener(this)
 
-    val menu = arrayOf(I18nString.get("Name"), I18nString.get("Authorization"))
+    val menu = arrayOf(i18nString("Name"), i18nString("Authorization"))
     val menuWidth = intArrayOf(150, 400)
 
     val tableAction =
@@ -52,7 +51,7 @@ constructor(owner: JFrame, private val authorizationSupplier: Supplier<String>? 
 
     val addAction = {
       try {
-        val dlg = GUIOptionSessionProfileDialog(owner, authorizationSupplier)
+        val dlg = GUIOptionSessionProfileDialog(owner, authorizationSupplier, sessionProfiles)
         dlg.showDialog()
       } catch (e: Exception) {
         errWithStackTrace(e)
@@ -63,7 +62,7 @@ constructor(owner: JFrame, private val authorizationSupplier: Supplier<String>? 
       try {
         val oldProfile = getSelectedTableContent()
         if (oldProfile != null) {
-          val dlg = GUIOptionSessionProfileDialog(owner, authorizationSupplier)
+          val dlg = GUIOptionSessionProfileDialog(owner, authorizationSupplier, sessionProfiles)
           dlg.showDialog(oldProfile)
         }
       } catch (e: Exception) {
@@ -96,7 +95,7 @@ constructor(owner: JFrame, private val authorizationSupplier: Supplier<String>? 
 
   fun showManageDialog() {
     try {
-      val dlg = GUIOptionSessionProfileDialog(owner, authorizationSupplier)
+      val dlg = GUIOptionSessionProfileDialog(owner, authorizationSupplier, sessionProfiles)
       dlg.showDialog()
     } catch (e: Exception) {
       errWithStackTrace(e)

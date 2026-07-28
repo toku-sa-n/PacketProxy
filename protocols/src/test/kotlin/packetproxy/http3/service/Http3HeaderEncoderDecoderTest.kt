@@ -14,7 +14,7 @@ class Http3HeaderEncoderDecoderTest {
   fun `ヘッダをencode後decodeできること`() {
     val encoder = Http3HeaderEncoder(1000)
     val decoder = Http3HeaderDecoder()
-    val input = Http3TestHelper.generateTestMetaData()
+    val input = Http3TestHelper().generateTestMetaData()
     val encoded = encoder.encode(0, input)
     decoder.putInstructions(encoder.getInstructions())
     decoder.decode(0, encoded).forEach { Logging.log((it.fields as HttpFields).toString()) }
@@ -25,7 +25,7 @@ class Http3HeaderEncoderDecoderTest {
   @Throws(Exception::class)
   fun `getInstructionsすると命令が消費されること`() {
     val encoder = Http3HeaderEncoder(1000)
-    encoder.encode(0, Http3TestHelper.generateTestMetaData())
+    encoder.encode(0, Http3TestHelper().generateTestMetaData())
     assertThat(encoder.getInstructions()).isNotEmpty()
     assertThat(encoder.getInstructions()).isEmpty()
   }

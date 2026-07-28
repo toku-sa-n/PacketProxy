@@ -3,7 +3,7 @@ package packetproxy.gui
 import javax.swing.*
 import packetproxy.model.ClientCertificate
 
-class GUIOptionClientCertificateDialog(private val owner: JFrame) : JDialog(owner) {
+class GUIOptionClientCertificateDialog(owner: JFrame) : JDialog(owner) {
   fun showDialog(): ClientCertificate? {
     isModal = true
     isVisible = true

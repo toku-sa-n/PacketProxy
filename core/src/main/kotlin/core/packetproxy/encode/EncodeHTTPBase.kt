@@ -16,12 +16,13 @@
 package packetproxy.encode
 
 import java.io.InputStream
+import packetproxy.common.UniqueID
 import packetproxy.http.Http
 import packetproxy.http2.FramesBase
 import packetproxy.http2.Http2
 import packetproxy.http3.service.Http3
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 abstract class EncodeHTTPBase : Encoder {
   enum class HTTPVersion {
@@ -46,11 +47,11 @@ abstract class EncodeHTTPBase : Encoder {
         ALPN == null -> HTTPVersion.HTTP1
         ALPN == "http/1.0" || ALPN == "http/1.1" -> HTTPVersion.HTTP1
         ALPN == "h2" || ALPN == "grpc" || ALPN == "grpc-exp" -> {
-          http2 = Http2()
+          http2 = Http2(UniqueID())
           HTTPVersion.HTTP2
         }
         ALPN == "h3" -> {
-          http3 = Http3()
+          http3 = Http3(UniqueID())
           HTTPVersion.HTTP3
         }
         else -> HTTPVersion.HTTP1

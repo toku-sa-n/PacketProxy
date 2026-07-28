@@ -24,16 +24,17 @@ import packetproxy.common.ClientKeyManager
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.CLIENT_CERTIFICATES
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 /** DAO for ClientCertificate */
-class ClientCertificates private constructor() : PropertyChangeListener {
+class ClientCertificates(
+  private val database: Database,
+  private val clientKeyManager: ClientKeyManager,
+) : PropertyChangeListener {
   private val pcs = PropertyChangeSupport(this)
 
-  private var database: Database = Database.getInstance()
   private var dao: Dao<ClientCertificate, Int> =
     database.createTable(ClientCertificate::class.java, this)
-  private var servers: Servers = Servers.getInstance()
 
   init {
     if (!isLatestVersion()) {
@@ -43,12 +44,10 @@ class ClientCertificates private constructor() : PropertyChangeListener {
 
   fun addPropertyChangeListener(listener: PropertyChangeListener) {
     pcs.addPropertyChangeListener(listener)
-    servers.addPropertyChangeListener(listener)
   }
 
   fun removePropertyChangeListener(listener: PropertyChangeListener) {
     pcs.removePropertyChangeListener(listener)
-    servers.removePropertyChangeListener(listener)
   }
 
   fun firePropertyChange() {
@@ -75,12 +74,10 @@ class ClientCertificates private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(ClientCertificate::class.java, this)
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(ClientCertificate::class.java, this)
         }
       }
@@ -92,7 +89,7 @@ class ClientCertificates private constructor() : PropertyChangeListener {
   @Throws(Exception::class)
   fun hasCorrectSecretKey(certificate: ClientCertificate): Boolean {
     try {
-      ClientKeyManager.setKeyManagers(certificate.getServer(), certificate.load())
+      clientKeyManager.setKeyManagers(certificate.getServer(database), certificate.load())
       return true
     } catch (keyException: java.security.UnrecoverableKeyException) {
       return false
@@ -105,7 +102,7 @@ class ClientCertificates private constructor() : PropertyChangeListener {
 
   @Throws(Exception::class)
   fun create(certificate: ClientCertificate) {
-    ClientKeyManager.setKeyManagers(certificate.getServer(), certificate.load())
+    clientKeyManager.setKeyManagers(certificate.getServer(database), certificate.load())
     certificate.setEnabled()
     dao.createIfNotExists(certificate)
     firePropertyChange()
@@ -114,7 +111,7 @@ class ClientCertificates private constructor() : PropertyChangeListener {
   @Throws(Exception::class)
   fun delete(certificate: ClientCertificate) {
     dao.delete(certificate)
-    ClientKeyManager.removeKeyManagers(certificate.getServer())
+    clientKeyManager.removeKeyManagers(certificate.getServer(database))
     firePropertyChange()
   }
 
@@ -122,8 +119,8 @@ class ClientCertificates private constructor() : PropertyChangeListener {
   fun update(certificate: ClientCertificate) {
     dao.update(certificate)
     if (certificate.isEnabled())
-      ClientKeyManager.setKeyManagers(certificate.getServer(), certificate.load())
-    else ClientKeyManager.removeKeyManagers(certificate.getServer())
+      clientKeyManager.setKeyManagers(certificate.getServer(database), certificate.load())
+    else clientKeyManager.removeKeyManagers(certificate.getServer(database))
     firePropertyChange()
   }
 
@@ -156,19 +153,6 @@ class ClientCertificates private constructor() : PropertyChangeListener {
     if (option == JOptionPane.YES_OPTION) {
       database.dropTable(ClientCertificate::class.java)
       dao = database.createTable(ClientCertificate::class.java, this)
-    }
-  }
-
-  companion object {
-    private var instance: ClientCertificates? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): ClientCertificates {
-      if (instance == null) {
-        instance = ClientCertificates()
-      }
-      return instance!!
     }
   }
 }

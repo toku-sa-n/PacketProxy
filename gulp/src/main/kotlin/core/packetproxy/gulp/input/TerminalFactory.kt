@@ -22,7 +22,7 @@ import packetproxy.gulp.CommandContext
 import packetproxy.gulp.DynamicCompleter
 
 /** DefaultTerminalの起動を試みる 失敗時は代わりにFallbackTerminalを起動する */
-object TerminalFactory {
+class TerminalFactory {
   fun create(cmdCtx: CommandContext): LineSource {
     return try {
       val terminal = TerminalBuilder.builder().system(true).build()

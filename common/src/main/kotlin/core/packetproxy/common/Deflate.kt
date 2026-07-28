@@ -10,7 +10,7 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.DataFormatException
 import java.util.zip.Deflater
 import java.util.zip.Inflater
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class Deflate {
   fun decompress(data: ByteArray): ByteArray {

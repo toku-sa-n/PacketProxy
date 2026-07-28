@@ -17,8 +17,8 @@ package packetproxy.ppcontextmenu
 
 import java.awt.event.ActionListener
 import javax.swing.JMenuItem
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 abstract class PPContextMenu {
   @JvmField protected var menuItem: JMenuItem? = null

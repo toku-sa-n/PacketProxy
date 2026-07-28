@@ -36,36 +36,30 @@ import org.xbill.DNS.SVCBBase
 import org.xbill.DNS.Type
 import packetproxy.model.ConfigBoolean
 import packetproxy.model.ConfigInteger
-import packetproxy.model.PrivateDnsHooks
+import packetproxy.model.Configs
 import packetproxy.model.PrivateDnsRunningCheck
+import packetproxy.model.Resolutions
 import packetproxy.model.Servers
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class PrivateDNS private constructor() {
+class PrivateDNS(
+  private val configs: Configs,
+  private val servers: Servers,
+  private val resolutions: Resolutions,
+) {
   companion object {
     var BUFSIZE = 1024
     var DEFAULT_PORT = 53
     var dnsServer = "8.8.8.8"
-    private var instance: PrivateDNS? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): PrivateDNS {
-      if (instance == null) {
-        instance = PrivateDNS()
-        PrivateDnsHooks.runningCheck = PrivateDnsRunningCheck { instance!!.isRunning() }
-      }
-      return instance!!
-    }
   }
 
   private val state: ConfigBoolean
   private var dns: PrivateDNSImp? = null
-  private val servers: Servers
   private val lock: Any
   private val spoofAddrFactry = SpoofAddrFactory()
+  private val dnsClient = PrivateDNSClient(PrivateDnsRunningCheck { isRunning() })
 
   inner class SpoofAddrFactory {
     private val subnets = ArrayList<SubnetInfo>()
@@ -129,8 +123,7 @@ class PrivateDNS private constructor() {
 
   init {
     lock = Any()
-    state = ConfigBoolean("PrivateDNS")
-    servers = Servers.getInstance()
+    state = ConfigBoolean(configs, "PrivateDNS")
     dns = null
   }
 
@@ -208,7 +201,7 @@ class PrivateDNS private constructor() {
     }
     synchronized(lock) {
       try {
-        val portConfig = ConfigInteger("PrivateDNSPort")
+        val portConfig = ConfigInteger(configs, "PrivateDNSPort")
         val currentPort = portConfig.getInteger()
         if (currentPort != port) {
           log("Private DNS port changed: %d -> %d", currentPort, port)
@@ -324,12 +317,12 @@ class PrivateDNS private constructor() {
 
           try {
             if (queryRecType == Type.A) {
-              addr = PrivateDNSClient.getByName(queryHostName)
+              addr = dnsClient.getByName(queryHostName, resolutions)
               if (addr is Inet6Address) {
                 throw UnknownHostException()
               }
             } else if (queryRecType == Type.AAAA) {
-              addr = PrivateDNSClient.getByName6(queryHostName) ?: throw UnknownHostException()
+              addr = dnsClient.getByName6(queryHostName) ?: throw UnknownHostException()
             } else if (queryRecType == Type.HTTPS) {
               log("[DNS Query] '%s' [HTTPS]", queryHostName)
               val jn: PrivateDnsResponseBuilder
@@ -343,7 +336,7 @@ class PrivateDNS private constructor() {
                 jn = PrivateDnsResponseBuilder(record)
                 log("Force to access '%s' with HTTP3", queryHostName)
               } else {
-                val records = PrivateDNSClient.getHTTPSRecord(queryHostName)
+                val records = dnsClient.getHTTPSRecord(queryHostName)
                 jn = PrivateDnsResponseBuilder(records)
               }
               res = jn.generateReply(smsg, smsgBA, smsgBA.size, null)
@@ -433,7 +426,7 @@ class PrivateDNS private constructor() {
 
   private fun getListenPort(): Int {
     try {
-      val portConfig = ConfigInteger("PrivateDNSPort")
+      val portConfig = ConfigInteger(configs, "PrivateDNSPort")
       val port = portConfig.getInteger()
       if (isValidPort(port)) {
         return port

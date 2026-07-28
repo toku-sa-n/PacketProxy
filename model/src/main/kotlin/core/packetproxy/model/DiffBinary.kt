@@ -19,12 +19,11 @@ import com.google.common.primitives.Bytes
 import difflib.Chunk
 import difflib.Delta
 import difflib.DiffUtils
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class DiffBinary private constructor() : DiffBase() {
+class DiffBinary() : DiffBase() {
   // static public void main(String[] args) {
   // try {
-  // Diff diff = Diff.getInstance();
   // diff.markAsOriginal("hello\nw orld\naaaa\nhoge".getBytes());
   // diff.markAsTarget("hello\nworld\nhoge".getBytes());
   // diff.diff(new DiffEventAdapter() {
@@ -48,16 +47,6 @@ class DiffBinary private constructor() : DiffBase() {
   // }
 
   companion object {
-    private var instance: DiffBinary? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): DiffBinary {
-      if (instance == null) {
-        instance = DiffBinary()
-      }
-      return instance!!
-    }
 
     @JvmStatic
     @Throws(Exception::class)

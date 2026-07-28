@@ -26,7 +26,7 @@ class SessionRequestModifierTest {
   fun apply_nullProfile_returnsOriginalBytes() {
     val original = sampleRequest("Bearer original")
 
-    val result = SessionRequestModifier.apply(original, null)
+    val result = apply(original, null)
 
     assertArrayEquals(original, result)
   }
@@ -36,7 +36,7 @@ class SessionRequestModifierTest {
     val original = sampleRequest("Bearer original")
     val profile = SessionProfile("userB", "Bearer userB-token")
 
-    val result = SessionRequestModifier.apply(original, profile)
+    val result = apply(original, profile)
     val http = Http.create(result)
 
     assertEquals("Bearer userB-token", http.getFirstHeader("Authorization"))
@@ -47,7 +47,7 @@ class SessionRequestModifierTest {
     val original = sampleRequest("Bearer original")
     val profile = SessionProfile("anonymous", "")
 
-    val result = SessionRequestModifier.apply(original, profile)
+    val result = apply(original, profile)
     val http = Http.create(result)
 
     assertFalse(http.getHeader().getValue("Authorization").isPresent)
@@ -64,7 +64,7 @@ class SessionRequestModifierTest {
         .toByteArray()
     val profile = SessionProfile("userB", "Bearer userB-token")
 
-    val result = SessionRequestModifier.apply(response, profile)
+    val result = apply(response, profile)
 
     assertArrayEquals(response, result)
   }
@@ -74,7 +74,7 @@ class SessionRequestModifierTest {
     val invalid = byteArrayOf(0x00, 0x01, 0x02)
     val profile = SessionProfile("userB", "Bearer userB-token")
 
-    val result = SessionRequestModifier.apply(invalid, profile)
+    val result = apply(invalid, profile)
 
     assertArrayEquals(invalid, result)
   }

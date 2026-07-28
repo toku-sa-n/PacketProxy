@@ -21,7 +21,7 @@ import packetproxy.http3.value.Setting
 import packetproxy.http3.value.frame.SettingsFrame
 import packetproxy.quic.value.QuicMessages
 import packetproxy.quic.value.StreamId
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 open class ControlWriteStream(streamId: StreamId) :
   Stream(streamId, StreamType.ControlStreamType), WriteStream {

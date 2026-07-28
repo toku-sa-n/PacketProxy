@@ -19,14 +19,14 @@ package packetproxy.gulp
 data class ParsedCommand(val raw: String, val cmd: String, val args: List<String>) {
   /** argsの先頭を新たなcmdとしたParsedCommandを返す argsはemptyな可能性あり */
   fun shift(): ParsedCommand? {
-    val (cmd, args) = CommandParser.shift(args) ?: return null
+    val (cmd, args) = CommandParser().shift(args) ?: return null
     return ParsedCommand(raw, cmd, args)
   }
 
   //    fun hasOption(opt: String): Boolean = args.contains(opt)
 }
 
-object CommandParser {
+class CommandParser {
   // [^\\s"]+  -> クォートでもスペースでもない文字の塊（普通の単語）
   // "([^"]*)" -> ダブルクォートで囲まれた中身（スペースを含める）
   private val regex = Regex("""[^\s"]+|"([^"]*)"""")

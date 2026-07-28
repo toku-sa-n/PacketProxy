@@ -21,8 +21,8 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.UnknownHostException
 import packetproxy.PrivateDNSClient
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
 
 @DatabaseTable(tableName = "servers")
 open class Server {
@@ -92,7 +92,8 @@ open class Server {
   override fun toString(): String = String.format("%s:%d(%s)", ip, port, encoder)
 
   @Throws(Exception::class)
-  fun getAddress(): InetSocketAddress = InetSocketAddress(PrivateDNSClient.getByName(ip!!), port)
+  fun getAddress(resolutions: Resolutions): InetSocketAddress =
+    InetSocketAddress(PrivateDNSClient().getByName(ip!!, resolutions), port)
 
   fun getId(): Int = this.id
 
@@ -173,7 +174,7 @@ open class Server {
   fun getIps(): List<InetAddress> {
     try {
       if (specifiedByHostName) {
-        return PrivateDNSClient.getAllByName(ip!!).toList()
+        return PrivateDNSClient().getAllByName(ip!!).toList()
       } else {
         val ips = ArrayList<InetAddress>()
         ips.add(InetAddress.getByName(ip!!))

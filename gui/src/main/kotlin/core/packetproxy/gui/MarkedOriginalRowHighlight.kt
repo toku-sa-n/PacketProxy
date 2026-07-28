@@ -17,7 +17,7 @@ package packetproxy.gui
 
 import java.awt.Color
 
-class MarkedOriginalRowHighlight {
+class MarkedOriginalRowHighlight(private val history: GUIHistory) {
   companion object {
     internal val DIFF_ORIGINAL_ROW_COLOR = Color(0xb0, 0xb0, 0xb0)
   }
@@ -31,7 +31,7 @@ class MarkedOriginalRowHighlight {
 
   fun markCurrentRowAsOriginal() {
     markedRow = captureMarkedRow()
-    GUIHistory.getInstance().addCustomColoringToCursorPos(DIFF_ORIGINAL_ROW_COLOR)
+    history.addCustomColoringToCursorPos(DIFF_ORIGINAL_ROW_COLOR)
   }
 
   fun restoreMarkedRowAndClear() {
@@ -41,7 +41,6 @@ class MarkedOriginalRowHighlight {
   }
 
   private fun captureMarkedRow(): MarkedRow {
-    val history = GUIHistory.getInstance()
     val savedRowColor =
       if (history.containsColor()) {
         history.color
@@ -52,7 +51,6 @@ class MarkedOriginalRowHighlight {
   }
 
   private fun restoreRowColor(marked: MarkedRow) {
-    val history = GUIHistory.getInstance()
     if (marked.savedRowColor != null) {
       history.addCustomColoring(marked.packetId, marked.savedRowColor)
       return

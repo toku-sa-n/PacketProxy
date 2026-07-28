@@ -14,7 +14,7 @@ import packetproxy.quic.value.frame.AckFrame
 import packetproxy.quic.value.key.Key
 import packetproxy.quic.value.packet.PnSpacePacket
 import packetproxy.quic.value.packet.QuicPacket
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class ShortHeaderPacket : QuicPacket, PnSpacePacket {
   val destConnId: ConnectionId

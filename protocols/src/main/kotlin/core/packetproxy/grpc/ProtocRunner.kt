@@ -64,12 +64,11 @@ class ProtocRunner private constructor() {
      */
     @JvmStatic
     @Throws(Exception::class)
-    fun run(protos: List<File>, includes: List<File>, serverId: Int?): Result {
+    fun run(database: Database, protos: List<File>, includes: List<File>, serverId: Int?): Result {
       if (!DEFAULT_DESC_DIR.exists() && !DEFAULT_DESC_DIR.mkdirs()) {
         throw IllegalStateException("Cannot create directory: ${DEFAULT_DESC_DIR.absolutePath}")
       }
-      val projectName =
-        Database.getInstance().getDatabasePath().fileName.toString().removeSuffix(".sqlite3")
+      val projectName = database.getDatabasePath().fileName.toString().removeSuffix(".sqlite3")
       val name =
         if (serverId != null) {
           "${projectName}_${serverId}.desc"

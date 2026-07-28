@@ -20,9 +20,8 @@ class RegexParam(private var packetId: Int, private var name: String, regex: Str
     this.value = value
   }
 
-  fun setValue(oneshot: OneShotPacket) {
+  fun setValue(oneshot: OneShotPacket, charSetUtility: CharSetUtility) {
     val dataByte = oneshot.getData()
-    val charSetUtility = CharSetUtility.getInstance()
     var encoding = charSetUtility.guessCharSetFromHttpHeader(dataByte)
     if (encoding == "") {
       encoding = charSetUtility.guessCharSetFromMetatag(dataByte)
@@ -39,9 +38,8 @@ class RegexParam(private var packetId: Int, private var name: String, regex: Str
   }
 
   @Throws(Exception::class)
-  fun applyToPacket(oneshot: OneShotPacket): OneShotPacket {
+  fun applyToPacket(oneshot: OneShotPacket, charSetUtility: CharSetUtility): OneShotPacket {
     var data = oneshot.getData()
-    val charSetUtility = CharSetUtility.getInstance()
     var encoding = charSetUtility.guessCharSetFromHttpHeader(data)
     if (encoding == "") {
       charSetUtility.guessCharSetFromMetatag(data)

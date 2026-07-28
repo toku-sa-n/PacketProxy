@@ -18,7 +18,7 @@ package packetproxy.common
 import java.io.ByteArrayInputStream
 import java.util.HashMap
 import net.arnx.jsonic.JSON
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 open class JWT {
   protected var header: String? = null

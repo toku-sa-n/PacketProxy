@@ -2,19 +2,16 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JFrame
 import packetproxy.model.ListenPort
-import packetproxy.model.ListenPorts
-import packetproxy.model.Servers
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionListenPorts(owner: JFrame) : GUIOptionComponentBase<ListenPort>(owner) {
-  private val listenPorts = ListenPorts.getInstance()
+class GUIOptionListenPorts(owner: GUIMain) : GUIOptionComponentBase<ListenPort>(owner) {
+  private val listenPorts = owner.modelServices.listenPorts
   private val values = mutableListOf<ListenPort>()
 
   init {
     listenPorts.addPropertyChangeListener(this)
-    Servers.getInstance().addPropertyChangeListener(this)
+    owner.modelServices.servers.addPropertyChangeListener(this)
     val action =
       object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent) {
@@ -80,7 +77,7 @@ class GUIOptionListenPorts(owner: JFrame) : GUIOptionComponentBase<ListenPort>(o
         value.getPort(),
         value.getType(),
         value.getCA().map { it.getName() }.orElse("Error"),
-        value.getServer()?.toString() ?: serverNull,
+        value.getServer(owner.modelServices.database)?.toString() ?: serverNull,
       )
     )
   }

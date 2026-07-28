@@ -27,10 +27,16 @@ import org.apache.commons.lang3.ArrayUtils
 import packetproxy.PrivateDNSClient
 import packetproxy.common.Parameter
 import packetproxy.common.Utils
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.model.Resolutions
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class Http private constructor(data: ByteArray, withoutTouchingContentLength: Boolean) {
+class Http
+private constructor(
+  data: ByteArray,
+  withoutTouchingContentLength: Boolean,
+  private val resolutions: Resolutions?,
+) {
   @JvmField var header: HttpHeader
   private var originalHeader: HttpHeader
   private var rawBody: ByteArray
@@ -68,7 +74,17 @@ class Http private constructor(data: ByteArray, withoutTouchingContentLength: Bo
 
   val serverAddr: InetSocketAddress
     @Throws(Exception::class)
-    get() = InetSocketAddress(PrivateDNSClient.getByName(serverName), proxyPort)
+    get() =
+      InetSocketAddress(
+        PrivateDNSClient()
+          .getByName(
+            serverName,
+            requireNotNull(resolutions) {
+              "Resolutions is required to resolve the HTTP server address"
+            },
+          ),
+        proxyPort,
+      )
 
   fun getServerPort(): Int = proxyPort
 
@@ -431,11 +447,20 @@ class Http private constructor(data: ByteArray, withoutTouchingContentLength: Bo
     val STATUS_LINE_PATTERN2: Pattern = Pattern.compile("[^ ]+ +([^ ]+) +([a-z0-9A-Z ]+)$")
     val STATUS_LINE_PATTERN3: Pattern = Pattern.compile("^([^ ]+)")
 
-    @JvmStatic @Throws(Exception::class) fun create(data: ByteArray): Http = Http(data, false)
+    @JvmStatic @Throws(Exception::class) fun create(data: ByteArray): Http = Http(data, false, null)
 
     @JvmStatic
     @Throws(Exception::class)
-    fun createWithoutTouchingContentLength(data: ByteArray): Http = Http(data, true)
+    fun create(data: ByteArray, resolutions: Resolutions): Http = Http(data, false, resolutions)
+
+    @JvmStatic
+    @Throws(Exception::class)
+    fun createWithoutTouchingContentLength(data: ByteArray): Http = Http(data, true, null)
+
+    @JvmStatic
+    @Throws(Exception::class)
+    fun createWithoutTouchingContentLength(data: ByteArray, resolutions: Resolutions): Http =
+      Http(data, true, resolutions)
 
     // TODO header系作業をHttpHeaderに分離
     @JvmStatic

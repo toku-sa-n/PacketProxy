@@ -19,20 +19,25 @@ import java.io.ByteArrayOutputStream
 import packetproxy.DuplexFactory
 import packetproxy.DuplexSync
 import packetproxy.EncoderManager
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.DataFrame
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameUtils
-import packetproxy.http2.frames.FrameUtils.PREFACE
-import packetproxy.http2.frames.FrameUtils.SETTINGS
-import packetproxy.http2.frames.FrameUtils.WINDOW_UPDATE
 import packetproxy.http2.frames.HeadersFrame
+import packetproxy.http2.frames.PREFACE
+import packetproxy.http2.frames.SETTINGS
+import packetproxy.http2.frames.WINDOW_UPDATE
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
 
 class SinglePacketAttackController
 @JvmOverloads
 @Throws(Exception::class)
-constructor(oneshot: OneShotPacket?, private val sleepTimeMs: Int = 100) {
+constructor(
+  oneshot: OneShotPacket?,
+  private val duplexFactory: DuplexFactory,
+  private val encoderManager: EncoderManager,
+  private val sleepTimeMs: Int = 100,
+) {
   private val attackConnection: DuplexSync
   private val baseAttackFrames: AttackFrames
 
@@ -46,8 +51,8 @@ constructor(oneshot: OneShotPacket?, private val sleepTimeMs: Int = 100) {
       "GET requests are not supported by Single Packet Attack because they cannot have DATA frames in HTTP/2."
     }
 
-    attackConnection = DuplexFactory.createDuplexSyncForSinglePacketAttack(targetPacket)
-    baseAttackFrames = generateAttackFrames(targetPacket)
+    attackConnection = duplexFactory.createDuplexSyncForSinglePacketAttack(targetPacket)
+    baseAttackFrames = generateAttackFrames(targetPacket, encoderManager)
   }
 
   @Throws(Exception::class)
@@ -287,13 +292,13 @@ constructor(oneshot: OneShotPacket?, private val sleepTimeMs: Int = 100) {
 
     @Throws(Exception::class)
     fun sendFirstFrames() {
-      var firstFramesData = FrameUtils.toByteArray(streamAttackFrames.firstFrames)
+      var firstFramesData = toByteArray(streamAttackFrames.firstFrames)
       connection.execFastSend(firstFramesData)
     }
 
     @get:Throws(Exception::class)
     val lastFramesData: ByteArray
-      get() = FrameUtils.toByteArray(streamAttackFrames.lastFrames)
+      get() = toByteArray(streamAttackFrames.lastFrames)
 
     @Throws(Exception::class)
     private fun createStreamAttackFrames(): AttackFrames {
@@ -341,8 +346,11 @@ constructor(oneshot: OneShotPacket?, private val sleepTimeMs: Int = 100) {
     }
 
     @Throws(Exception::class)
-    private fun generateAttackFrames(packet: OneShotPacket): AttackFrames {
-      var originalFrames = convertPacketToFrames(packet)
+    private fun generateAttackFrames(
+      packet: OneShotPacket,
+      encoderManager: EncoderManager,
+    ): AttackFrames {
+      var originalFrames = convertPacketToFrames(packet, encoderManager)
       if (originalFrames.isEmpty()) {
         throw IllegalArgumentException("No frames found after encoding and parsing")
       }
@@ -351,13 +359,15 @@ constructor(oneshot: OneShotPacket?, private val sleepTimeMs: Int = 100) {
     }
 
     @Throws(Exception::class)
-    private fun convertPacketToFrames(packet: OneShotPacket): List<Frame> {
-      var encoder =
-        EncoderManager.getInstance().createInstance(packet.getEncoder()!!, packet.getAlpn())
+    private fun convertPacketToFrames(
+      packet: OneShotPacket,
+      encoderManager: EncoderManager,
+    ): List<Frame> {
+      var encoder = encoderManager.createInstance(packet.getEncoder()!!, packet.getAlpn())
       checkNotNull(encoder) { "Could not create encoder for target packet" }
 
       var binaryFrames = encoder.encodeClientRequest(packet.getData())
-      return FrameUtils.parseFrames(binaryFrames)
+      return parseFrames(binaryFrames)
     }
 
     private fun filterOutEmptyDataFrames(frames: List<Frame>): List<Frame> =

@@ -23,7 +23,7 @@ import packetproxy.http.Http
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
 import packetproxy.model.PacketInfo
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 class GUIServerNamePanel : JPanel() {
   private val clientLabel = JLabel(" ")

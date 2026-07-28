@@ -6,9 +6,10 @@ import com.google.gson.JsonObject
 import java.io.File
 import java.io.FileReader
 import java.io.IOException
-import packetproxy.util.Logging.log
+import packetproxy.model.Configs
+import packetproxy.util.log
 
-class RestoreConfigTool : AuthenticatedMCPTool() {
+class RestoreConfigTool(private val configs: Configs) : AuthenticatedMCPTool(configs) {
 
   private val gson = Gson()
 
@@ -65,7 +66,7 @@ class RestoreConfigTool : AuthenticatedMCPTool() {
       updateArgs.addProperty("suppress_dialog", suppressDialog)
       updateArgs.addProperty("access_token", arguments.get("access_token").getAsString())
 
-      var updateTool = UpdateConfigTool()
+      var updateTool = UpdateConfigTool(configs)
       updateTool.call(updateArgs)
       log("RestoreConfigTool step 4: Configuration restored successfully")
 

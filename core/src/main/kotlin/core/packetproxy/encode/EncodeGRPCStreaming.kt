@@ -22,14 +22,16 @@ import java.util.Arrays
 import java.util.concurrent.ConcurrentHashMap
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Protobuf3
+import packetproxy.common.UniqueID
 import packetproxy.common.Utils
 import packetproxy.grpc.GrpcSchemaResolver
+import packetproxy.grpc.GrpcServiceRegistryStore
 import packetproxy.http.Http
 import packetproxy.http2.GrpcStreaming
 
 // gRPCでデータフレーム1つずつをメッセージと解釈して送受信するエンコーダ
 class EncodeGRPCStreaming : EncodeHTTPBase {
-  private val schemaResolver = GrpcSchemaResolver()
+  private val schemaResolver = GrpcSchemaResolver(GrpcServiceRegistryStore())
 
   private var compressedFlag: Byte = 0
   @Volatile private var lastGrpcPath: String? = null
@@ -77,7 +79,7 @@ class EncodeGRPCStreaming : EncodeHTTPBase {
 
   @Throws(Exception::class) constructor() : super()
 
-  @Throws(Exception::class) constructor(ALPN: String?) : super(ALPN, GrpcStreaming())
+  @Throws(Exception::class) constructor(ALPN: String?) : super(ALPN, GrpcStreaming(UniqueID()))
 
   override fun getName(): String = "gRPC Streaming"
 

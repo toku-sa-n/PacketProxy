@@ -21,11 +21,14 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.Date
 import org.apache.commons.io.FilenameUtils
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.common.RecentProjectsStore
 import packetproxy.model.Database
 
-class Projects {
+class Projects(
+  private val database: Database,
+  private val recentProjectsStore: RecentProjectsStore,
+) {
   class ProjectInfo(private val path: String) {
     private val name: String
     private val lastModified: String
@@ -64,14 +67,14 @@ class Projects {
         var fileTime = Files.getLastModifiedTime(path)
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date(fileTime.toMillis()))
       } catch (exception: Exception) {
-        I18nString.get("Unknown")
+        i18nString("Unknown")
       }
     }
   }
 
   @Throws(Exception::class)
   fun getValidRecentProjects(): List<ProjectInfo> {
-    var recents = ArrayList(RecentProjectsStore.load())
+    var recents = ArrayList(recentProjectsStore.load())
     var validRecents = ArrayList<ProjectInfo>()
     var validPaths = ArrayList<String>()
     for (path in recents) {
@@ -82,7 +85,7 @@ class Projects {
       validPaths.add(path)
     }
     if (validPaths.size != recents.size) {
-      RecentProjectsStore.save(validPaths)
+      recentProjectsStore.save(validPaths)
     }
     validRecents.sortByDescending { it.getLastModifiedMillis() }
     return validRecents
@@ -90,8 +93,8 @@ class Projects {
 
   @Throws(Exception::class)
   fun openProject(path: String) {
-    Database.getInstance().openAt(path)
-    RecentProjectsStore.add(Paths.get(path))
+    database.openAt(path)
+    recentProjectsStore.add(Paths.get(path))
   }
 
   @Throws(Exception::class)
@@ -100,7 +103,7 @@ class Projects {
     Files.createDirectories(temporaryDirectory)
     var timestamp = SimpleDateFormat("yyyyMMdd-HHmmss").format(Date())
     var database = temporaryDirectory.resolve("packetproxy-$timestamp.sqlite3")
-    Database.getInstance().openAt(database.toString())
+    this.database.openAt(database.toString())
     return database.toString()
   }
 
@@ -110,8 +113,8 @@ class Projects {
     var projectDirectory = Paths.get(System.getProperty("user.home"), ".packetproxy", "projects")
     Files.createDirectories(projectDirectory)
     var database = projectDirectory.resolve("${name.trim()}.sqlite3")
-    Database.getInstance().openAt(database.toString())
-    RecentProjectsStore.add(database)
+    this.database.openAt(database.toString())
+    recentProjectsStore.add(database)
     return database.toString()
   }
 }

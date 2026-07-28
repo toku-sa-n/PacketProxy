@@ -15,10 +15,10 @@
  */
 package packetproxy.common
 
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 /** ローカルPC の現在時刻（ミリ秒単位）を利用したユニークな自動採番クラス かならず昇順の番号を採番するため、ソートするのに便利 */
-class UniqueID private constructor() {
+class UniqueID {
   private var lastId: Long = getNow()
 
   @Throws(Exception::class)
@@ -38,17 +38,4 @@ class UniqueID private constructor() {
   }
 
   @Throws(Exception::class) private fun getNow(): Long = System.currentTimeMillis()
-
-  companion object {
-    private var instance: UniqueID? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): UniqueID {
-      if (instance == null) {
-        instance = UniqueID()
-      }
-      return instance!!
-    }
-  }
 }

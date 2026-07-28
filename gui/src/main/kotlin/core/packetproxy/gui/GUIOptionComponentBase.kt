@@ -16,18 +16,16 @@ import java.beans.PropertyChangeListener
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.RowFilter
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.table.TableRowSorter
-import packetproxy.common.FontManager
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.OptionTableModel
 
-abstract class GUIOptionComponentBase<T>(protected val owner: JFrame) : PropertyChangeListener {
+abstract class GUIOptionComponentBase<T>(protected val owner: GUIMain) : PropertyChangeListener {
   protected lateinit var option_model: OptionTableModel
   protected lateinit var table: JTable
   protected lateinit var jcomponent: JComponent
@@ -92,10 +90,10 @@ abstract class GUIOptionComponentBase<T>(protected val owner: JFrame) : Property
     for (i in menu.indices) {
       table.getColumn(menu[i]).preferredWidth = menuWidth[i]
     }
-    TableHeaderStyle.apply(table, menu.size)
+    apply(table, menu.size)
     (table.getDefaultRenderer(Boolean::class.java) as JComponent).isOpaque = true
     table.addMouseListener(tableAction)
-    table.rowHeight = FontManager.getInstance().getUIFontHeight(table)
+    table.rowHeight = owner.modelServices.fontManager.getUIFontHeight(table)
 
     val scrollPane = CustomScrollPane()
     scrollPane.setViewportView(table)
@@ -107,7 +105,7 @@ abstract class GUIOptionComponentBase<T>(protected val owner: JFrame) : Property
 
     panel.add(createTableButton(addAction, editAction, removeAction))
     if (searchable) {
-      val filterText = HintTextField(I18nString.get("Incremental Search for Host"))
+      val filterText = HintTextField(i18nString("Incremental Search for Host"))
       filterText.minimumSize = Dimension(800, 30)
       filterText.preferredSize = Dimension(800, 30)
       filterText.maximumSize = Dimension(800, 30)

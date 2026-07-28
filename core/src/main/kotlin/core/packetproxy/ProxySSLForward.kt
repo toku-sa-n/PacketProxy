@@ -21,15 +21,24 @@ import packetproxy.common.EndpointFactory
 import packetproxy.common.SSLSocketEndpoint
 import packetproxy.common.SocketEndpoint
 import packetproxy.encode.EncodeHTTPBase
+import packetproxy.model.Database
 import packetproxy.model.ListenPort
+import packetproxy.model.Resolutions
 import packetproxy.model.SSLPassThroughs
 import packetproxy.model.Server
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class ProxySSLForward(
   private val listen_socket: ServerSocket,
   private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
+  private val endpointFactory: EndpointFactory,
+  private val encoderManager: EncoderManager,
+  private val sslPassThroughs: SSLPassThroughs,
+  private val database: Database,
+  private val resolutions: Resolutions,
 ) : Proxy() {
   override fun run() {
     val clients = ArrayList<Socket>()
@@ -54,24 +63,24 @@ class ProxySSLForward(
 
   @Throws(Exception::class)
   private fun checkSSLForward(client: Socket) {
-    val server = listen_info.getServer()!!
-    val serverAddr = server.getAddress()
-    if (SSLPassThroughs.getInstance().includes(server.getIp()!!, listen_info.getPort())) {
+    val server = listen_info.getServer(database)!!
+    val serverAddr = server.getAddress(resolutions)
+    if (sslPassThroughs.includes(server.getIp()!!, listen_info.getPort())) {
       val server_e = SocketEndpoint(serverAddr)
       val client_e = SocketEndpoint(client)
       val duplex = DuplexAsync(client_e, server_e)
       duplex.start()
     } else {
       val eps =
-        EndpointFactory.createBothSideSSLEndpoints(
+        endpointFactory.createBothSideSSLEndpoints(
           client,
           null,
           serverAddr,
           null,
-          listen_info.getServer()!!.getIp()!!,
+          listen_info.getServer(database)!!.getIp()!!,
           listen_info.getCA().get(),
         )
-      createConnection(eps[0], eps[1], listen_info.getServer())
+      createConnection(eps[0], eps[1], listen_info.getServer(database))
     }
   }
 
@@ -82,22 +91,22 @@ class ProxySSLForward(
     if (server == null) {
       duplex =
         if (alpn == "h2" || alpn == "http/1.1" || alpn == "http/1.0") {
-          DuplexFactory.createDuplexAsync(client_e, server_e, "HTTP", alpn)
+          duplexFactory.createDuplexAsync(client_e, server_e, "HTTP", alpn)
         } else {
-          DuplexFactory.createDuplexAsync(client_e, server_e, "Sample", alpn)
+          duplexFactory.createDuplexAsync(client_e, server_e, "Sample", alpn)
         }
     } else {
       if (alpn.isNullOrEmpty()) {
-        val encoder = EncoderManager.getInstance().createInstance(server.getEncoder()!!, "")
+        val encoder = encoderManager.createInstance(server.getEncoder()!!, "")
         if (encoder is EncodeHTTPBase) {
           /* The client does not support ALPN. It seems to be an old HTTP client */
           alpn = "http/1.1"
         }
       }
-      duplex = DuplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder()!!, alpn)
+      duplex = duplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder()!!, alpn)
     }
     duplex.start()
-    DuplexManager.getInstance().registerDuplex(duplex)
+    duplexManager.registerDuplex(duplex)
   }
 
   @Throws(Exception::class)

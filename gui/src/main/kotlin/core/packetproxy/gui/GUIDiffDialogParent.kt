@@ -4,14 +4,14 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.*
 import javax.swing.event.ChangeListener
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIDiffDialogParent(owner: JFrame) : JDialog(owner) {
+class GUIDiffDialogParent(private val owner: GUIMain) : JDialog(owner) {
   private var mainPanel = JPanel()
   private var dataPane = JTabbedPane()
-  private var rawPanel = GUIDiffRaw()
-  private var binaryPanel = GUIDiffBinary()
-  private var jsonPanel = GUIDiffJson()
+  private var rawPanel = GUIDiffRaw(owner)
+  private var binaryPanel = GUIDiffBinary(owner)
+  private var jsonPanel = GUIDiffJson(owner)
 
   init {
     title = "Diff"

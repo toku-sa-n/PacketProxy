@@ -3,13 +3,11 @@ package packetproxy.gui
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import javax.swing.*
-import packetproxy.controller.InterceptController
-import packetproxy.model.InterceptModel
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIIntercept(private var owner: JFrame) : PropertyChangeListener {
-  private var controller = InterceptController.getInstance()
-  private var model = InterceptModel.getInstance()
+class GUIIntercept(private val owner: GUIMain) : PropertyChangeListener {
+  private val controller = owner.coreServices.interceptController
+  private var model = owner.modelServices.interceptModel
   private lateinit var forward: JButton
   private lateinit var drop: JButton
   private lateinit var enabled: JToggleButton
@@ -53,7 +51,7 @@ class GUIIntercept(private var owner: JFrame) : PropertyChangeListener {
         }
       }
     serverNamePanel = GUIServerNamePanel()
-    tabs = TabSet(true, false)
+    tabs = TabSet(owner, true, false)
     return JPanel().apply {
       layout = BoxLayout(this, BoxLayout.Y_AXIS)
       add(

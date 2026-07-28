@@ -38,18 +38,21 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeCellRenderer
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
-import packetproxy.common.I18nString
-import packetproxy.gui.GUIHistory
+import packetproxy.CoreServiceExtension
+import packetproxy.CoreServices
+import packetproxy.common.*
+import packetproxy.gui.GUIMain
 import packetproxy.gui.GUIOptionSessionProfileDialog
 import packetproxy.gui.GUIRequestResponsePanel
-import packetproxy.http.SessionProfileAuthorizationExtractor
+import packetproxy.gui.GuiServiceExtension
+import packetproxy.http.*
 import packetproxy.model.Extension
 import packetproxy.model.Packets
 import packetproxy.model.SessionProfile
 import packetproxy.model.SessionProfiles
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class EndpointOverviewExtension : Extension() {
+class EndpointOverviewExtension : Extension(), CoreServiceExtension, GuiServiceExtension {
   private data class SessionComboEntry(val label: String, val profile: SessionProfile?) {
     override fun toString(): String = label
   }
@@ -63,6 +66,9 @@ class EndpointOverviewExtension : Extension() {
   private lateinit var sendButton: JButton
   private var endpoints: Collection<EndpointSummary> = emptyList()
   private var sessionProfileListener: PropertyChangeListener? = null
+  private lateinit var packets: Packets
+  private lateinit var sessionProfiles: SessionProfiles
+  private lateinit var guiMain: GUIMain
 
   init {
     setName("EndpointOverview")
@@ -75,7 +81,7 @@ class EndpointOverviewExtension : Extension() {
     initializeSessionControls()
     setupSelectionListener()
 
-    requestResponsePanel = GUIRequestResponsePanel(GUIHistory.getOwner())
+    requestResponsePanel = GUIRequestResponsePanel(guiMain)
     requestResponsePanel.setSessionProfileProvider {
       (sessionComboBox.selectedItem as? SessionComboEntry)?.profile
     }
@@ -101,15 +107,24 @@ class EndpointOverviewExtension : Extension() {
     return panel
   }
 
+  override fun initialize(coreServices: CoreServices) {
+    packets = coreServices.modelServices.packets
+    sessionProfiles = coreServices.modelServices.sessionProfiles
+  }
+
+  override fun initialize(guiMain: GUIMain) {
+    this.guiMain = guiMain
+  }
+
   private fun initializeSessionControls() {
     sessionComboBox = JComboBox()
-    sendButton = JButton(I18nString.get("Send"))
+    sendButton = JButton(i18nString("Send"))
     sendButton.isEnabled = false
 
     try {
       refreshSessionComboBox()
       sessionProfileListener = PropertyChangeListener { refreshSessionComboBox() }
-      SessionProfiles.getInstance().addPropertyChangeListener(sessionProfileListener!!)
+      sessionProfiles.addPropertyChangeListener(sessionProfileListener!!)
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
@@ -186,28 +201,28 @@ class EndpointOverviewExtension : Extension() {
     val toolbar = JPanel(BorderLayout())
 
     val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-    val scanButton = JButton(I18nString.get("Scan History"))
+    val scanButton = JButton(i18nString("Scan History"))
     scanButton.addActionListener { scanHistory() }
     buttonPanel.add(scanButton)
 
-    val clearButton = JButton(I18nString.get("Clear"))
+    val clearButton = JButton(i18nString("Clear"))
     clearButton.addActionListener { clearTree() }
     buttonPanel.add(clearButton)
 
-    buttonPanel.add(JLabel(I18nString.get("Session:")))
+    buttonPanel.add(JLabel(i18nString("Session:")))
     buttonPanel.add(sessionComboBox)
 
     sendButton.addActionListener { resendWithSelectedSession() }
     buttonPanel.add(sendButton)
 
-    val manageButton = JButton(I18nString.get("Manage..."))
+    val manageButton = JButton(i18nString("Manage..."))
     manageButton.addActionListener { openSessionManageDialog() }
     buttonPanel.add(manageButton)
 
     toolbar.add(buttonPanel, BorderLayout.WEST)
 
     val filterPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
-    filterPanel.add(JLabel(I18nString.get("Filter:")))
+    filterPanel.add(JLabel(i18nString("Filter:")))
     filterField = JTextField(20)
     filterField.document.addDocumentListener(
       object : DocumentListener {
@@ -232,9 +247,9 @@ class EndpointOverviewExtension : Extension() {
 
   private fun refreshSessionComboBox() {
     val selectedProfile = (sessionComboBox.selectedItem as? SessionComboEntry)?.profile
-    val entries = mutableListOf(SessionComboEntry(I18nString.get("(Original)"), null))
+    val entries = mutableListOf(SessionComboEntry(i18nString("(Original)"), null))
     try {
-      SessionProfiles.getInstance().queryAll().forEach { profile ->
+      sessionProfiles.queryAll().forEach { profile ->
         entries.add(SessionComboEntry(profile.name ?: "", profile))
       }
     } catch (e: Exception) {
@@ -263,12 +278,16 @@ class EndpointOverviewExtension : Extension() {
   private fun openSessionManageDialog() {
     try {
       val dlg =
-        GUIOptionSessionProfileDialog(GUIHistory.getOwner()) {
-          val selectedNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
-          val requestData =
-            selectedNode?.let { resolveSummary(it)?.latestRequestPacket?.getDecodedData() }
-          SessionProfileAuthorizationExtractor.extract(requestData ?: ByteArray(0))
-        }
+        GUIOptionSessionProfileDialog(
+          guiMain,
+          {
+            val selectedNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
+            val requestData =
+              selectedNode?.let { resolveSummary(it)?.latestRequestPacket?.getDecodedData() }
+            extract(requestData ?: ByteArray(0))
+          },
+          sessionProfiles,
+        )
       dlg.showDialog()
     } catch (e: Exception) {
       errWithStackTrace(e)
@@ -309,7 +328,7 @@ class EndpointOverviewExtension : Extension() {
   private fun scanHistory() {
     Thread {
         try {
-          val aggregated = EndpointAggregator.aggregateEndpoints(Packets.getInstance().queryAll())
+          val aggregated = aggregateEndpoints(packets.queryAll())
           SwingUtilities.invokeLater {
             endpoints = aggregated.values
             populateTree(endpoints)
@@ -325,7 +344,7 @@ class EndpointOverviewExtension : Extension() {
     val expandedKeys = collectExpandedKeys()
     val selectedKey = collectSelectedKey()
     val filtered = filterSummaries(summaries, filterField.text.trim())
-    treeModel.setRoot(EndpointTreeBuilder.build(filtered))
+    treeModel.setRoot(build(filtered))
     val root = treeModel.root as? DefaultMutableTreeNode ?: return
     tree.expandPath(TreePath(root))
     restoreExpandedKeys(expandedKeys)
@@ -342,14 +361,14 @@ class EndpointOverviewExtension : Extension() {
       if (path == rootPath) {
         continue
       }
-      EndpointTreeKeys.keyForPath(path)?.let { keys.add(it) }
+      keyForPath(path)?.let { keys.add(it) }
     }
     return keys
   }
 
   private fun collectSelectedKey(): String? {
     val selected = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return null
-    return EndpointTreeKeys.keyForPath(TreePath(selected.path))
+    return keyForPath(TreePath(selected.path))
   }
 
   private fun restoreExpandedKeys(expandedKeys: Set<String>) {
@@ -358,7 +377,7 @@ class EndpointOverviewExtension : Extension() {
     }
     val root = treeModel.root as? DefaultMutableTreeNode ?: return
     for (key in expandedKeys) {
-      EndpointTreeKeys.findPathByKey(root, key)?.let { tree.expandPath(it) }
+      findPathByKey(root, key)?.let { tree.expandPath(it) }
     }
   }
 
@@ -367,7 +386,7 @@ class EndpointOverviewExtension : Extension() {
       return
     }
     val root = treeModel.root as? DefaultMutableTreeNode ?: return
-    val path = EndpointTreeKeys.findPathByKey(root, selectedKey) ?: return
+    val path = findPathByKey(root, selectedKey) ?: return
     tree.selectionPath = path
     tree.scrollPathToVisible(path)
   }

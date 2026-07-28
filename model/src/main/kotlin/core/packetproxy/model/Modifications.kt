@@ -22,14 +22,12 @@ import java.beans.PropertyChangeSupport
 import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.MODIFICATIONS_UPDATED
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class Modifications private constructor() : PropertyChangeListener {
+class Modifications(private val database: Database) : PropertyChangeListener {
   private val pcs = PropertyChangeSupport(this)
 
-  private var database: Database = Database.getInstance()
   private var dao: Dao<Modification, Int> = database.createTable(Modification::class.java, this)
-  private var servers: Servers = Servers.getInstance()
   private var cache = DaoQueryCache<Modification>()
 
   init {
@@ -40,12 +38,10 @@ class Modifications private constructor() : PropertyChangeListener {
 
   fun addPropertyChangeListener(listener: PropertyChangeListener) {
     pcs.addPropertyChangeListener(listener)
-    servers.addPropertyChangeListener(listener)
   }
 
   fun removePropertyChangeListener(listener: PropertyChangeListener) {
     pcs.removePropertyChangeListener(listener)
-    servers.removePropertyChangeListener(listener)
   }
 
   @Throws(Exception::class)
@@ -179,13 +175,11 @@ class Modifications private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(Modification::class.java, this)
           cache.clear()
           firePropertyChange()
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(Modification::class.java, this)
           cache.clear()
         }
@@ -218,19 +212,6 @@ class Modifications private constructor() : PropertyChangeListener {
       database.dropTable(Modification::class.java)
       dao = database.createTable(Modification::class.java, this)
       cache.clear()
-    }
-  }
-
-  companion object {
-    private var instance: Modifications? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): Modifications {
-      if (instance == null) {
-        instance = Modifications()
-      }
-      return instance!!
     }
   }
 }

@@ -9,33 +9,32 @@ import javax.swing.JDialog
 import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.Extension
-import packetproxy.model.Extensions
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionExtensionsDialog(owner: JFrame) : JDialog(owner) {
-  private val cancel = JButton(I18nString.get("Cancel"))
-  private val save = JButton(I18nString.get("Save"))
+class GUIOptionExtensionsDialog(private val owner: JFrame) : JDialog(owner) {
+  private val cancel = JButton(i18nString("Cancel"))
+  private val save = JButton(i18nString("Save"))
   private val nameField = HintTextField("sample library")
   private val pathField = HintTextField("path/to/library.jar")
   private var extension: Extension? = null
 
   init {
-    title = I18nString.get("Setting")
+    title = i18nString("Setting")
     val rect = owner.bounds
     setBounds(rect.x + rect.width / 2 - 250, rect.y + rect.height / 2 - 250, 500, 500)
     val panel = JPanel()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-    panel.add(labeled(I18nString.get("Library Name"), nameField))
-    panel.add(labeled(I18nString.get("Library Path"), pathField))
+    panel.add(labeled(i18nString("Library Name"), nameField))
+    panel.add(labeled(i18nString("Library Path"), pathField))
     panel.add(buttons())
     (contentPane as Container).add(panel)
     save.addActionListener {
       try {
         val name = nameField.text
         if (name.isNotEmpty())
-          extension = Extensions.getInstance().loadExtension(name, pathField.text)
+          extension = owner.modelServices.extensions.loadExtension(name, pathField.text)
         dispose()
       } catch (e: Exception) {
         errWithStackTrace(e)

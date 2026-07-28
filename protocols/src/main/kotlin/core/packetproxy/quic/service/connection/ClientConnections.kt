@@ -8,13 +8,18 @@ import java.util.HashMap
 import java.util.Optional
 import java.util.concurrent.Executors
 import org.apache.commons.lang3.ArrayUtils
+import packetproxy.CertCacheManager
 import packetproxy.model.CAs.CA
 import packetproxy.quic.service.packet.QuicPacketParser
 import packetproxy.quic.value.ConnectionId
 import packetproxy.quic.value.ConnectionIdPair
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class ClientConnections(val listenPort: Int, private val ca: CA) {
+class ClientConnections(
+  val listenPort: Int,
+  private val ca: CA,
+  private val certCacheManager: CertCacheManager,
+) {
   private val connes = HashMap<ConnectionId, ClientConnection>()
   private val alreadyReceivedInitialSecrets = ArrayList<ConnectionId>()
   private val executor = Executors.newFixedThreadPool(2)
@@ -57,7 +62,7 @@ class ClientConnections(val listenPort: Int, private val ca: CA) {
     if (alreadyReceivedInitialSecrets.contains(initialSecret)) return Optional.empty()
     alreadyReceivedInitialSecrets.add(initialSecret)
     val pair = ConnectionIdPair.generateRandom()
-    val conn = ClientConnection(pair, initialSecret, socket, peer, ca, listenPort)
+    val conn = ClientConnection(pair, initialSecret, socket, peer, ca, certCacheManager, listenPort)
     connes[pair.srcConnId] = conn
     return Optional.of(conn)
   }

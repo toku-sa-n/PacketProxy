@@ -257,15 +257,15 @@ class Packet : PacketInfo {
   }
 
   @Throws(Exception::class)
-  fun getSummarizedRequest(): String {
+  fun getSummarizedRequest(summarizer: PacketSummarizer = NoOpPacketSummarizer()): String {
     if (getDirection() != Direction.CLIENT) return ""
-    return PacketSummarizers.get().summarizeRequest(encoder_name, null, this)
+    return summarizer.summarizeRequest(encoder_name, null, this)
   }
 
   @Throws(Exception::class)
-  fun getSummarizedResponse(): String {
+  fun getSummarizedResponse(summarizer: PacketSummarizer = NoOpPacketSummarizer()): String {
     if (getDirection() != Direction.SERVER) return ""
-    return PacketSummarizers.get().summarizeResponse(encoder_name, null, this)
+    return summarizer.summarizeResponse(encoder_name, null, this)
   }
 
   fun decode() {}

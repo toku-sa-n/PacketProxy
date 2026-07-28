@@ -1,17 +1,15 @@
 package packetproxy.gui
 
 import javax.swing.JComponent
-import javax.swing.JFrame
 import packetproxy.model.Packet
 
-class GUIPacket private constructor() {
-  private val owner: JFrame = GUIHistory.getOwner()
+class GUIPacket(private val main: GUIMain) {
   private lateinit var requestResponsePanel: GUIRequestResponsePanel
   private var showingPacket: Packet? = null
   private var showingResponsePacket: Packet? = null
 
   fun createPanel(): JComponent {
-    requestResponsePanel = GUIRequestResponsePanel(owner)
+    requestResponsePanel = GUIRequestResponsePanel(main)
     return requestResponsePanel.createPanel()
   }
 
@@ -84,17 +82,5 @@ class GUIPacket private constructor() {
       return showingResponsePacket == null && responsePacket == null
     }
     return showingResponsePacket?.getId() == responsePacket.getId()
-  }
-
-  companion object {
-    private var instance: GUIPacket? = null
-
-    @JvmStatic
-    fun getInstance(): GUIPacket {
-      if (instance == null) {
-        instance = GUIPacket()
-      }
-      return instance!!
-    }
   }
 }

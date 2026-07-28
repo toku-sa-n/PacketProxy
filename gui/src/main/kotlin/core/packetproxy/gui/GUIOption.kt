@@ -8,22 +8,18 @@ import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JComponent
-import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JSeparator
-import packetproxy.common.FontManager
-import packetproxy.common.I18nString
-import packetproxy.model.CAFactory
+import packetproxy.common.*
 import packetproxy.model.CAs.PacketProxyCAPerUser
-import packetproxy.model.InterceptOptions
-import packetproxy.util.Logging.err
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.err
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class GUIOption(private val owner: JFrame) {
+class GUIOption(private val owner: GUIMain) {
   fun createPanel(): JComponent {
     val panel = JPanel()
     panel.background = Color.WHITE
@@ -31,27 +27,27 @@ class GUIOption(private val owner: JFrame) {
     addSection(
       panel,
       "Listen Ports",
-      I18nString.get("Set listen port and server that packets are forwarded to."),
+      i18nString("Set listen port and server that packets are forwarded to."),
       GUIOptionListenPorts(owner).createPanel(),
     )
     addSection(
       panel,
       "Servers",
-      I18nString.get("Set server and encode module to be used to encode packets."),
+      i18nString("Set server and encode module to be used to encode packets."),
       GUIOptionServers(owner).createPanel(),
     )
     addSection(
       panel,
       "Hostname Resolutions",
-      I18nString.get("Set ip addr and server for DNS resolution."),
+      i18nString("Set ip addr and server for DNS resolution."),
       GUIOptionResolutions(owner).createPanel(),
     )
     panel.add(
-      element("Auto Modifications", I18nString.get("Set pattern for auto packet modification."))
+      element("Auto Modifications", i18nString("Set pattern for auto packet modification."))
     )
     panel.add(GUIOptionModifications(owner).createPanel())
     panel.add(
-      JLabel(I18nString.get("Hex calculator for binary pattern")).also {
+      JLabel(i18nString("Hex calculator for binary pattern")).also {
         it.alignmentX = Component.LEFT_ALIGNMENT
       }
     )
@@ -59,12 +55,12 @@ class GUIOption(private val owner: JFrame) {
     panel.add(separator())
     panel.add(element("Intercept Rules", ""))
     val interceptRule =
-      JCheckBox(I18nString.get("Use these intercept rules")).also { checkbox ->
-        checkbox.isSelected = InterceptOptions.getInstance().isEnabled()
+      JCheckBox(i18nString("Use these intercept rules")).also { checkbox ->
+        checkbox.isSelected = owner.modelServices.interceptOptions.isEnabled()
         checkbox.alignmentX = Component.LEFT_ALIGNMENT
         checkbox.addActionListener {
           try {
-            InterceptOptions.getInstance().setEnabled(checkbox.isSelected)
+            owner.modelServices.interceptOptions.setEnabled(checkbox.isSelected)
           } catch (e: Exception) {
             errWithStackTrace(e)
           }
@@ -76,13 +72,13 @@ class GUIOption(private val owner: JFrame) {
     addSection(
       panel,
       "Client Certificates",
-      I18nString.get("Set client certificate to be used on SSL/TLS."),
+      i18nString("Set client certificate to be used on SSL/TLS."),
       GUIOptionClientCertificate(owner).createPanel(),
     )
     addSection(
       panel,
-      I18nString.get("Session Profiles"),
-      I18nString.get(
+      i18nString("Session Profiles"),
+      i18nString(
         "Set Authorization header profiles for resending requests with different sessions."
       ),
       GUIOptionSessionProfile(owner).createPanel(),
@@ -90,7 +86,7 @@ class GUIOption(private val owner: JFrame) {
     addSection(
       panel,
       "SSL PassThrough",
-      I18nString.get(
+      i18nString(
         "Set HTTPS server that packets are forwarded to without analyzing. These settings are enabled only if 'HTTP_PROXY' type is used."
       ),
       GUIOptionSSLPassThrough(owner).createPanel(),
@@ -98,15 +94,13 @@ class GUIOption(private val owner: JFrame) {
     addSection(
       panel,
       "Private DNS server",
-      I18nString.get(
-        "Use private DNS server that resolves server name to the IP address of this pc."
-      ),
-      GUIOptionPrivateDNS().getPanel(),
+      i18nString("Use private DNS server that resolves server name to the IP address of this pc."),
+      GUIOptionPrivateDNS(owner.coreServices.privateDns, owner.modelServices.configs).getPanel(),
     )
     addSection(
       panel,
       "OpenVPN Server with Docker",
-      I18nString.get(
+      i18nString(
         "Use OpenVPN Server as Docker Container to proxy HTTP/HTTPS without DNS Spoofing."
       ),
       GUIOptionOpenVPN(owner).getPanel(),
@@ -114,8 +108,8 @@ class GUIOption(private val owner: JFrame) {
     addSection(
       panel,
       "Priority Order of HTTP Versions",
-      I18nString.get("Set order of priority between HTTP1 and HTTP2."),
-      GUIOptionHttp().createPanel(),
+      i18nString("Set order of priority between HTTP1 and HTTP2."),
+      GUIOptionHttp(owner.modelServices.configs).createPanel(),
     )
     panel.add(title("PacketProxy CA Certificates & Private Keys"))
     panel.add(createCaPanel())
@@ -123,20 +117,20 @@ class GUIOption(private val owner: JFrame) {
     addSection(
       panel,
       "Character encodings",
-      I18nString.get("Add/Remove character encodings to be used to display contents of packet."),
+      i18nString("Add/Remove character encodings to be used to display contents of packet."),
       GUIOptionCharSets(owner).createPanel(),
     )
     addSection(
       panel,
       "Extensions",
-      I18nString.get("Enable/Disable loaded extensions"),
+      i18nString("Enable/Disable loaded extensions"),
       GUIOptionExtensions(owner).createPanel(),
     )
     addSection(panel, "Fonts", "", GUIOptionFonts(owner).createPanel())
     addSection(
       panel,
       "Import/Export configs (Experimental)",
-      I18nString.get(
+      i18nString(
         "Import/Export configs by GET/POST http://localhost:32349/config with 'Authorization: [AccessToken]' header"
       ),
       GUIOptionHubServer(owner).createPanel(),
@@ -148,7 +142,7 @@ class GUIOption(private val owner: JFrame) {
     val caPanel = JPanel()
     caPanel.background = Color.WHITE
     caPanel.layout = BoxLayout(caPanel, BoxLayout.X_AXIS)
-    val exportable = CAFactory.queryExportable()
+    val exportable = owner.modelServices.caFactory.queryExportable()
     val caCombo = JComboBox<String>()
     exportable.forEach {
       caCombo.addItem(it.getUTF8Name())
@@ -156,21 +150,21 @@ class GUIOption(private val owner: JFrame) {
     }
     caCombo.maximumRowCount = exportable.size
     caCombo.maximumSize = Dimension(caCombo.preferredSize.width, caCombo.minimumSize.height)
-    val exportCertButton = JButton(I18nString.get("Export"))
+    val exportCertButton = JButton(i18nString("Export"))
     exportCertButton.addActionListener {
-      val ca = CAFactory.findByUTF8Name(caCombo.selectedItem as String).get()
+      val ca = owner.modelServices.caFactory.findByUTF8Name(caCombo.selectedItem as String).get()
       GUIOptionExportCertificateAndPrivateKeyDialog(owner, ca).showDialog()
     }
-    val regenerateCertButton = JButton(I18nString.get("Regenerate"))
+    val regenerateCertButton = JButton(i18nString("Regenerate"))
     regenerateCertButton.addActionListener {
       try {
         val name = caCombo.selectedItem.toString()
-        val ca = CAFactory.find(name).orElseThrow()
+        val ca = owner.modelServices.caFactory.find(name).orElseThrow()
         val option =
           JOptionPane.showConfirmDialog(
             owner,
-            String.format(I18nString.get("Regenerate %s?"), name),
-            String.format(I18nString.get("Regenerate CA certificate"), name),
+            String.format(i18nString("Regenerate %s?"), name),
+            String.format(i18nString("Regenerate CA certificate"), name),
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE,
           )
@@ -182,9 +176,11 @@ class GUIOption(private val owner: JFrame) {
         err("RegenerateCertButton Action Error: %s", exp.message)
       }
     }
-    val importCertButton = JButton(I18nString.get("Import another certificate and private key"))
+    val importCertButton = JButton(i18nString("Import another certificate and private key"))
     importCertButton.addActionListener {
-      val ca = CAFactory.findByUTF8Name("PacketProxy per-user CA").get() as PacketProxyCAPerUser
+      val ca =
+        owner.modelServices.caFactory.findByUTF8Name("PacketProxy per-user CA").get()
+          as PacketProxyCAPerUser
       GUIOptionImportCertificateAndPrivateKeyDialog(owner, ca).showDialog()
     }
     caPanel.add(caCombo)
@@ -222,7 +218,7 @@ class GUIOption(private val owner: JFrame) {
     JLabel(text).also {
       it.foreground = TITLE_FOREGROUND_COLOR
       it.background = Color.WHITE
-      it.font = FontManager.getInstance().getUICaptionFont()
+      it.font = owner.modelServices.fontManager.getUICaptionFont()
       it.maximumSize = Dimension(Short.MAX_VALUE.toInt(), it.minimumSize.height)
       it.alignmentX = Component.LEFT_ALIGNMENT
     }

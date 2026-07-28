@@ -34,8 +34,8 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.text.BadLocationException
 import javax.swing.text.Position
-import packetproxy.common.I18nString
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.common.*
+import packetproxy.util.errWithStackTrace
 
 class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
   private val fontFamilies =
@@ -148,7 +148,7 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
     val frame =
       if (parent is Frame) parent
       else SwingUtilities.getAncestorOfClass(Frame::class.java, parent) as? Frame
-    val dialog = JDialog(frame, I18nString.get("Font Setting"), true)
+    val dialog = JDialog(frame, i18nString("Font Setting"), true)
     val okAction = DialogAction(dialog, OK_OPTION, "OK")
     val cancelAction = DialogAction(dialog, CANCEL_OPTION, "Cancel")
     val buttons =

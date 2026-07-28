@@ -5,7 +5,7 @@ package packetproxy.extensions.randomness.test
 
 import org.apache.commons.math3.distribution.GammaDistribution
 import org.ejml.simple.SimpleMatrix
-import packetproxy.util.Logging.log
+import packetproxy.util.log
 
 class RankTest : RandomnessTest() {
   override fun run(e: Array<Array<Int>>): DoubleArray {

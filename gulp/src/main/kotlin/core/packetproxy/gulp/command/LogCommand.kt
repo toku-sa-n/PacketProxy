@@ -19,8 +19,8 @@ import packetproxy.gulp.CommandContext
 import packetproxy.gulp.ParsedCommand
 import packetproxy.util.Logging
 
-object LogCommand : Command {
+class LogCommand : Command {
   override suspend fun invoke(parsed: ParsedCommand, ctx: CommandContext) {
-    Logging.tailLog()
+    Logging().tailLog()
   }
 }

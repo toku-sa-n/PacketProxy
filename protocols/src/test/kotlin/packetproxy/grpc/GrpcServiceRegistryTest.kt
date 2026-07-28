@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class GrpcServiceRegistryTest {
+  private val store = GrpcServiceRegistryStore()
+
   private fun resource(classpathPath: String): File {
     val u =
       GrpcServiceRegistryTest::class.java.getResource(classpathPath)
@@ -31,7 +33,7 @@ class GrpcServiceRegistryTest {
 
   @Test
   fun mapsGrpcPathToInputOutput() {
-    val reg = GrpcServiceRegistryStore.getInstance().get(resource("proto/testsvc.desc"))
+    val reg = store.get(resource("proto/testsvc.desc"))
     val input = reg.getInputType("/pp.testsvc.Greeter/SayHello")
     val output = reg.getOutputType("/pp.testsvc.Greeter/SayHello")
     assertNotNull(input)
@@ -43,13 +45,13 @@ class GrpcServiceRegistryTest {
 
   @Test
   fun findMessageByName_nestedIndexing() {
-    val reg = GrpcServiceRegistryStore.getInstance().get(resource("proto/testsvc.desc"))
+    val reg = store.get(resource("proto/testsvc.desc"))
     assertNotNull(reg.findMessageByName("pp.testsvc.HelloRequest"))
   }
 
   @Test
   fun findMessageByName_nestedMessage_returnsDescriptor() {
-    val reg = GrpcServiceRegistryStore.getInstance().get(resource("proto/testsvc.desc"))
+    val reg = store.get(resource("proto/testsvc.desc"))
     val metadata = reg.findMessageByName("pp.testsvc.HelloRequest.Metadata")
     assertNotNull(metadata)
     assertEquals("Metadata", metadata!!.name)
@@ -57,7 +59,7 @@ class GrpcServiceRegistryTest {
 
   @Test
   fun findMessageByName_nestedMessageInAnotherType_returnsDescriptor() {
-    val reg = GrpcServiceRegistryStore.getInstance().get(resource("proto/testsvc.desc"))
+    val reg = store.get(resource("proto/testsvc.desc"))
     val errorInfo = reg.findMessageByName("pp.testsvc.HelloReply.ErrorInfo")
     assertNotNull(errorInfo)
     assertEquals("ErrorInfo", errorInfo!!.name)
@@ -65,7 +67,7 @@ class GrpcServiceRegistryTest {
 
   @Test
   fun findMessageByName_unknownNestedMessage_returnsNull() {
-    val reg = GrpcServiceRegistryStore.getInstance().get(resource("proto/testsvc.desc"))
+    val reg = store.get(resource("proto/testsvc.desc"))
     assertNull(reg.findMessageByName("pp.testsvc.HelloRequest.Unknown"))
   }
 }

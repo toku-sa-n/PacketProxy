@@ -9,8 +9,15 @@ import javax.swing.JTextPane
 import javax.swing.SwingUtilities
 import packetproxy.common.JsonSyntaxHighlighter
 
-class GUIJson : GUIHistoryPanel(), ExtendedTextPane.DataChangedListener {
-  private val rawText = RawTextPane()
+class GUIJson(private val owner: GUIMain) :
+  GUIHistoryPanel(), ExtendedTextPane.DataChangedListener {
+  private val rawText =
+    RawTextPane(
+      owner,
+      owner.modelServices.fontManager,
+      owner.modelServices.charSetUtility,
+      owner.coreServices.packetProxyUtility,
+    )
   private val jsonHighlighter: JsonSyntaxHighlighter
   private val textPanel: JScrollPane
   private val panel: JComponent

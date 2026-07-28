@@ -28,7 +28,7 @@ import packetproxy.quic.utils.Constants
 import packetproxy.quic.value.QuicMessage
 import packetproxy.quic.value.QuicMessages
 import packetproxy.quic.value.StreamId
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.rethrow
 
 open class StreamsReader(role: Constants.Role) {
   private val httpStreams: MutableMap<StreamId, HttpReadStream> = HashMap()

@@ -5,10 +5,9 @@ import java.beans.PropertyChangeListener
 import javax.swing.*
 import packetproxy.model.OneShotPacket
 import packetproxy.model.PropertyChangeEventType
-import packetproxy.model.ResenderPackets
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIResender private constructor() : PropertyChangeListener {
+class GUIResender(private val main: GUIMain) : PropertyChangeListener {
   private var mainPanel = JPanel()
   private var tabs = CloseButtonTabbedPane()
   private var indexes = mutableListOf<Int>()
@@ -16,14 +15,14 @@ class GUIResender private constructor() : PropertyChangeListener {
   init {
     mainPanel.layout = BoxLayout(mainPanel, BoxLayout.Y_AXIS)
     mainPanel.add(tabs)
-    ResenderPackets.getInstance().addPropertyChangeListener(this)
+    main.modelServices.resenderPackets.addPropertyChangeListener(this)
     loadResenderPackets()
   }
 
   fun createPanel(): JComponent = mainPanel
 
   fun addResends(packet: OneShotPacket) {
-    var panel = GUIPacketData()
+    var panel = GUIPacketData(main)
     panel.setOneShotPacket(packet)
     var index = (indexes.lastOrNull() ?: 0) + 1
     indexes.add(index)
@@ -42,14 +41,16 @@ class GUIResender private constructor() : PropertyChangeListener {
 
   private fun loadResenderPackets() {
     try {
-      ResenderPackets.getInstance()
+      main.modelServices.resenderPackets
         .queryAllOrdered()
         .groupBy { it.getResendsIndex() }
         .forEach { (index, packets) ->
           var panel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
           packets.forEach { packet ->
             panel.add(
-              GUIPacketData().apply { setOneShotPacket(packet.getOneShotPacket()) }.createPanel()
+              GUIPacketData(main)
+                .apply { setOneShotPacket(packet.getOneShotPacket()) }
+                .createPanel()
             )
           }
           indexes.add(index)
@@ -58,11 +59,5 @@ class GUIResender private constructor() : PropertyChangeListener {
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
-  }
-
-  companion object {
-    private var instance: GUIResender? = null
-
-    @JvmStatic fun getInstance(): GUIResender = instance ?: GUIResender().also { instance = it }
   }
 }

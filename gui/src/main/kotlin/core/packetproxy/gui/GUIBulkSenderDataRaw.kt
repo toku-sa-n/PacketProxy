@@ -5,10 +5,16 @@ import java.util.function.Consumer
 import javax.swing.*
 import packetproxy.util.SearchBox
 
-class GUIBulkSenderDataRaw(private var onChanged: Consumer<ByteArray>) :
+class GUIBulkSenderDataRaw(private val owner: GUIMain, private var onChanged: Consumer<ByteArray>) :
   RawTextPane.DataChangedListener {
-  private var rawText = RawTextPane()
-  private var searchBox = SearchBox()
+  private var rawText =
+    RawTextPane(
+      owner,
+      owner.modelServices.fontManager,
+      owner.modelServices.charSetUtility,
+      owner.coreServices.packetProxyUtility,
+    )
+  private var searchBox = SearchBox(owner.modelServices.fontManager)
   private var textPanel = JScrollPane(rawText)
   private var panel: JComponent =
     JPanel(BorderLayout()).apply {

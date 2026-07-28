@@ -40,7 +40,7 @@ class EndpointTreeBuilderTest {
   fun build_singleEndpoint_createsMethodNodeWithoutLeaf() {
     val summary = createSummary("GET", "https://example.com/api/users", "example.com")
 
-    val root = EndpointTreeBuilder.build(listOf(summary))
+    val root = build(listOf(summary))
     val hostNode = root.getChildAt(0) as DefaultMutableTreeNode
     val apiNode = hostNode.getChildAt(0) as DefaultMutableTreeNode
     val usersNode = apiNode.getChildAt(0) as DefaultMutableTreeNode
@@ -69,7 +69,7 @@ class EndpointTreeBuilderTest {
     val apiSummary = createSummary("GET", "https://example.com/api", "example.com")
     val usersSummary = createSummary("GET", "https://example.com/api/users", "example.com")
 
-    val root = EndpointTreeBuilder.build(listOf(apiSummary, usersSummary))
+    val root = build(listOf(apiSummary, usersSummary))
     val hostNode = root.getChildAt(0) as DefaultMutableTreeNode
     val apiNode = hostNode.getChildAt(0) as DefaultMutableTreeNode
 
@@ -93,7 +93,7 @@ class EndpointTreeBuilderTest {
     val getSummary = createSummary("GET", "https://example.com/api/users", "example.com")
     val postSummary = createSummary("POST", "https://example.com/api/users", "example.com")
 
-    val root = EndpointTreeBuilder.build(listOf(getSummary, postSummary))
+    val root = build(listOf(getSummary, postSummary))
     val hostNode = root.getChildAt(0) as DefaultMutableTreeNode
     val apiNode = hostNode.getChildAt(0) as DefaultMutableTreeNode
     val usersNode = apiNode.getChildAt(0) as DefaultMutableTreeNode
@@ -127,7 +127,7 @@ class EndpointTreeBuilderTest {
         statusCodes = setOf("404"),
       )
 
-    val root = EndpointTreeBuilder.build(listOf(firstSummary, secondSummary))
+    val root = build(listOf(firstSummary, secondSummary))
     val usersNode = findPathFolder(root, "/api/users")
 
     assertEquals(1, usersNode.childCount)
@@ -157,7 +157,7 @@ class EndpointTreeBuilderTest {
         statusCodes = setOf("404"),
       )
 
-    val root = EndpointTreeBuilder.build(listOf(noQuerySummary, querySummary))
+    val root = build(listOf(noQuerySummary, querySummary))
     val usersNode = findPathFolder(root, "/api/users")
 
     assertEquals(1, usersNode.childCount)
@@ -180,7 +180,7 @@ class EndpointTreeBuilderTest {
         statusCodes = setOf("200"),
       )
 
-    val root = EndpointTreeBuilder.build(listOf(summary))
+    val root = build(listOf(summary))
     val usersNode = findPathFolder(root, "/api/users")
     val methodNode = usersNode.getChildAt(0) as DefaultMutableTreeNode
     val method = methodNode.userObject as EndpointTreeMethod
@@ -200,7 +200,7 @@ class EndpointTreeBuilderTest {
         statusCodes = setOf("200"),
       )
 
-    val root = EndpointTreeBuilder.build(listOf(summary))
+    val root = build(listOf(summary))
     val method = findMethodNode(root)
 
     assertEquals("GET", method.displayName)
@@ -211,7 +211,7 @@ class EndpointTreeBuilderTest {
   fun build_noQueryUrl_showsMethodNameOnly() {
     val summary = createSummary("GET", "https://example.com/api/users", "example.com")
 
-    val root = EndpointTreeBuilder.build(listOf(summary))
+    val root = build(listOf(summary))
     val method = findMethodNode(root)
 
     assertEquals("GET", method.displayName)
@@ -219,7 +219,7 @@ class EndpointTreeBuilderTest {
   }
 
   private fun buildPathSegments(path: String): List<PathSegment> =
-    EndpointTreeBuilder.buildPathSegments(path)
+    packetproxy.extensions.endpointoverview.buildPathSegments(path)
 
   private fun createSummary(
     method: String,

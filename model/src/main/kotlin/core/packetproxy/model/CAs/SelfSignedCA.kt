@@ -15,13 +15,13 @@
  */
 package packetproxy.model.CAs
 
-import packetproxy.common.I18nString
+import packetproxy.common.*
 
 class SelfSignedCA : CA {
   companion object {
-    private const val name = "Temp CA (for SelfSigned Test)"
-    private val desc = I18nString.get("self sigend CA (for security test purpose)")
-    private const val keyStorePath = "/certificates/user.ks"
+    private val name = "Temp CA (for SelfSigned Test)"
+    private val desc = i18nString("self sigend CA (for security test purpose)")
+    private val keyStorePath = "/certificates/user.ks"
   }
 
   @Throws(Exception::class)

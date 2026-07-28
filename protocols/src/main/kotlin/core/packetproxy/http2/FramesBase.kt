@@ -34,8 +34,8 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import org.eclipse.jetty.http2.hpack.HpackDecoder
 import org.eclipse.jetty.http2.hpack.HpackEncoder
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameUtils
 import packetproxy.model.Packet
 
 abstract class FramesBase {
@@ -54,8 +54,7 @@ abstract class FramesBase {
 
   open fun getName(): String = "HTTP2 Frames Base"
 
-  @Throws(Exception::class)
-  fun checkDelimiter(data: ByteArray): Int = FrameUtils.checkDelimiter(data)
+  @Throws(Exception::class) fun checkDelimiter(data: ByteArray): Int = checkDelimiter(data)
 
   @Throws(Exception::class)
   fun clientRequestArrived(frames: ByteArray) {
@@ -71,9 +70,9 @@ abstract class FramesBase {
   open fun passThroughClientRequest(): ByteArray {
     val out = ByteArrayOutputStream()
     if (!alreadySentClientRequestPrologue) {
-      out.write(FrameUtils.PREFACE)
-      out.write(FrameUtils.SETTINGS)
-      out.write(FrameUtils.WINDOW_UPDATE)
+      out.write(PREFACE)
+      out.write(SETTINGS)
+      out.write(WINDOW_UPDATE)
       alreadySentClientRequestPrologue = true
     }
     for (frame in clientFrameManager.readControlFrames()) {
@@ -86,8 +85,8 @@ abstract class FramesBase {
   open fun passThroughServerResponse(): ByteArray {
     val out = ByteArrayOutputStream()
     if (!alreadySentClientRequestEpilogue) {
-      out.write(FrameUtils.SETTINGS)
-      out.write(FrameUtils.WINDOW_UPDATE)
+      out.write(SETTINGS)
+      out.write(WINDOW_UPDATE)
       alreadySentClientRequestEpilogue = true
     }
     for (frame in serverFrameManager.readControlFrames()) {

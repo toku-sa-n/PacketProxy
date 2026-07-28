@@ -23,13 +23,12 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.RESOLUTIONS_UPDATED
-import packetproxy.util.Logging.errWithStackTrace
 import packetproxy.util.PacketProxyUtility
+import packetproxy.util.errWithStackTrace
 
-class Resolutions private constructor() : PropertyChangeListener {
+class Resolutions(private val database: Database) : PropertyChangeListener {
   private val pcs = PropertyChangeSupport(this)
 
-  private var database: Database = Database.getInstance()
   private var dao: Dao<Resolution, Int> = database.createTable(Resolution::class.java, this)
   private var cache = DaoQueryCache<Resolution>()
 
@@ -50,7 +49,7 @@ class Resolutions private constructor() : PropertyChangeListener {
   @Throws(Exception::class)
   fun setResolutionsBySystem() {
     val fileLines: List<String>
-    if (PacketProxyUtility.getInstance().isWindows()) {
+    if (PacketProxyUtility().isWindows()) {
       fileLines = Files.readAllLines(Paths.get("C:\\Windows\\System32\\drivers\\etc\\hosts"))
     } else {
       fileLines = Files.readAllLines(Paths.get("/etc/hosts"))
@@ -175,32 +174,17 @@ class Resolutions private constructor() : PropertyChangeListener {
         }
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(Resolution::class.java, this)
           cache.clear()
           firePropertyChange()
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(Resolution::class.java, this)
           cache.clear()
         }
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  companion object {
-    private var instance: Resolutions? = null
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun getInstance(): Resolutions {
-      if (instance == null) {
-        instance = Resolutions()
-      }
-      return instance!!
     }
   }
 }

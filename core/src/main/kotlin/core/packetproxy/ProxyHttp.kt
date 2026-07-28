@@ -25,15 +25,20 @@ import packetproxy.common.SocketEndpoint
 import packetproxy.http.Http
 import packetproxy.http.Https
 import packetproxy.model.ListenPort
-import packetproxy.model.SSLPassThroughs
-import packetproxy.model.Servers
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.model.ModelServices
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class ProxyHttp
 @Throws(Exception::class)
-constructor(private val listen_socket: ServerSocket, private val listen_info: ListenPort) :
-  Proxy() {
+constructor(
+  private val listen_socket: ServerSocket,
+  private val listen_info: ListenPort,
+  private val duplexFactory: DuplexFactory,
+  private val endpointFactory: EndpointFactory,
+  private val modelServices: ModelServices,
+  private val https: Https,
+) : Proxy() {
   override fun run() {
     val clients = ArrayList<Socket>()
     while (!listen_socket.isClosed) {
@@ -64,11 +69,11 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
 
                   var serverName = http.serverName
                   if (serverName.matches(Regex("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"))) {
-                    serverName = Https.getCommonName(http.serverAddr)
+                    serverName = https.getCommonName(http.serverAddr)
                     log("Overwrite CN: %s --> %s", http.serverName, serverName)
                   }
 
-                  if (SSLPassThroughs.getInstance().includes(serverName, listen_info.getPort())) {
+                  if (modelServices.sslPassThroughs.includes(serverName, listen_info.getPort())) {
                     val server_e = SocketEndpoint(http.serverAddr)
                     val client_e = SocketEndpoint(client)
                     val d = DuplexAsync(client_e, server_e)
@@ -76,13 +81,17 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
                   } else {
                     val clientE: SSLSocketEndpoint
                     val serverE: SSLSocketEndpoint
-                    if (listen_info.getServer() != null) { // upstream proxyに接続する時
+                    if (
+                      listen_info.getServer(modelServices.database) != null
+                    ) { // upstream proxyに接続する時
                       val es =
-                        EndpointFactory.createBothSideSSLEndpoints(
+                        endpointFactory.createBothSideSSLEndpoints(
                           client,
                           null,
                           http.serverAddr,
-                          listen_info.getServer()!!.getAddress(),
+                          listen_info
+                            .getServer(modelServices.database)!!
+                            .getAddress(modelServices.resolutions),
                           http.serverName,
                           listen_info.getCA().get(),
                         )
@@ -90,7 +99,7 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
                       serverE = es[1]
                     } else { // 直接サーバに接続する時
                       val es =
-                        EndpointFactory.createBothSideSSLEndpoints(
+                        endpointFactory.createBothSideSSLEndpoints(
                           client,
                           null,
                           http.serverAddr,
@@ -106,26 +115,26 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
                       /* The client does not support ALPN. It seems to be an old HTTP client */
                       ALPN = "http/1.1"
                     }
-                    val serverSetting = Servers.getInstance().queryByAddress(http.serverAddr)
+                    val serverSetting = modelServices.servers.queryByAddress(http.serverAddr)
                     val encoderName = serverSetting?.getEncoder() ?: "HTTP"
-                    val d = DuplexFactory.createDuplexAsync(clientE, serverE, encoderName, ALPN)
+                    val d = duplexFactory.createDuplexAsync(clientE, serverE, encoderName, ALPN)
                     d.start()
                   }
 
                   client_loopback.finishWithoutClose()
                 } else if (http.isProxy) {
                   val client_e = SocketEndpoint(client)
-                  val next = listen_info.getServer()
+                  val next = listen_info.getServer(modelServices.database)
                   val server_e: Endpoint
 
                   if (next != null) { // connect to upstream proxy
-                    server_e = SocketEndpoint(next.getAddress())
+                    server_e = SocketEndpoint(next.getAddress(modelServices.resolutions))
                   } else {
                     http.disableProxyFormatUrl() // direct connect!
-                    val s = Servers.getInstance().queryByAddress(http.serverAddr)
+                    val s = modelServices.servers.queryByAddress(http.serverAddr)
                     server_e =
                       if (s != null) {
-                        EndpointFactory.createFromServer(s)
+                        endpointFactory.createFromServer(s)
                       } else {
                         SocketEndpoint(http.serverAddr)
                       }
@@ -184,12 +193,12 @@ constructor(private val listen_socket: ServerSocket, private val listen_info: Li
     server: Endpoint,
     input_data: ByteArray,
   ): ByteArray {
-    val s = Servers.getInstance().queryByAddress(server.getAddress())
+    val s = modelServices.servers.queryByAddress(server.getAddress())
     val duplex =
       if (s != null) {
-        DuplexFactory.createDuplexSync(client, server, s.getEncoder()!!, "http/1.1")
+        duplexFactory.createDuplexSync(client, server, s.getEncoder()!!, "http/1.1")
       } else {
-        DuplexFactory.createDuplexSync(client, server, "HTTP", "http/1.1")
+        duplexFactory.createDuplexSync(client, server, "HTTP", "http/1.1")
       }
     duplex.send(input_data)
     val output_data = duplex.receive()

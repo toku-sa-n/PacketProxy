@@ -5,7 +5,7 @@ import java.util.function.Consumer
 import javax.swing.*
 import packetproxy.model.OneShotPacket
 
-class GUIBulkSender private constructor() {
+class GUIBulkSender(private val owner: GUIMain) {
   private var sendPackets = mutableMapOf<Int, OneShotPacket>()
   private var sendPacketIds = mutableMapOf<Int, Int>()
   private var recvPackets = mutableMapOf<Int, OneShotPacket>()
@@ -92,14 +92,5 @@ class GUIBulkSender private constructor() {
       add(recvData.createPanel())
       alignmentX = Component.CENTER_ALIGNMENT
     }
-  }
-
-  companion object {
-    private var instance: GUIBulkSender? = null
-    private var owner: JFrame? = null
-
-    @JvmStatic fun getOwner() = owner
-
-    @JvmStatic fun getInstance(): GUIBulkSender = instance ?: GUIBulkSender().also { instance = it }
   }
 }

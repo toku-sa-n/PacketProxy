@@ -25,8 +25,8 @@ import packetproxy.http3.value.frame.GreaseFrame
 import packetproxy.http3.value.frame.HeadersFrame
 import packetproxy.quic.value.QuicMessage
 import packetproxy.quic.value.StreamId
-import packetproxy.util.Logging.log
-import packetproxy.util.Throwing.rethrow
+import packetproxy.util.log
+import packetproxy.util.rethrow
 
 open class HttpReadStream(streamId: StreamId) :
   Stream(streamId, StreamType.NoStreamType), ReadStream {

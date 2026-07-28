@@ -23,12 +23,11 @@ import java.util.concurrent.Executors
 import javax.swing.JOptionPane
 import packetproxy.common.Logger
 import packetproxy.model.Database.DatabaseMessage
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
-class Packets private constructor(restore: Boolean) : PropertyChangeListener {
+class Packets(private val database: Database, restore: Boolean) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
-  private var database = Database.getInstance()
   private var dao: Dao<Packet, Int> = database.createTable(Packet::class.java)
   private val executor = Executors.newSingleThreadExecutor()
 
@@ -161,7 +160,6 @@ class Packets private constructor(restore: Boolean) : PropertyChangeListener {
         DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          database = Database.getInstance()
           dao = database.createTable(Packet::class.java)
           val result =
             dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='packets'").firstResult[0]
@@ -174,7 +172,6 @@ class Packets private constructor(restore: Boolean) : PropertyChangeListener {
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          database = Database.getInstance()
           dao = database.createTable(Packet::class.java)
         }
       }
@@ -208,19 +205,5 @@ class Packets private constructor(restore: Boolean) : PropertyChangeListener {
     }
     database.dropTable(Packet::class.java)
     dao = database.createTable(Packet::class.java)
-  }
-
-  companion object {
-    private var instance: Packets? = null
-
-    @JvmStatic
-    fun getInstance(restore: Boolean): Packets {
-      if (instance == null) {
-        instance = Packets(restore)
-      }
-      return instance!!
-    }
-
-    @JvmStatic fun getInstance(): Packets = instance ?: throw Exception("Packets インスタンスが作成されていません。")
   }
 }

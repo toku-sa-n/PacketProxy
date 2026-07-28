@@ -11,9 +11,8 @@ import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
-import packetproxy.common.FontManager
-import packetproxy.common.I18nString
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.common.*
+import packetproxy.util.errWithStackTrace
 
 class GUIOptionFonts(private val owner: JFrame) {
   private lateinit var uiFontInfo: JTextField
@@ -21,24 +20,19 @@ class GUIOptionFonts(private val owner: JFrame) {
 
   fun createPanel(): JPanel {
     uiFontInfo = createFontInfo(true)
-    val uiButton = JButton(I18nString.get("choose..."))
+    val uiButton = JButton(i18nString("choose..."))
     uiButton.addMouseListener(fontListener(true, false))
-    val uiRestore = JButton(I18nString.get("restore default"))
+    val uiRestore = JButton(i18nString("restore default"))
     uiRestore.addMouseListener(fontListener(true, true))
     val uiPanel =
-      createRow(
-        I18nString.get("UI Font (need a reboot to apply):"),
-        uiFontInfo,
-        uiButton,
-        uiRestore,
-      )
+      createRow(i18nString("UI Font (need a reboot to apply):"), uiFontInfo, uiButton, uiRestore)
 
     fontInfo = createFontInfo(false)
-    val button = JButton(I18nString.get("choose..."))
+    val button = JButton(i18nString("choose..."))
     button.addMouseListener(fontListener(false, false))
-    val restore = JButton(I18nString.get("restore default"))
+    val restore = JButton(i18nString("restore default"))
     restore.addMouseListener(fontListener(false, true))
-    val fontPanel = createRow(I18nString.get("Data Font:"), fontInfo, button, restore)
+    val fontPanel = createRow(i18nString("Data Font:"), fontInfo, button, restore)
 
     val panel = JPanel()
     panel.background = Color.WHITE
@@ -51,7 +45,8 @@ class GUIOptionFonts(private val owner: JFrame) {
 
   private fun createFontInfo(isUi: Boolean): JTextField {
     val font =
-      if (isUi) FontManager.getInstance().getUIFont() else FontManager.getInstance().getFont()
+      if (isUi) owner.modelServices.fontManager.getUIFont()
+      else owner.modelServices.fontManager.getFont()
     val info = JTextField("${font.name} (size: ${font.size})")
     info.isEditable = false
     info.maximumSize = Dimension(Short.MAX_VALUE.toInt(), info.minimumSize.height)
@@ -62,7 +57,7 @@ class GUIOptionFonts(private val owner: JFrame) {
     object : MouseAdapter() {
       override fun mousePressed(e: MouseEvent) {
         try {
-          val manager = FontManager.getInstance()
+          val manager = owner.modelServices.fontManager
           if (restore) {
             if (isUi) manager.restoreUIFont() else manager.restoreFont()
           } else {

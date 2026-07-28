@@ -14,10 +14,3 @@
  * limitations under the License.
  */
 package packetproxy.common
-
-import java.awt.Frame
-
-/** GUI 本体フレームへの参照。vulchecker 等がダイアログ親を解決するために使う。 */
-object DialogParents {
-  @Volatile var mainFrame: Frame? = null
-}

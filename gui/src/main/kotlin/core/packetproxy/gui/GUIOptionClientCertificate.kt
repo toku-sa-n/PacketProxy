@@ -2,13 +2,12 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JFrame
 import packetproxy.model.ClientCertificate
-import packetproxy.model.ClientCertificates
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIOptionClientCertificate(owner: JFrame) : GUIOptionComponentBase<ClientCertificate>(owner) {
-  private val clientCertificates = ClientCertificates.getInstance()
+class GUIOptionClientCertificate(owner: GUIMain) :
+  GUIOptionComponentBase<ClientCertificate>(owner) {
+  private val clientCertificates = owner.modelServices.clientCertificates
   private val tableList = mutableListOf<ClientCertificate>()
 
   init {
@@ -73,7 +72,7 @@ class GUIOptionClientCertificate(owner: JFrame) : GUIOptionComponentBase<ClientC
       arrayOf<Any>(
         certificate.isEnabled(),
         certificate.getType()!!.getText(),
-        certificate.getServerName(),
+        certificate.getServerName(owner.modelServices.database),
         certificate.getSubject() ?: "",
         certificate.getIssuer() ?: "",
       )

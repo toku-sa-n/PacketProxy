@@ -13,9 +13,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
-import packetproxy.util.Logging.log
+import packetproxy.model.Configs
+import packetproxy.util.log
 
-class UpdateConfigTool : AuthenticatedMCPTool() {
+class UpdateConfigTool(configs: Configs) : AuthenticatedMCPTool(configs) {
 
   private val gson = Gson()
   private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")

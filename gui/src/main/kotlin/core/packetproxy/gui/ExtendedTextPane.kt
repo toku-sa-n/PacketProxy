@@ -33,10 +33,14 @@ import packetproxy.common.FontManager
 import packetproxy.common.Range
 import packetproxy.common.Utils
 import packetproxy.util.CharSetUtility
-import packetproxy.util.Logging.errWithStackTrace
 import packetproxy.util.PacketProxyUtility
+import packetproxy.util.errWithStackTrace
 
-abstract class ExtendedTextPane : PlainTextCopyTextPane() {
+abstract class ExtendedTextPane(
+  protected val fontManager: FontManager,
+  protected val charSetUtility: CharSetUtility,
+  protected val packetProxyUtility: PacketProxyUtility,
+) : PlainTextCopyTextPane() {
   private var data: ByteArray? = null
   private var showAll = false
   private val listenerList = EventListenerList()
@@ -55,7 +59,7 @@ abstract class ExtendedTextPane : PlainTextCopyTextPane() {
 
   init {
     editorKit = WrapEditorKit(ByteArray(0))
-    font = FontManager.getInstance().getFont()
+    font = fontManager.getFont()
     document.addDocumentListener(
       object : DocumentListener {
         override fun insertUpdate(event: DocumentEvent) {
@@ -145,17 +149,16 @@ abstract class ExtendedTextPane : PlainTextCopyTextPane() {
 
   @Throws(Exception::class)
   fun setData(data: ByteArray, trimming: Boolean) {
-    font = FontManager.getInstance().getFont()
+    font = fontManager.getFont()
     this.data = data
     if (
       trimming &&
         (data.size > TEXT_TRIMMING_SIZE ||
-          (PacketProxyUtility.getInstance().isBinaryData(data, BINARY_TRIMMING_SIZE) &&
+          (packetProxyUtility.isBinaryData(data, BINARY_TRIMMING_SIZE) &&
             data.size > BINARY_TRIMMING_SIZE))
     ) {
       showAll = false
       var head = data.copyOfRange(0, DEFAULT_SHOW_SIZE)
-      var charSetUtility = CharSetUtility.getInstance()
       if (charSetUtility.isAuto()) {
         charSetUtility.setGuessedCharSet(getData())
       }

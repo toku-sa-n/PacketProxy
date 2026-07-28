@@ -171,11 +171,13 @@ class ClientCertificate {
     this.enabled = false
   }
 
-  @Throws(Exception::class) fun getServer(): Server? = Servers.getInstance().query(this.serverId)
+  @Throws(Exception::class)
+  fun getServer(database: Database): Server? =
+    database.createTable(Server::class.java).queryForId(this.serverId)
 
   @Throws(Exception::class)
-  fun getServerName(): String {
-    val server = Servers.getInstance().query(this.serverId)
+  fun getServerName(database: Database): String {
+    val server = getServer(database)
     return if (server != null) server.toString() else ""
   }
 

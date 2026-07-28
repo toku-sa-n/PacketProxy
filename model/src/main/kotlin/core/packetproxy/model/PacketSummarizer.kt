@@ -21,22 +21,8 @@ interface PacketSummarizer {
   fun summarizeResponse(encoderName: String?, alpn: String?, packet: Packet): String
 }
 
-object PacketSummarizers {
-  private val noop =
-    object : PacketSummarizer {
-      override fun summarizeRequest(encoderName: String?, alpn: String?, packet: Packet): String =
-        ""
+class NoOpPacketSummarizer : PacketSummarizer {
+  override fun summarizeRequest(encoderName: String?, alpn: String?, packet: Packet): String = ""
 
-      override fun summarizeResponse(encoderName: String?, alpn: String?, packet: Packet): String =
-        ""
-    }
-
-  @Volatile private var instance: PacketSummarizer = noop
-
-  @JvmStatic fun get(): PacketSummarizer = instance
-
-  @JvmStatic
-  fun set(summarizer: PacketSummarizer) {
-    instance = summarizer
-  }
+  override fun summarizeResponse(encoderName: String?, alpn: String?, packet: Packet): String = ""
 }

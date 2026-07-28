@@ -7,16 +7,16 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
-import packetproxy.common.I18nString
+import packetproxy.common.*
 import packetproxy.model.Packet
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
-class GUIDataAll {
+class GUIDataAll(private val owner: GUIMain) {
   private val mainPanel = JPanel(GridLayout(1, 4))
-  private val receivedText = createTextPane(I18nString.get("Received"))
-  private val decodedText = createTextPane(I18nString.get("Decoded"))
-  private val modifiedText = createTextPane(I18nString.get("Modified"))
-  private val sentText = createTextPane(I18nString.get("Encoded"))
+  private val receivedText = createTextPane(i18nString("Received"))
+  private val decodedText = createTextPane(i18nString("Decoded"))
+  private val modifiedText = createTextPane(i18nString("Modified"))
+  private val sentText = createTextPane(i18nString("Encoded"))
 
   fun createPanel(): JComponent = mainPanel
 
@@ -36,7 +36,13 @@ class GUIDataAll {
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     val label = JLabel(labelName)
     label.alignmentX = 0.5f
-    val text = RawTextPane()
+    val text =
+      RawTextPane(
+        owner,
+        owner.modelServices.fontManager,
+        owner.modelServices.charSetUtility,
+        owner.coreServices.packetProxyUtility,
+      )
     text.isEditable = false
     panel.add(label)
     val scroll = JScrollPane(text)

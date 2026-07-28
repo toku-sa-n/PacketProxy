@@ -29,7 +29,7 @@ class SessionProfileAuthorizationExtractorTest {
           "\r\n")
         .toByteArray()
 
-    assertEquals("Bearer test-token", SessionProfileAuthorizationExtractor.extract(request))
+    assertEquals("Bearer test-token", extract(request))
   }
 
   @Test
@@ -38,11 +38,11 @@ class SessionProfileAuthorizationExtractorTest {
       ("GET /api/users HTTP/1.1\r\n" + "Host: example.com\r\n" + "Content-Length: 0\r\n" + "\r\n")
         .toByteArray()
 
-    assertEquals("", SessionProfileAuthorizationExtractor.extract(request))
+    assertEquals("", extract(request))
   }
 
   @Test
   fun extract_withNonHttpData_returnsEmptyString() {
-    assertEquals("", SessionProfileAuthorizationExtractor.extract(byteArrayOf(0x00, 0x01, 0x02)))
+    assertEquals("", extract(byteArrayOf(0x00, 0x01, 0x02)))
   }
 }

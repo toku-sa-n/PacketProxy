@@ -23,15 +23,18 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class SessionProfilesTest {
+  private lateinit var profiles: SessionProfiles
+
   @BeforeEach
   fun setUp() {
     val tempDb = Files.createTempFile("session_profiles_test", ".sqlite3")
-    Database.getInstance().openAt(tempDb.toString())
+    val database = Database()
+    database.openAt(tempDb.toString())
+    profiles = SessionProfiles(database)
   }
 
   @Test
   fun queryByName_returnsProfileWhenExists() {
-    val profiles = SessionProfiles.getInstance()
     val profile = SessionProfile("userA", "Bearer token-a")
     profiles.create(profile)
 
@@ -42,14 +45,11 @@ class SessionProfilesTest {
 
   @Test
   fun queryByName_returnsNullWhenMissing() {
-    val profiles = SessionProfiles.getInstance()
     assertNull(profiles.queryByName("missing"))
   }
 
   @Test
   fun createQueryUpdateDelete() {
-    val profiles = SessionProfiles.getInstance()
-
     val profile = SessionProfile("userA", "Bearer token-a")
     profiles.create(profile)
 

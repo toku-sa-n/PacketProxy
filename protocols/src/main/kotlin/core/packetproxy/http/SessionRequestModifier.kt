@@ -17,38 +17,35 @@ package packetproxy.http
 
 import packetproxy.model.SessionProfile
 
-object SessionRequestModifier {
-  @JvmStatic
-  fun apply(decodedBytes: ByteArray, profile: SessionProfile?): ByteArray {
-    if (profile == null) {
-      return decodedBytes
-    }
-
-    if (!HttpHeader.isHTTPHeader(decodedBytes)) {
-      return decodedBytes
-    }
-
-    try {
-      val http = Http.create(decodedBytes)
-      if (!http.isRequest) {
-        return decodedBytes
-      }
-
-      applyAuthorization(http, profile.authorization)
-      return http.toByteArray()
-    } catch (_: Exception) {
-      return decodedBytes
-    }
+fun apply(decodedBytes: ByteArray, profile: SessionProfile?): ByteArray {
+  if (profile == null) {
+    return decodedBytes
   }
 
-  private fun applyAuthorization(http: Http, authorization: String?) {
-    if (authorization == null) {
-      return
-    }
-    if (authorization.isEmpty()) {
-      http.removeHeader("Authorization")
-      return
-    }
-    http.updateHeader("Authorization", authorization)
+  if (!HttpHeader.isHTTPHeader(decodedBytes)) {
+    return decodedBytes
   }
+
+  try {
+    val http = Http.create(decodedBytes)
+    if (!http.isRequest) {
+      return decodedBytes
+    }
+
+    applyAuthorization(http, profile.authorization)
+    return http.toByteArray()
+  } catch (_: Exception) {
+    return decodedBytes
+  }
+}
+
+private fun applyAuthorization(http: Http, authorization: String?) {
+  if (authorization == null) {
+    return
+  }
+  if (authorization.isEmpty()) {
+    http.removeHeader("Authorization")
+    return
+  }
+  http.updateHeader("Authorization", authorization)
 }

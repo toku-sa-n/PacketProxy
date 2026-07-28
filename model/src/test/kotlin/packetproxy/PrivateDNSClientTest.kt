@@ -20,80 +20,81 @@ class PrivateDNSClientTest {
   @Test
   fun 成功するケース() {
     assertTrue(
-      PrivateDNSClient.dnsLoopingFromHostsLines(
-        listOf("127.0.0.1 aaa aaa.example.com # for test"),
-        "aaa.example.com",
-      )
+      PrivateDNSClient()
+        .dnsLoopingFromHostsLines(
+          listOf("127.0.0.1 aaa aaa.example.com # for test"),
+          "aaa.example.com",
+        )
     )
   }
 
   @Test
   fun 成功するケース2() {
     assertTrue(
-      PrivateDNSClient.dnsLoopingFromHostsLines(
-        listOf("2.3.4.5 aaa bbb.example.com", "127.0.0.1 aaa aaa.example.com"),
-        "aaa.example.com",
-      )
+      PrivateDNSClient()
+        .dnsLoopingFromHostsLines(
+          listOf("2.3.4.5 aaa bbb.example.com", "127.0.0.1 aaa aaa.example.com"),
+          "aaa.example.com",
+        )
     )
   }
 
   @Test
   fun 成功するケース3() {
     assertTrue(
-      PrivateDNSClient.dnsLoopingFromHostsLines(
-        listOf(
-          " # this is a comment.",
-          "# 2.3.4.5 aaa bbb.example.com",
-          "127.0.0.1 aaa aaa.example.com",
-          " # 3.3.3.3 aaa ccc.example.com",
-        ),
-        "aaa.example.com",
-      )
+      PrivateDNSClient()
+        .dnsLoopingFromHostsLines(
+          listOf(
+            " # this is a comment.",
+            "# 2.3.4.5 aaa bbb.example.com",
+            "127.0.0.1 aaa aaa.example.com",
+            " # 3.3.3.3 aaa ccc.example.com",
+          ),
+          "aaa.example.com",
+        )
     )
   }
 
   @Test
   fun 失敗するケース() {
     assertFalse(
-      PrivateDNSClient.dnsLoopingFromHostsLines(
-        listOf("127.0.0.2 aaa aaa.example.com # for test"),
-        "aaa.example.com",
-      )
+      PrivateDNSClient()
+        .dnsLoopingFromHostsLines(
+          listOf("127.0.0.2 aaa aaa.example.com # for test"),
+          "aaa.example.com",
+        )
     )
   }
 
   @Test
   fun 失敗するケース2() {
     assertFalse(
-      PrivateDNSClient.dnsLoopingFromHostsLines(
-        listOf("# 127.0.0.2 aaa aaa.example.com"),
-        "aaa.example.com",
-      )
+      PrivateDNSClient()
+        .dnsLoopingFromHostsLines(listOf("# 127.0.0.2 aaa aaa.example.com"), "aaa.example.com")
     )
   }
 
   @Test
   fun 失敗するケース3() {
     assertFalse(
-      PrivateDNSClient.dnsLoopingFromHostsLines(
-        listOf("# 127.0.0.2 aaa bbb.example.com"),
-        "aaa.example.com",
-      )
+      PrivateDNSClient()
+        .dnsLoopingFromHostsLines(listOf("# 127.0.0.2 aaa bbb.example.com"), "aaa.example.com")
     )
   }
 
   @Test
   fun 失敗するケース4() {
     assertFalse(
-      PrivateDNSClient.dnsLoopingFromHostsLines(
-        listOf(
-          " # this is a comment.",
-          "# 2.3.4.5 aaa bbb.example.com",
-          "127.0.0.1 aaa ddd.example.com",
-          " # 3.3.3.3 aaa ccc.example.com",
-        ),
-        "aaa.example.com",
-      )
+      PrivateDNSClient()
+        .dnsLoopingFromHostsLines(
+          listOf(
+            " # this is a comment.",
+            "# 2.3.4.5 aaa bbb.example.com",
+            "127.0.0.1 aaa ddd.example.com",
+            " # 3.3.3.3 aaa ccc.example.com",
+          ),
+          "aaa.example.com",
+        )
     )
   }
 
@@ -105,7 +106,7 @@ class PrivateDNSClientTest {
       ResolverConfig.setConfigProviders(listOf(provider))
       ResolverConfig.refresh()
       provider.setServer("8.8.8.8")
-      assertEquals("8.8.8.8", PrivateDNSClient.getCurrentSystemDnsServerAddress())
+      assertEquals("8.8.8.8", PrivateDNSClient().getCurrentSystemDnsServerAddress())
     } finally {
       ResolverConfig.setConfigProviders(originalProviders)
       ResolverConfig.refresh()

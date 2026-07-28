@@ -26,9 +26,8 @@ import javax.swing.JButton
 import javax.swing.JDialog
 import javax.swing.JLabel
 import javax.swing.JPanel
-import packetproxy.common.DialogParents
 import packetproxy.common.TokenHttpServer
-import packetproxy.util.Logging.errWithStackTrace
+import packetproxy.util.errWithStackTrace
 
 open class JWTSignWithAppleOtherTokenGenerator : Generator() {
   override fun getName(): String = "他サービスのApple id_tokenと入れ替え"
@@ -44,17 +43,12 @@ open class JWTSignWithAppleOtherTokenGenerator : Generator() {
     this.tokenFromBrowser = ""
     this.cancelClicked = false
 
-    val dlg = JDialog(DialogParents.mainFrame)
+    val dlg = JDialog()
 
-    val rect = DialogParents.mainFrame!!.bounds
     val width = 300
     val height = 150
-    dlg.setBounds(
-      rect.x + rect.width / 2 - width / 2,
-      rect.y + rect.height / 2 - height / 2,
-      width,
-      height,
-    ) /* ド真ん中 */
+    dlg.setSize(width, height)
+    dlg.setLocationRelativeTo(null)
 
     val labels = JPanel()
     labels.layout = BoxLayout(labels, BoxLayout.X_AXIS)
@@ -114,15 +108,10 @@ open class JWTSignWithAppleOtherTokenGenerator : Generator() {
       throw Exception("cancel")
     }
 
-    DialogParents.mainFrame!!.isAlwaysOnTop = true
-    DialogParents.mainFrame!!.isVisible = true
-
     // Need to wait for the server to finish sending the response data before
     // exiting
     Thread.sleep(100)
     server!!.stop()
-
-    DialogParents.mainFrame!!.isAlwaysOnTop = false
 
     return tokenFromBrowser
   }

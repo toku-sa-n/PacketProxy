@@ -22,18 +22,16 @@ import org.eclipse.jetty.http.HttpFields
 import org.eclipse.jetty.http2.hpack.HpackEncoder
 import packetproxy.common.UniqueID
 import packetproxy.http.Http
+import packetproxy.http2.frames.*
 import packetproxy.http2.frames.DataFrame
 import packetproxy.http2.frames.Frame
-import packetproxy.http2.frames.FrameUtils
 import packetproxy.http2.frames.HeadersFrame
 import packetproxy.model.Packet
 
-open class Grpc : FramesBase {
+open class Grpc(private val uniqueId: UniqueID) : FramesBase() {
   private val clientStreamManager = StreamManager()
   private val serverStreamManager = StreamManager()
   private val groupMap: MutableMap<Long, Long> = HashMap()
-
-  @Throws(Exception::class) constructor() : super()
 
   override fun getName(): String = "gRPC"
 
@@ -55,7 +53,7 @@ open class Grpc : FramesBase {
       }
       if ((frame.flags and 0x01) > 0) {
         val stream = streamManager.read(frame.streamId)
-        return FrameUtils.toByteArray(stream!!)
+        return toByteArray(stream!!)
       }
     }
     return null
@@ -75,7 +73,7 @@ open class Grpc : FramesBase {
     val outData = ByteArrayOutputStream()
     var httpHeaderSums: Http? = null
 
-    for (frame in FrameUtils.parseFrames(frames)) {
+    for (frame in parseFrames(frames)) {
       if (frame is HeadersFrame) {
         val http = Http.create(frame.getHttp())
         if (httpHeaderSums == null) {
@@ -175,7 +173,7 @@ open class Grpc : FramesBase {
       if (groupMap.containsKey(streamId)) {
         packet.setGroup(groupMap[streamId]!!)
       } else {
-        val groupId = UniqueID.getInstance().createId()
+        val groupId = uniqueId.createId()
         groupMap[streamId] = groupId
         packet.setGroup(groupId)
       }

@@ -17,7 +17,7 @@ package packetproxy.http2
 
 import org.apache.commons.codec.binary.Hex
 import org.junit.jupiter.api.Test
-import packetproxy.http2.frames.FrameUtils
+import packetproxy.http2.frames.*
 import packetproxy.util.Logging
 
 class FrameManagerTest {
@@ -45,7 +45,7 @@ class FrameManagerTest {
   fun parseRequestFramesTest() {
     val h2 = FrameManager()
     h2.write(settingsFrame)
-    for (frame in FrameUtils.parseFrames(requestFrames)) {
+    for (frame in parseFrames(requestFrames)) {
       Logging.log(frame.toString())
     }
   }
@@ -55,7 +55,7 @@ class FrameManagerTest {
   fun parseResponseFramesTest() {
     val h2 = FrameManager()
     h2.write(settingsFrame)
-    for (frame in FrameUtils.parseFrames(responseFrames)) {
+    for (frame in parseFrames(responseFrames)) {
       Logging.log(frame.toString())
     }
   }

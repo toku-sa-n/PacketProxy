@@ -24,7 +24,7 @@ import packetproxy.http2.frames.Frame
 import packetproxy.http2.frames.SettingsFrame
 import packetproxy.http2.frames.SettingsFrame.SettingsFrameType
 import packetproxy.http2.frames.WindowUpdateFrame
-import packetproxy.util.Logging.err
+import packetproxy.util.err
 
 open class FlowControlManager {
   private val flows: MutableMap<Int, FlowControl> = HashMap()

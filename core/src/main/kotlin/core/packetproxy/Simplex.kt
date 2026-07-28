@@ -27,8 +27,8 @@ import java.util.concurrent.TimeoutException
 import javax.net.ssl.SSLException
 import javax.swing.event.EventListenerList
 import org.apache.commons.lang3.ArrayUtils
-import packetproxy.util.Logging.errWithStackTrace
-import packetproxy.util.Logging.log
+import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 internal open class Simplex
 @Throws(Exception::class)
