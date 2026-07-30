@@ -71,6 +71,8 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
   private lateinit var guiVulCheckHelper: GUIVulCheckHelper
   private lateinit var interceptModel: InterceptModel
   private val appVersion = AppVersion()
+  private val lazyTabBuilders = HashMap<Int, () -> JComponent>()
+  private val initializedTabs = HashSet<Int>()
 
   enum class Panes {
     HISTORY,
@@ -133,13 +135,16 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
 
       SwingUtilities.updateComponentTreeUI(tabbedPane)
       tabbedPane.addTab(getPaneString(Panes.HISTORY), guiHistory.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.INTERCEPT), guiIntercept.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.RESENDER), guiResender.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.VULCHECKHELPER), guiVulCheckHelper.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.BULKSENDER), guiBulkSender.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.EXTENSIONS), guiExtensions.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.OPTIONS), guiOption.createPanel())
-      tabbedPane.addTab(getPaneString(Panes.LOG), coreServices.logging.createLogPanelInternal())
+      initializedTabs.add(Panes.HISTORY.ordinal)
+      tabbedPane.addTab(getPaneString(Panes.INTERCEPT), JPanel())
+      tabbedPane.addTab(getPaneString(Panes.RESENDER), JPanel())
+      tabbedPane.addTab(getPaneString(Panes.VULCHECKHELPER), JPanel())
+      tabbedPane.addTab(getPaneString(Panes.BULKSENDER), JPanel())
+      tabbedPane.addTab(getPaneString(Panes.EXTENSIONS), JPanel())
+      tabbedPane.addTab(getPaneString(Panes.OPTIONS), JPanel())
+      tabbedPane.addTab(getPaneString(Panes.LOG), JPanel())
+      registerLazyTabs()
+      tabbedPane.addChangeListener { initializeTab(tabbedPane.selectedIndex) }
 
       contentPane.add(tabbedPane, BorderLayout.CENTER)
 
@@ -155,6 +160,7 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
         }
       )
       guiHistory.updateAllAsync()
+      initializeTab(Panes.INTERCEPT.ordinal)
     } catch (e: Exception) {
       errWithStackTrace(e)
       errWithStackTrace(e)
@@ -362,5 +368,24 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
 
   companion object {
     private val serialVersionUID = 1L
+  }
+
+  private fun registerLazyTabs() {
+    lazyTabBuilders[Panes.INTERCEPT.ordinal] = { guiIntercept.createPanel() }
+    lazyTabBuilders[Panes.RESENDER.ordinal] = { guiResender.createPanel() }
+    lazyTabBuilders[Panes.VULCHECKHELPER.ordinal] = { guiVulCheckHelper.createPanel() }
+    lazyTabBuilders[Panes.BULKSENDER.ordinal] = { guiBulkSender.createPanel() }
+    lazyTabBuilders[Panes.EXTENSIONS.ordinal] = { guiExtensions.createPanel() }
+    lazyTabBuilders[Panes.OPTIONS.ordinal] = { guiOption.createPanel() }
+    lazyTabBuilders[Panes.LOG.ordinal] = { coreServices.logging.createLogPanelInternal() }
+  }
+
+  private fun initializeTab(index: Int) {
+    if (initializedTabs.contains(index)) {
+      return
+    }
+    val builder = lazyTabBuilders[index] ?: return
+    tabbedPane.setComponentAt(index, builder())
+    initializedTabs.add(index)
   }
 }

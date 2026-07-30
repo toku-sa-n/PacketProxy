@@ -4,7 +4,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.util.ArrayList
-import java.util.HashMap
+import java.util.LinkedHashMap
 import java.util.Optional
 import java.util.concurrent.Executors
 import org.apache.commons.lang3.ArrayUtils
@@ -20,7 +20,7 @@ class ClientConnections(
   private val ca: CA,
   private val certCacheManager: CertCacheManager,
 ) {
-  private val connes = HashMap<ConnectionId, ClientConnection>()
+  private val connes = LinkedHashMap<ConnectionId, ClientConnection>()
   private val alreadyReceivedInitialSecrets = ArrayList<ConnectionId>()
   private val executor = Executors.newFixedThreadPool(2)
   val socket: DatagramSocket =
@@ -60,10 +60,14 @@ class ClientConnections(
   @Throws(Exception::class)
   fun create(initialSecret: ConnectionId, peer: InetSocketAddress): Optional<ClientConnection> {
     if (alreadyReceivedInitialSecrets.contains(initialSecret)) return Optional.empty()
+    if (alreadyReceivedInitialSecrets.size >= MAX_INITIAL_SECRET_HISTORY) {
+      alreadyReceivedInitialSecrets.removeAt(0)
+    }
     alreadyReceivedInitialSecrets.add(initialSecret)
     val pair = ConnectionIdPair.generateRandom()
     val conn = ClientConnection(pair, initialSecret, socket, peer, ca, certCacheManager, listenPort)
     connes[pair.srcConnId] = conn
+    pruneConnectionCache()
     return Optional.of(conn)
   }
 
@@ -74,5 +78,18 @@ class ClientConnections(
     socket.receive(p)
     p.data = ArrayUtils.subarray(p.data, 0, p.length)
     return p
+  }
+
+  private fun pruneConnectionCache() {
+    while (connes.size > MAX_CONNECTION_CACHE) {
+      val oldest = connes.entries.firstOrNull() ?: break
+      oldest.value.close()
+      connes.remove(oldest.key)
+    }
+  }
+
+  companion object {
+    private const val MAX_CONNECTION_CACHE = 4096
+    private const val MAX_INITIAL_SECRET_HISTORY = 8192
   }
 }

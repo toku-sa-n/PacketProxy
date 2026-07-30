@@ -16,7 +16,7 @@
 package packetproxy.model
 
 class DaoQueryCache<T> {
-  private var queryCache = HashMap<String, HashMap<Int, List<T>>>()
+  private var queryCache = HashMap<String, LinkedHashMap<Int, List<T>>>()
 
   fun clear() {
     queryCache = HashMap()
@@ -32,6 +32,21 @@ class DaoQueryCache<T> {
   }
 
   fun set(type: String, query: Any, results: List<T>) {
-    queryCache.getOrPut(type) { HashMap() }[query.hashCode()] = results
+    val cacheByType = queryCache.getOrPut(type) { LinkedHashMap() }
+    val key = query.hashCode()
+    if (cacheByType.containsKey(key)) {
+      cacheByType.remove(key)
+    }
+    cacheByType[key] = results
+    if (cacheByType.size > MAX_CACHE_ENTRIES_PER_TYPE) {
+      val oldestKey = cacheByType.keys.firstOrNull()
+      if (oldestKey != null) {
+        cacheByType.remove(oldestKey)
+      }
+    }
+  }
+
+  companion object {
+    private const val MAX_CACHE_ENTRIES_PER_TYPE = 256
   }
 }
