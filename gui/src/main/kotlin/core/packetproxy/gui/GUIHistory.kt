@@ -33,6 +33,7 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Hashtable
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.AbstractButton
 import javax.swing.BoxLayout
 import javax.swing.ImageIcon
@@ -104,6 +105,10 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   private var preferredPosition = 0
   private val historyUpdateService = Executors.newSingleThreadExecutor()
   private val updatePacketIds = HashSet<Int>()
+  // Int値のPACKETSプロパティ変更(packet id)をEDT上で1回のinvokeLaterにまとめてドレインするための
+  // 保留キュー。絶対値(packet id)が同じ場合は最新の値(符号含む)で上書きし、最新の状態だけを反映する。
+  private val pendingIntPacketUpdates = LinkedHashMap<Int, Int>()
+  private val intPacketUpdateScheduled = AtomicBoolean(false)
   private val idRow = Hashtable<Int, Int>()
   private var dialogOnce = false
   private val autoScroll = GUIHistoryAutoScroll()
@@ -215,13 +220,12 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     table.selectionModel.addListSelectionListener { _: ListSelectionEvent ->
       try {
         preferredPosition = selectedPacketId
-        packets.refresh()
       } catch (_: Exception) {
         // Nothing to do
       }
     }
     sorter = TableRowSorter(tableModel)
-    sorter.sortsOnUpdates = true
+    sorter.sortsOnUpdates = false
     sorter.toggleSortOrder(14)
     table.rowSorter = sorter
 
@@ -314,7 +318,9 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   }
 
   fun updateAllAsync() {
-    val packetList = packets.queryAllIdsAndColors()
+    // 一覧のスケルトン構築にはid/color/direction/group等のメタデータのみで十分なため、
+    // BLOB列を含まないqueryPageMetadataで軽量に取得する。
+    val packetList = packets.queryPageMetadata(0, packets.countOf(), true)
     tableModel.rowCount = 0
     colorManager.clear()
     idRow.clear()
@@ -353,13 +359,13 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
                 index - limit
               }
             val range = packets.queryRange(offset, limit)
-            for (packet in range) {
-              SwingUtilities.invokeLater {
-                try {
+            SwingUtilities.invokeLater {
+              try {
+                for (packet in range) {
                   updateOne(packet)
-                } catch (exception: Exception) {
-                  errWithStackTrace(exception)
                 }
+              } catch (exception: Exception) {
+                errWithStackTrace(exception)
               }
             }
             index -= limit
@@ -602,16 +608,24 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
             table.scrollRectToVisible(table.getCellRect(table.rowCount - 1, 0, true))
             table.changeSelection(table.rowCount - 1, 0, false, false)
             val packetId = selectedPacketId
-            var packet = requireNotNull(packets.query(packetId))
-            var retryCount = 10
-            while (packet.getDecodedData() == null || packet.getDecodedData().isEmpty()) {
-              if (retryCount-- <= 0) {
-                break
+            historyUpdateService.submit {
+              var packet = requireNotNull(packets.query(packetId))
+              var retryCount = 10
+              while (packet.getDecodedData().isEmpty()) {
+                if (retryCount-- <= 0) {
+                  break
+                }
+                Thread.sleep(100)
+                packet = requireNotNull(packets.query(packetId))
               }
-              Thread.sleep(100)
-              packet = requireNotNull(packets.query(packetId))
+              SwingUtilities.invokeLater {
+                try {
+                  resolveAndShowPacket(packet, false)
+                } catch (exception: Exception) {
+                  errWithStackTrace(exception)
+                }
+              }
             }
-            resolveAndShowPacket(packet, false)
           } catch (exception: Exception) {
             errWithStackTrace(exception)
           }
@@ -657,17 +671,47 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   }
 
   private fun handlePacketsPropertyChange(event: PropertyChangeEvent) {
-    SwingUtilities.invokeLater {
-      try {
-        when (val value = event.newValue) {
-          is Boolean -> handleBooleanPacketValue(value)
-          is Int -> handleIntegerPacketValue(value)
-          DatabaseMessage.RECONNECT -> updateAllAsync()
-          else -> updateRequest(true)
+    when (val value = event.newValue) {
+      is Int -> scheduleIntegerPacketUpdate(value)
+      else ->
+        SwingUtilities.invokeLater {
+          try {
+            when (value) {
+              is Boolean -> handleBooleanPacketValue(value)
+              DatabaseMessage.RECONNECT -> updateAllAsync()
+              else -> updateRequest(true)
+            }
+          } catch (exception: Exception) {
+            errWithStackTrace(exception)
+          }
         }
-      } catch (exception: Exception) {
-        errWithStackTrace(exception)
+    }
+  }
+
+  // 大量のInt値(packet id)通知が短時間に届いても、EDT上のinvokeLaterを1回にまとめてから
+  // まとめて処理することで、EDTタスクの積み増しによるコマ落ちを防ぐ。
+  private fun scheduleIntegerPacketUpdate(value: Int) {
+    synchronized(pendingIntPacketUpdates) { pendingIntPacketUpdates[Math.abs(value)] = value }
+    if (!intPacketUpdateScheduled.compareAndSet(false, true)) {
+      return
+    }
+    SwingUtilities.invokeLater { drainPendingIntegerPacketUpdates() }
+  }
+
+  private fun drainPendingIntegerPacketUpdates() {
+    intPacketUpdateScheduled.set(false)
+    val values =
+      synchronized(pendingIntPacketUpdates) {
+        val copied = pendingIntPacketUpdates.values.toList()
+        pendingIntPacketUpdates.clear()
+        copied
       }
+    try {
+      for (value in values) {
+        handleIntegerPacketValue(value)
+      }
+    } catch (exception: Exception) {
+      errWithStackTrace(exception)
     }
   }
 

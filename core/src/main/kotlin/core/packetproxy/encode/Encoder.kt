@@ -170,6 +170,12 @@ abstract class Encoder {
   /** GroupId */
   @Throws(Exception::class) open fun setGroupId(packet: Packet) {}
 
+  /**
+   * ストリーム多重化やウィンドウ管理などのため専用のflow control用スレッドが必要なプロトコルではtrueを返す。 デフォルトはfalse
+   * (非対応のプロトコルではclient/serverの入出力を直結してスレッド数を削減できる)。
+   */
+  open fun requiresDedicatedFlowControlThreads(): Boolean = false
+
   /** Flow Controls */
   @Throws(Exception::class)
   open fun putToClientFlowControlledQueue(output_data: ByteArray) {

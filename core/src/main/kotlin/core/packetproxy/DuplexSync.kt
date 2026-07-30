@@ -47,8 +47,7 @@ class DuplexSync @Throws(Exception::class) constructor(private val server: Endpo
 
     val decoded = super.callOnClientChunkReceived(accepted)
     val encoded = super.callOnClientChunkSend(decoded!!)
-
-    return (pass ?: ByteArray(0)) + encoded!!
+    return mergeChunk(pass, encoded)
   }
 
   @Throws(Exception::class)
@@ -78,9 +77,9 @@ class DuplexSync @Throws(Exception::class) constructor(private val server: Endpo
     val bout = ByteArrayOutputStream()
 
     while (true) {
-      val packetLen = callOnServerPacketReceived(serverBuffer.toByteArray())
+      val buffered = serverBuffer.toByteArray()
+      val packetLen = callOnServerPacketReceived(buffered)
       if (packetLen > 0) {
-        val buffered = serverBuffer.toByteArray()
         val packetData = ArrayUtils.subarray(buffered, 0, packetLen)
         val restData = ArrayUtils.subarray(buffered, packetLen, buffered.size)
         serverBuffer.reset()
@@ -113,5 +112,19 @@ class DuplexSync @Throws(Exception::class) constructor(private val server: Endpo
   override fun close() {
     `in`.close()
     out.close()
+  }
+
+  private fun mergeChunk(pass: ByteArray?, encoded: ByteArray?): ByteArray {
+    val encodedData = encoded ?: ByteArray(0)
+    if (pass == null || pass.isEmpty()) {
+      return encodedData
+    }
+    if (encodedData.isEmpty()) {
+      return pass
+    }
+    return ByteArray(pass.size + encodedData.size).also {
+      System.arraycopy(pass, 0, it, 0, pass.size)
+      System.arraycopy(encodedData, 0, it, pass.size, encodedData.size)
+    }
   }
 }

@@ -24,6 +24,12 @@ import javax.swing.event.EventListenerList
 import packetproxy.util.errWithStackTrace
 
 abstract class Duplex {
+  // HTTP/2やHTTP/3のようにストリームごとのフロー制御(ウィンドウ管理)が必要なプロトコルではtrueのままにする。
+  // フロー制御を必要としないプロトコルの通常のコネクションでは、DuplexFactory.prepareDuplex()から
+  // encoder.requiresDedicatedFlowControlThreads()の結果に応じてfalseに設定され、
+  // start()前であれば専用のflow control用スレッドを4本立てずにパイプを直結できる。
+  var useDedicatedFlowThreads = true
+
   protected var duplexEventListenerList = EventListenerList()
   private var flagEventListener = false
   private val pipeSize = 65536

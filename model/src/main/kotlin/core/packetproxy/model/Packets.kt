@@ -20,6 +20,7 @@ import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JOptionPane
 import packetproxy.common.Logger
 import packetproxy.model.Database.DatabaseMessage
@@ -30,6 +31,8 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
   private val changes = PropertyChangeSupport(this)
   private var dao: Dao<Packet, Int> = database.createTable(Packet::class.java)
   private val executor = Executors.newSingleThreadExecutor()
+  private val pendingUpdates = LinkedHashMap<String, Packet>()
+  private val updateScheduled = AtomicBoolean(false)
 
   init {
     database.addPropertyChangeListener(this)
@@ -59,22 +62,27 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     firePropertyChange()
   }
 
+  // packet.getId() > 0 のときはdao.update()を使う。dao.update()はレコード全体を書き込むため、
+  // 一部カラムのみをselectしたpartial-select済みのPacket（BLOB列を持たない）を渡すと、
+  // 未選択カラムがデフォルト値で上書きされデータを消してしまう。updateSync()には常に
+  // 全カラムを保持したPacketのみを渡すこと。
   fun updateSync(packet: Packet) {
     if (database.isAlertFileSize()) {
       firePropertyChange(true)
+    }
+    val id = packet.getId()
+    if (id > 0) {
+      synchronized(dao) { dao.update(packet) }
+      firePropertyChange(id)
+      return
     }
     val status = synchronized(dao) { dao.createOrUpdate(packet) }
     firePropertyChange(if (status.isCreated) packet.getId() * -1 else packet.getId())
   }
 
   fun update(packet: Packet) {
-    executor.execute {
-      try {
-        updateSync(packet)
-      } catch (e: Exception) {
-        errWithStackTrace(e)
-      }
-    }
+    synchronized(pendingUpdates) { pendingUpdates[packetUpdateKey(packet)] = packet }
+    schedulePendingUpdates()
   }
 
   fun deleteAll() {
@@ -100,6 +108,42 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
 
   fun queryRange(offset: Long, limit: Long): List<Packet> =
     dao.queryBuilder().offset(offset).limit(limit).orderBy("id", true).query()
+
+  fun queryPage(offset: Long, limit: Long, ascending: Boolean): List<Packet> =
+    dao.queryBuilder().offset(offset).limit(limit).orderBy("id", ascending).query()
+
+  // BLOB列(decoded_data等)を含まないメタデータのみを返す。一覧のスケルトン表示など、
+  // 本文データを必要としない箇所で queryPage/queryRange の代わりに使うことで、
+  // 大きなBLOBの読み出しコストを避けられる。
+  fun queryPageMetadata(offset: Long, limit: Long, ascending: Boolean): List<Packet> =
+    dao
+      .queryBuilder()
+      .selectColumns(
+        "id",
+        "direction",
+        "listen_port",
+        "client_ip",
+        "client_port",
+        "server_ip",
+        "server_name",
+        "server_port",
+        "use_ssl",
+        "content_type",
+        "encoder_name",
+        "alpn",
+        "modified",
+        "resend",
+        "date",
+        "conn",
+        "group",
+        "color",
+        "job_id",
+        "temporary_id",
+      )
+      .offset(offset)
+      .limit(limit)
+      .orderBy("id", ascending)
+      .query()
 
   fun queryAll(): List<Packet> = dao.queryBuilder().orderBy("id", true).query()
 
@@ -140,6 +184,24 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
       .where()
       .like("decoded_data", "%%%s%%".format(search))
       .query()
+
+  fun queryPairedPacket(
+    group: Long,
+    conn: Int,
+    direction: Packet.Direction,
+    excludeId: Int,
+  ): Packet? =
+    dao
+      .queryBuilder()
+      .where()
+      .eq("group", group)
+      .and()
+      .eq("conn", conn)
+      .and()
+      .eq("direction", direction)
+      .and()
+      .ne("id", excludeId)
+      .queryForFirst()
 
   fun firePropertyChange() {
     changes.firePropertyChange(PropertyChangeEventType.PACKETS.toString(), null, null)
@@ -205,5 +267,48 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     }
     database.dropTable(Packet::class.java)
     dao = database.createTable(Packet::class.java)
+  }
+
+  private fun flushPendingUpdates() {
+    while (true) {
+      val batch =
+        synchronized(pendingUpdates) {
+          if (pendingUpdates.isEmpty()) {
+            return
+          }
+          val copied = pendingUpdates.values.toList()
+          pendingUpdates.clear()
+          copied
+        }
+      for (packet in batch) {
+        updateSync(packet)
+      }
+    }
+  }
+
+  private fun packetUpdateKey(packet: Packet): String {
+    val id = packet.getId()
+    if (id > 0) {
+      return "id:$id"
+    }
+    return "obj:${System.identityHashCode(packet)}"
+  }
+
+  private fun schedulePendingUpdates() {
+    if (!updateScheduled.compareAndSet(false, true)) {
+      return
+    }
+    executor.execute {
+      try {
+        flushPendingUpdates()
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      } finally {
+        updateScheduled.set(false)
+        if (synchronized(pendingUpdates) { pendingUpdates.isNotEmpty() }) {
+          schedulePendingUpdates()
+        }
+      }
+    }
   }
 }

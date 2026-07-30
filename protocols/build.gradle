@@ -7,3 +7,21 @@ dependencies {
   api 'dnsjava:dnsjava:3.6.4'
   api files("${rootProject.projectDir}/libs/agent15.jar")
 }
+
+apply plugin: 'me.champeau.jmh'
+
+jmh {
+  fork = 1
+  warmupIterations = 2
+  iterations = 5
+  warmup = '1s'
+  timeOnIteration = '1s'
+  benchmarkMode = ['avgt']
+  timeUnit = 'ns'
+  duplicateClassesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+sourceSets.jmh {
+  java.srcDirs = []
+  kotlin.srcDirs = ['src/jmh/kotlin']
+}

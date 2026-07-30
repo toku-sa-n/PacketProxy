@@ -73,6 +73,16 @@ class InterceptController(
   }
 
   /**
+   * received()を呼ぶ前に、対象パケットがインターセプト対象かどうかを判定する。 インターセプト対象でない場合、呼び出し側はsha1によるハッシュ比較をスキップできる
+   * （received()はインターセプト対象でなければ即座にdataをそのまま返すだけで、 実際には改変されないため）。
+   */
+  fun shouldIntercept(
+    server: Server?,
+    clientPacket: Packet,
+    serverPacket: Packet? = null,
+  ): Boolean = isInterceptTarget(server, clientPacket, serverPacket)
+
+  /**
    * suspend 版
    *
    * 戻り値:

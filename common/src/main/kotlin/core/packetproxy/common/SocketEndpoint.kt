@@ -57,4 +57,6 @@ class SocketEndpoint : Endpoint {
   override fun getLocalPort(): Int = socket.localPort
 
   override fun getName(): String? = null
+
+  override fun getSocket(): Socket = socket
 }

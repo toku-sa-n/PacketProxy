@@ -66,6 +66,10 @@ abstract class EncodeHTTPBase : Encoder {
 
   fun getHttpVersion(): HTTPVersion = httpVersion
 
+  // HTTP/2, HTTP/3はストリーム多重化・ウィンドウ管理のため専用のflow control用スレッドが必要。
+  override fun requiresDedicatedFlowControlThreads(): Boolean =
+    httpVersion == HTTPVersion.HTTP2 || httpVersion == HTTPVersion.HTTP3
+
   @Throws(Exception::class)
   override fun checkDelimiter(data: ByteArray): Int =
     when (httpVersion) {

@@ -163,26 +163,15 @@ class PacketDetailTool(private val packets: Packets, configs: Configs) :
 
   @Throws(Exception::class)
   private fun findPairedPacket(packet: Packet): Packet? {
-    // Look for a packet with same group and conn but opposite direction
     var targetDirection =
       if (packet.getDirection() == Packet.Direction.CLIENT) Packet.Direction.SERVER
       else Packet.Direction.CLIENT
-
-    // Search through packets with same group
-    // Note: This is a simple implementation. In a real system, you might want to
-    // add specific query methods to Packets class for better performance
-    var allPackets = packets.queryAll()
-    for (p in allPackets) {
-      if (
-        p.getGroup() == packet.getGroup() &&
-          p.getConn() == packet.getConn() &&
-          p.getDirection() == targetDirection &&
-          p.getId() != packet.getId()
-      ) {
-        return p
-      }
-    }
-    return null
+    return packets.queryPairedPacket(
+      packet.getGroup(),
+      packet.getConn(),
+      targetDirection,
+      packet.getId(),
+    )
   }
 
   @Throws(Exception::class)

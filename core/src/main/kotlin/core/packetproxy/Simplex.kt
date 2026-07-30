@@ -18,7 +18,9 @@ package packetproxy
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.Socket
 import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.util.EventListener
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -26,7 +28,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import javax.net.ssl.SSLException
 import javax.swing.event.EventListenerList
-import org.apache.commons.lang3.ArrayUtils
 import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
@@ -38,6 +39,14 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
   private var flag_break_loop = false
   private var flag_close = true
   private val input_data: ByteArray = ByteArray(100 * 1024)
+  private var timeoutSocket: Socket? = null
+
+  // タイムアウト管理にSocket#setSoTimeout()が使える場合(通常のSocketEndpoint/SSLSocketEndpoint)は、
+  // newSingleThreadExecutor()によるスレッド生成コストを避けるためこちらを設定する。
+  // Pipe由来のストリームなどSocketが無い場合はnullのままでExecutor/Future方式にフォールバックする。
+  fun setTimeoutSocket(socket: Socket?) {
+    timeoutSocket = socket
+  }
 
   protected var simplexEventListenerList = EventListenerList()
 
@@ -152,6 +161,57 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
 
   override fun run() {
     if (`in` == null) return
+    val socket = timeoutSocket
+    if (socket != null) {
+      runWithSocketTimeout(socket)
+    } else {
+      runWithExecutorTimeout()
+    }
+  }
+
+  // Socketが利用できる場合、Socket#setSoTimeout()で読み込みタイムアウトを制御する。
+  // newSingleThreadExecutor()によるスレッド生成/Future#get()のオーバーヘッドを避けられる。
+  private fun runWithSocketTimeout(socket: Socket) {
+    val bout = ByteArrayOutputStream()
+    try {
+      while (!flag_break_loop) {
+        socket.soTimeout = if (bout.size() > 0) TIMEOUT else 0
+        var length: Int
+        try {
+          length = `in`!!.read(input_data)
+        } catch (e: SSLException) {
+          length = -1
+        } catch (e: SocketException) {
+          length = -1
+        }
+        if (length == -1) break
+
+        bout.write(input_data, 0, length)
+        processAvailableChunks(bout)
+      }
+    } catch (e: SocketTimeoutException) {
+      errWithStackTrace(e)
+      log("-----")
+      log(String(bout.toByteArray()))
+      log("-----")
+      try {
+        `in`!!.close()
+      } catch (e1: Exception) {
+        errWithStackTrace(e)
+      }
+    } catch (e: SSLException) {
+      // ignore
+    } catch (e: SocketException) {
+      // ignore
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    } finally {
+      closeStreamsIfNeeded()
+    }
+  }
+
+  // Socketを持たないpipe由来のストリーム等では、従来通りExecutor + Future#get()でタイムアウトを実現する。
+  private fun runWithExecutorTimeout() {
     val bout = ByteArrayOutputStream()
     val executor = Executors.newSingleThreadExecutor()
     val readTask = Callable {
@@ -174,33 +234,7 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
         if (length == -1) break
 
         bout.write(input_data, 0, length)
-        while (bout.size() > 0) {
-          val accepted_input_size = callOnPacketReceived(bout.toByteArray())
-          if (accepted_input_size < 0 || accepted_input_size > bout.size()) break
-          val accepted_array = ArrayUtils.subarray(bout.toByteArray(), 0, accepted_input_size)
-          val unaccepted_array =
-            ArrayUtils.subarray(bout.toByteArray(), accepted_input_size, bout.size())
-          bout.reset()
-          bout.write(unaccepted_array)
-
-          callOnChunkArrived(accepted_array)
-
-          var pass_through_data = callOnChunkPassThrough()
-          while (pass_through_data != null && pass_through_data.isNotEmpty()) {
-            out!!.write(pass_through_data)
-            out!!.flush()
-            pass_through_data = callOnChunkPassThrough()
-          }
-
-          var available_data = callOnChunkAvailable()
-          while (available_data != null && available_data.isNotEmpty()) {
-            val send_data = callOnChunkReceived(available_data)
-            if (send_data != null && send_data.isNotEmpty()) {
-              send(send_data)
-            }
-            available_data = callOnChunkAvailable()
-          }
-        }
+        processAvailableChunks(bout)
       }
     } catch (e: TimeoutException) {
       errWithStackTrace(e)
@@ -220,18 +254,52 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
       errWithStackTrace(e)
     } finally {
       executor.shutdownNow()
-      if (flag_close) {
-        try {
-          `in`?.close()
-          out?.close()
-        } catch (e1: Exception) {
-          errWithStackTrace(e1)
+      closeStreamsIfNeeded()
+    }
+  }
+
+  private fun processAvailableChunks(bout: ByteArrayOutputStream) {
+    while (bout.size() > 0) {
+      val currentBuffer = bout.toByteArray()
+      val accepted_input_size = callOnPacketReceived(currentBuffer)
+      if (accepted_input_size < 0 || accepted_input_size > currentBuffer.size) break
+      val accepted_array = currentBuffer.copyOfRange(0, accepted_input_size)
+      val unaccepted_array = currentBuffer.copyOfRange(accepted_input_size, currentBuffer.size)
+      bout.reset()
+      bout.write(unaccepted_array)
+
+      callOnChunkArrived(accepted_array)
+
+      var pass_through_data = callOnChunkPassThrough()
+      while (pass_through_data != null && pass_through_data.isNotEmpty()) {
+        out!!.write(pass_through_data)
+        out!!.flush()
+        pass_through_data = callOnChunkPassThrough()
+      }
+
+      var available_data = callOnChunkAvailable()
+      while (available_data != null && available_data.isNotEmpty()) {
+        val send_data = callOnChunkReceived(available_data)
+        if (send_data != null && send_data.isNotEmpty()) {
+          send(send_data)
         }
-        try {
-          out?.close()
-        } catch (e1: Exception) {
-          errWithStackTrace(e1)
-        }
+        available_data = callOnChunkAvailable()
+      }
+    }
+  }
+
+  private fun closeStreamsIfNeeded() {
+    if (flag_close) {
+      try {
+        `in`?.close()
+        out?.close()
+      } catch (e1: Exception) {
+        errWithStackTrace(e1)
+      }
+      try {
+        out?.close()
+      } catch (e1: Exception) {
+        errWithStackTrace(e1)
       }
     }
   }

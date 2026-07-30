@@ -47,6 +47,73 @@ sourceSets {
       ] + rootProject.ext.collectInternalSrcDirs('tests.gradle')
     }
   }
+  measurement {
+    kotlin.srcDirs = ['src/measurement/kotlin']
+    compileClasspath += sourceSets.main.output + configurations.runtimeClasspath
+    runtimeClasspath += output + compileClasspath
+  }
+}
+
+configurations {
+  measurementImplementation.extendsFrom implementation
+  measurementRuntimeOnly.extendsFrom runtimeOnly
+}
+
+tasks.register('measureE2E', JavaExec) {
+  group = 'verification'
+  description = 'Run headless E2E proxy throughput/latency measurement'
+  dependsOn compileMeasurementKotlin
+  classpath = sourceSets.measurement.runtimeClasspath
+  mainClass = 'packetproxy.perf.E2EProxyMeasurement'
+  args = [
+    '--requests=300',
+    '--warmup=30',
+    '--concurrency=1',
+    '--body-bytes=1024'
+  ]
+  jvmArgs = [
+    '-Xmx1g',
+    '-XX:StartFlightRecording=filename=' + "${buildDir}/jfr/e2e-serial.jfr" + ',settings=profile,dumponexit=true,maxage=5m'
+  ]
+  doFirst {
+    mkdir("${buildDir}/jfr")
+  }
+}
+
+tasks.register('measureE2EConcurrent', JavaExec) {
+  group = 'verification'
+  description = 'Run concurrent E2E proxy measurement'
+  dependsOn compileMeasurementKotlin
+  classpath = sourceSets.measurement.runtimeClasspath
+  mainClass = 'packetproxy.perf.E2EProxyMeasurement'
+  args = [
+    '--requests=300',
+    '--warmup=30',
+    '--concurrency=8',
+    '--body-bytes=1024'
+  ]
+  jvmArgs = [
+    '-Xmx1g',
+    '-XX:StartFlightRecording=filename=' + "${buildDir}/jfr/e2e-concurrent.jfr" + ',settings=profile,dumponexit=true,maxage=5m'
+  ]
+  doFirst {
+    mkdir("${buildDir}/jfr")
+  }
+}
+
+tasks.register('measureE2ELarge', JavaExec) {
+  group = 'verification'
+  description = 'Run E2E proxy measurement with 100KB bodies'
+  dependsOn compileMeasurementKotlin
+  classpath = sourceSets.measurement.runtimeClasspath
+  mainClass = 'packetproxy.perf.E2EProxyMeasurement'
+  args = [
+    '--requests=100',
+    '--warmup=10',
+    '--concurrency=1',
+    '--body-bytes=102400'
+  ]
+  jvmArgs = ['-Xmx1g']
 }
 
 application {
@@ -64,9 +131,19 @@ def shell(String command) {
 }
 
 def gitVersion = "git describe --tags --abbrev=0".execute().text.replace("\n", "")
-def versionFile = file("${projectDir}/src/main/resources/version")
-versionFile.parentFile.mkdirs()
-versionFile.text = gitVersion
+
+tasks.register('writeVersionFile') {
+  outputs.file(file("${projectDir}/src/main/resources/version"))
+  doLast {
+    def versionFile = file("${projectDir}/src/main/resources/version")
+    versionFile.parentFile.mkdirs()
+    versionFile.text = gitVersion
+  }
+}
+
+tasks.named('processResources') {
+  dependsOn 'writeVersionFile'
+}
 
 project.ext {
   nameInstaller = "PacketProxy-${gitVersion}-Installer.jar"

@@ -49,6 +49,9 @@ open class EncodeHTTPStreamingResponse : Encoder {
 
   fun getHttpVersion(): HTTPVersion = httpVersion
 
+  // HTTP/2側はhttp2StreamingResponse独自のストリーム多重化・ウィンドウ管理を使うため専用スレッドが必要。
+  override fun requiresDedicatedFlowControlThreads(): Boolean = httpVersion == HTTPVersion.HTTP2
+
   override fun getName(): String = "HTTP Streaming Response"
 
   @Throws(Exception::class)

@@ -82,6 +82,21 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
     }
 
     try {
+      val normalizedFilter = filter?.trim()
+      val normalizedOrder = order.trim().lowercase()
+      val idOrderDirection = parseIdOrderDirection(normalizedOrder)
+
+      if (normalizedFilter.isNullOrEmpty() && idOrderDirection != null) {
+        return buildPagedResult(
+          packets.queryPage(offset.toLong(), limit.toLong(), idOrderDirection),
+          packets.countOf().toInt(),
+          offset,
+          limit,
+          order,
+          filter,
+        )
+      }
+
       var allPackets = packets.queryAll()
       var filteredPackets = allPackets
 
@@ -93,40 +108,15 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
       // Apply ordering
       filteredPackets = applyOrdering(filteredPackets, order)
 
-      var packetsArray = JsonArray()
-
       var totalCount = filteredPackets.size
       var startIndex = minOf(offset, totalCount)
       var endIndex = minOf(startIndex + limit, totalCount)
-
-      for (i in startIndex until endIndex) {
-        var packet = filteredPackets[i]
-        var packetJson = convertPacketToJson(packet)
-        packetsArray.add(packetJson)
-      }
-
-      var data = JsonObject()
-      data.add("packets", packetsArray)
-      data.addProperty("total_count", totalCount)
-      data.addProperty("has_more", endIndex < totalCount)
-      if (filter != null && !filter.trim().isEmpty()) {
-        data.addProperty("filter_applied", filter)
-      }
-      data.addProperty("order_applied", order)
-
-      var content = JsonObject()
-      content.addProperty("type", "text")
-      content.addProperty("text", gson.toJson(data))
-
-      var contentArray = JsonArray()
-      contentArray.add(content)
-
-      var result = JsonObject()
-      result.add("content", contentArray)
+      val pagedPackets = filteredPackets.subList(startIndex, endIndex)
+      val result = buildPagedResult(pagedPackets, totalCount, offset, limit, order, filter)
 
       log(
         "HistoryTool returning " +
-          packetsArray.size() +
+          pagedPackets.size +
           " packets (filtered from " +
           allPackets.size +
           " total)"
@@ -356,5 +346,47 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
     }
 
     return packetJson
+  }
+
+  private fun parseIdOrderDirection(order: String): Boolean? =
+    when (order) {
+      "id asc" -> true
+      "id desc" -> false
+      else -> null
+    }
+
+  private fun buildPagedResult(
+    pagePackets: List<Packet>,
+    totalCount: Int,
+    offset: Int,
+    limit: Int,
+    order: String,
+    filter: String?,
+  ): JsonObject {
+    var packetsArray = JsonArray()
+    for (packet in pagePackets) {
+      packetsArray.add(convertPacketToJson(packet))
+    }
+
+    val endIndex = minOf(offset + limit, totalCount)
+    var data = JsonObject()
+    data.add("packets", packetsArray)
+    data.addProperty("total_count", totalCount)
+    data.addProperty("has_more", endIndex < totalCount)
+    if (filter != null && !filter.trim().isEmpty()) {
+      data.addProperty("filter_applied", filter)
+    }
+    data.addProperty("order_applied", order)
+
+    var content = JsonObject()
+    content.addProperty("type", "text")
+    content.addProperty("text", gson.toJson(data))
+
+    var contentArray = JsonArray()
+    contentArray.add(content)
+
+    var result = JsonObject()
+    result.add("content", contentArray)
+    return result
   }
 }

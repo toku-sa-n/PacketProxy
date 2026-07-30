@@ -17,8 +17,10 @@ package packetproxy.model
 
 import com.j256.ormlite.dao.Dao
 import com.j256.ormlite.dao.DaoManager
+import com.j256.ormlite.field.FieldType
 import com.j256.ormlite.jdbc.JdbcConnectionSource
 import com.j256.ormlite.logger.LocalLog
+import com.j256.ormlite.stmt.StatementBuilder.StatementType
 import com.j256.ormlite.support.ConnectionSource
 import com.j256.ormlite.support.DatabaseConnection
 import com.j256.ormlite.table.TableUtils
@@ -69,8 +71,12 @@ class Database {
     val src = Paths.get(getDatabasePath().parent.toAbsolutePath().toString() + "/tmp.sqlite3")
     val dst = getDatabasePath().toAbsolutePath()
     firePropertyChange(DatabaseMessage.DISCONNECT_NOW)
+    // WALモードでは本体ファイルに全データが反映されているとは限らないため、
+    // moveの前にcheckpointして-wal/-shmの内容を本体ファイルへ書き戻す。
+    source.readWriteConnection.executePragma("pragma wal_checkpoint(truncate)")
     source.readWriteConnection.close()
     Files.move(dst, src, StandardCopyOption.REPLACE_EXISTING)
+    deleteOrphanWalSidecars(dst)
     createDB()
     firePropertyChange(DatabaseMessage.RECREATE)
     migrateTableWithoutHistory(src, dst)
@@ -112,11 +118,7 @@ class Database {
 
   fun Save(path: String) {
     firePropertyChange(DatabaseMessage.PAUSE)
-    Files.copy(
-      databasePath,
-      FileSystems.getDefault().getPath(path),
-      StandardCopyOption.REPLACE_EXISTING,
-    )
+    checkpointAndCopyDatabase(FileSystems.getDefault().getPath(path))
     firePropertyChange(DatabaseMessage.RESUME)
   }
 
@@ -125,15 +127,17 @@ class Database {
     source.close()
     val dest = FileSystems.getDefault().getPath(databaseDir.toString() + "/resources_temp.sqlite3")
     Files.copy(FileSystems.getDefault().getPath(path), dest, StandardCopyOption.REPLACE_EXISTING)
+    deleteOrphanWalSidecars(dest)
     databasePath = dest
     source = JdbcConnectionSource(databaseURL)
+    applyConnectionPragmas()
     firePropertyChange(DatabaseMessage.RECONNECT)
   }
 
   fun saveWithoutLog(path: String) {
     firePropertyChange(DatabaseMessage.PAUSE)
     val dest = FileSystems.getDefault().getPath(path)
-    Files.copy(databasePath, dest, StandardCopyOption.REPLACE_EXISTING)
+    checkpointAndCopyDatabase(dest)
     val newDb = JdbcConnectionSource("jdbc:sqlite:$dest")
     newDb.readWriteConnection.apply {
       executeStatement("delete from packets", DatabaseConnection.DEFAULT_RESULT_FLAGS)
@@ -151,7 +155,9 @@ class Database {
       databasePath,
       StandardCopyOption.REPLACE_EXISTING,
     )
+    deleteOrphanWalSidecars(databasePath)
     source = JdbcConnectionSource(databaseURL)
+    applyConnectionPragmas()
     firePropertyChange(DatabaseMessage.RECONNECT)
   }
 
@@ -173,10 +179,59 @@ class Database {
     }
     System.setProperty(LocalLog.LOCAL_LOG_LEVEL_PROPERTY, "error")
     source = JdbcConnectionSource(databaseURL)
-    source.readWriteConnection.executeStatement(
-      "pragma auto_vacuum = full",
-      DatabaseConnection.DEFAULT_RESULT_FLAGS,
-    )
+    source.readWriteConnection.executePragma("pragma auto_vacuum = full")
+    applyConnectionPragmas()
+  }
+
+  /**
+   * Checkpoints the WAL into the main db file (so the sidecar -wal/-shm files are truncated), then
+   * copies the main db file to `dest`. Must run against the live `source` connection so that any
+   * pending WAL frames are flushed before copying.
+   */
+  private fun checkpointAndCopyDatabase(dest: Path) {
+    source.readWriteConnection.executePragma("pragma wal_checkpoint(truncate)")
+    Files.copy(databasePath, dest, StandardCopyOption.REPLACE_EXISTING)
+  }
+
+  /**
+   * After loading a snapshot db file that was saved without a checkpoint (e.g. from another
+   * process), stale -wal/-shm sidecars next to `dbPath` would otherwise shadow the data we just
+   * copied in. They are safe to drop because `dbPath` itself is a fully checkpointed snapshot.
+   */
+  private fun deleteOrphanWalSidecars(dbPath: Path) {
+    for (suffix in arrayOf("-wal", "-shm")) {
+      val sidecar = Paths.get(dbPath.toString() + suffix)
+      Files.deleteIfExists(sidecar)
+    }
+  }
+
+  private fun applyConnectionPragmas() {
+    source.readWriteConnection.apply {
+      executePragma("pragma busy_timeout = 5000")
+      executePragma("pragma synchronous = NORMAL")
+      executePragma("pragma journal_mode = WAL")
+    }
+  }
+
+  /**
+   * ORMLiteのDatabaseConnection#executeStatement()は内部で生成したStatement/ResultSetをcloseしない。
+   * busy_timeoutやjournal_modeのように結果行を返すPRAGMA文でこれを使うと、そのResultSetが開いたまま
+   * 残り続け、新しいsqlite-jdbcドライバのensureAutoCommitチェックに引っかかって後続のSQL実行が
+   * SQLITE_BUSYで失敗することがある。compileStatement()経由でStatementを明示的にcloseすることで防ぐ。
+   */
+  private fun DatabaseConnection.executePragma(sql: String) {
+    val statement =
+      compileStatement(
+        sql,
+        StatementType.EXECUTE,
+        arrayOf<FieldType>(),
+        DatabaseConnection.DEFAULT_RESULT_FLAGS,
+      )
+    try {
+      statement.runExecute()
+    } finally {
+      statement.close()
+    }
   }
 
   private fun firePropertyChange(message: DatabaseMessage) {

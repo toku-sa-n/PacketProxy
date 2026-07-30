@@ -135,6 +135,9 @@ class DuplexFactory(
     var use_ssl =
       server_endpoint is SSLSocketEndpoint || server_endpoint is HttpsProxySocketEndpoint
     var encoder = encoderManager.createInstance(encoder_name, ALPN)
+    // start()前に決定する必要がある。専用のflow control用スレッドが不要なプロトコルでは、
+    // DuplexAsync側でclient/serverの入出力を直結してスレッド数を削減する。
+    duplex.useDedicatedFlowThreads = encoder.requiresDedicatedFlowControlThreads()
 
     duplex.addDuplexEventListener(
       duplexEventListener(
@@ -197,7 +200,10 @@ class DuplexFactory(
           var server = servers.queryByAddress(server_addr)
           decoded_data = modifications.replaceOnRequest(decoded_data, server, client_packet!!)
 
-          var decoded_hash = CryptUtils.sha1(decoded_data)
+          // インターセプト対象でなければreceived()はdataをそのまま返すだけなので、
+          // sha1によるハッシュ比較は対象のときだけ行えばよい
+          var isInterceptTarget = interceptController().shouldIntercept(server, client_packet!!)
+          var decoded_hash = if (isInterceptTarget) CryptUtils.sha1(decoded_data) else null
 
           var intercepted_data = runBlocking {
             interceptController().received(decoded_data, server, client_packet!!).fold({
@@ -207,12 +213,13 @@ class DuplexFactory(
             }
           }
 
-          var intercepted_hash = CryptUtils.sha1(intercepted_data)
           client_packet!!.setModifiedData(intercepted_data)
-          if (intercepted_data.isNotEmpty() && !Arrays.equals(decoded_hash, intercepted_hash)) {
-            client_packet!!.setModified()
+          if (isInterceptTarget) {
+            var intercepted_hash = CryptUtils.sha1(intercepted_data)
+            if (intercepted_data.isNotEmpty() && !Arrays.equals(decoded_hash, intercepted_hash)) {
+              client_packet!!.setModified()
+            }
           }
-          packetHistory.updateIfSmall(packets, client_packet!!, data.size)
           if (intercepted_data.isEmpty()) {
             /* drop */
             client_packet!!.setModified()
@@ -224,9 +231,7 @@ class DuplexFactory(
       onServerChunkReceived = serverChunkReceived@{ data ->
           var group_id = packetHistory.groupIdOrNew(client_packet)
           server_packet = newPacket(Packet.Direction.SERVER, group_id)
-          packets.update(server_packet!!)
           server_packet!!.setReceivedData(data)
-          packetHistory.updateIfSmall(packets, server_packet!!, data.size)
           var decoded_data = encoder.decodeServerResponse(client_packet, server_packet!!)
           server_packet!!.setDecodedData(decoded_data)
           encoder.setGroupId(server_packet!!) /* 実行するのはsetDecodedDataのあと */
@@ -237,7 +242,11 @@ class DuplexFactory(
           var server = servers.queryByAddress(server_addr)
           decoded_data = modifications.replaceOnResponse(decoded_data, server, server_packet!!)
 
-          var decoded_hash = CryptUtils.sha1(decoded_data)
+          // インターセプト対象でなければreceived()はdataをそのまま返すだけなので、
+          // sha1によるハッシュ比較は対象のときだけ行えばよい
+          var isInterceptTarget =
+            interceptController().shouldIntercept(server, client_packet!!, server_packet!!)
+          var decoded_hash = if (isInterceptTarget) CryptUtils.sha1(decoded_data) else null
 
           var intercepted_data = runBlocking {
             interceptController()
@@ -245,12 +254,13 @@ class DuplexFactory(
               .fold({ ByteArray(0) }) { it }
           }
 
-          var intercepted_hash = CryptUtils.sha1(intercepted_data)
           server_packet!!.setModifiedData(intercepted_data)
-          if (intercepted_data.isNotEmpty() && !Arrays.equals(decoded_hash, intercepted_hash)) {
-            server_packet!!.setModified()
+          if (isInterceptTarget) {
+            var intercepted_hash = CryptUtils.sha1(intercepted_data)
+            if (intercepted_data.isNotEmpty() && !Arrays.equals(decoded_hash, intercepted_hash)) {
+              server_packet!!.setModified()
+            }
           }
-          packetHistory.updateIfSmall(packets, server_packet!!, data.size)
           if (intercepted_data.isEmpty()) {
             /* drop */
             server_packet!!.setModified()
@@ -286,15 +296,12 @@ class DuplexFactory(
       },
       onClientChunkSendForced = { data ->
         var forcedClientPacket = newPacket(Packet.Direction.CLIENT, uniqueId.createId())
-        packets.update(forcedClientPacket)
         forcedClientPacket.setModified()
         forcedClientPacket.setDecodedData(data)
-        packetHistory.updateIfSmall(packets, forcedClientPacket, data.size)
         forcedClientPacket.setModifiedData(data)
         forcedClientPacket.setModifiedData(
           encoder.procBeforeResendClientRequest(forcedClientPacket)
         )
-        packetHistory.updateIfSmall(packets, forcedClientPacket, data.size)
         var encoded_data = encoder.encodeClientRequest(forcedClientPacket)
         forcedClientPacket.setSentData(encoded_data)
         packets.update(forcedClientPacket)
@@ -303,14 +310,11 @@ class DuplexFactory(
       onServerChunkSendForced = { data ->
         var group_id = packetHistory.groupIdOrNew(client_packet)
         var forcedServerPacket = newPacket(Packet.Direction.SERVER, group_id)
-        packets.update(forcedServerPacket)
         forcedServerPacket.setDecodedData(data)
-        packetHistory.updateIfSmall(packets, forcedServerPacket, data.size)
         forcedServerPacket.setModifiedData(data)
         forcedServerPacket.setModifiedData(
           encoder.procBeforeResendServerResponse(forcedServerPacket)
         )
-        packetHistory.updateIfSmall(packets, forcedServerPacket, data.size)
         var encoded_data = encoder.encodeServerResponse(client_packet, forcedServerPacket)
         forcedServerPacket.setSentData(encoded_data)
         packets.update(forcedServerPacket)
@@ -526,7 +530,6 @@ class DuplexFactory(
         // OneShotPacketからjob_idとtemporary_idを引き継ぎ
         client_packet!!.setJobId(oneshot.getJobId())
         client_packet!!.setTemporaryId(oneshot.getTemporaryId())
-        packets.update(client_packet!!)
         client_packet!!.setModified()
         client_packet!!.setDecodedData(data)
         client_packet!!.setModifiedData(data)

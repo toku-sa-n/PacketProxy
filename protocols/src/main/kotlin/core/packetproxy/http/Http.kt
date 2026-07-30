@@ -509,29 +509,6 @@ private constructor(
         }
         body = getChankedHttpBody(body)
         if (body == null) return -1
-      } else if (content_length == 0) {
-        if (GZIP_PATTERN.matcher(header_str).find()) {
-          try {
-            var body = ArrayUtils.subarray(data, header_size, data.size)
-            gunzip(body)
-          } catch (e1: Exception) {
-            return -1
-          }
-        } else if (ZSTD_PATTERN.matcher(header_str).find()) {
-          try {
-            var body = ArrayUtils.subarray(data, header_size, data.size)
-            zstd_decompress(body)
-          } catch (e1: Exception) {
-            return -1
-          }
-        } else if (BR_PATTERN.matcher(header_str).find()) {
-          try {
-            var body = ArrayUtils.subarray(data, header_size, data.size)
-            br_decompress(body)
-          } catch (e1: Exception) {
-            return -1
-          }
-        }
       }
 
       if (content_length == 0) {

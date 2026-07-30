@@ -18,6 +18,7 @@ package packetproxy.common
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.InetSocketAddress
+import java.net.Socket
 import javax.net.ssl.SSLSocket
 import packetproxy.http.Https
 
@@ -55,6 +56,8 @@ open class SSLSocketEndpoint : Endpoint {
   override fun getLocalPort(): Int = socket.localPort
 
   override fun getName(): String? = server_name
+
+  override fun getSocket(): Socket = socket
 
   open fun getApplicationProtocol(): String? = socket.applicationProtocol
 }

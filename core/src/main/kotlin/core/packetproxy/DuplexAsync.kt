@@ -19,6 +19,8 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Endpoint
 
@@ -27,10 +29,6 @@ class DuplexAsync
 constructor(private val client: Endpoint, private val server: Endpoint) : Duplex() {
   private val client_to_server: Simplex
   private val server_to_client: Simplex
-  private var clientFlowSourceThread: Thread? = null
-  private var serverFlowSourceThread: Thread? = null
-  private var clientFlowSinkThread: Thread? = null
-  private var serverFlowSinkThread: Thread? = null
   private val client_input: InputStream? = client.getInputStream()
   private val server_input: InputStream? = server.getInputStream()
   private val client_output: OutputStream? = client.getOutputStream()
@@ -49,6 +47,10 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
 
     client_to_server = createClientToServerSimplex(client_input, flow_controlled_server_output)
     server_to_client = createServerToClientSimplex(server_input, flow_controlled_client_output)
+    // Socketが取れるendpointではSO_TIMEOUTベースの読み込みに切り替え、Simplex側の
+    // newSingleThreadExecutor()生成を避ける（P2a）。
+    client_to_server.setTimeoutSocket(client.getSocket())
+    server_to_client.setTimeoutSocket(server.getSocket())
 
     disableDuplexEventListener()
   }
@@ -77,12 +79,27 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
 
   @Throws(Exception::class)
   fun start() {
-    clientFlowSourceThread = Thread {
+    if (useDedicatedFlowThreads) {
+      startWithDedicatedFlowThreads()
+    } else {
+      // HTTP/2やHTTP/3のようなストリーム単位のフロー制御が不要なプロトコルでは、
+      // client_to_server/server_to_clientのSimplexの出力を直接相手側のOutputStreamへ
+      // つなぎ、flow control用の中継スレッドを4本立てるオーバーヘッドを避ける（P2c）。
+      client_to_server.setOutputStream(server_output)
+      server_to_client.setOutputStream(client_output)
+    }
+
+    client_to_server.start()
+    server_to_client.start()
+  }
+
+  private fun startWithDedicatedFlowThreads() {
+    IO_POOL.submit {
       try {
         val inputBuf = ByteArray(65536)
         var inputLen: Int
         while (flow_controlled_client_input.read(inputBuf).also { inputLen = it } > 0) {
-          callOnClientChunkFlowControl(ArrayUtils.subarray(inputBuf, 0, inputLen))
+          callOnClientChunkFlowControl(copyInputChunk(inputBuf, inputLen))
         }
         flow_controlled_client_input.close()
         closeOnClientChunkFlowControl()
@@ -91,12 +108,12 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
       }
     }
 
-    serverFlowSourceThread = Thread {
+    IO_POOL.submit {
       try {
         val inputBuf = ByteArray(65536)
         var inputLen: Int
         while (flow_controlled_server_input.read(inputBuf).also { inputLen = it } > 0) {
-          callOnServerChunkFlowControl(ArrayUtils.subarray(inputBuf, 0, inputLen))
+          callOnServerChunkFlowControl(copyInputChunk(inputBuf, inputLen))
         }
         flow_controlled_server_input.close()
         closeOnServerChunkFlowControl()
@@ -105,7 +122,7 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
       }
     }
 
-    clientFlowSinkThread = Thread {
+    IO_POOL.submit {
       try {
         val inputBuf = ByteArray(65536)
         var inputLen: Int
@@ -126,7 +143,7 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
       }
     }
 
-    serverFlowSinkThread = Thread {
+    IO_POOL.submit {
       try {
         val inputBuf = ByteArray(65536)
         var inputLen: Int
@@ -146,13 +163,6 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
         // errWithStackTrace(e);
       }
     }
-
-    client_to_server.start()
-    server_to_client.start()
-    clientFlowSinkThread!!.start()
-    serverFlowSinkThread!!.start()
-    clientFlowSourceThread!!.start()
-    serverFlowSourceThread!!.start()
   }
 
   @Throws(Exception::class)
@@ -231,5 +241,19 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
   @Throws(Exception::class)
   override fun sendToServerImpl(data: ByteArray) {
     client_to_server.sendWithoutRecording(data)
+  }
+
+  private fun copyInputChunk(inputBuf: ByteArray, inputLen: Int): ByteArray {
+    if (inputLen >= inputBuf.size) {
+      return inputBuf.clone()
+    }
+    return ArrayUtils.subarray(inputBuf, 0, inputLen)
+  }
+
+  companion object {
+    // 各コネクションごとにThreadを生成する代わりに、flow control用の中継タスクを
+    // 共有のキャッシュ済みスレッドプールに委譲してスレッド生成コストを削減する（P2b）。
+    private val IO_POOL: ExecutorService =
+      Executors.newCachedThreadPool { r -> Thread(r, "pp-duplex-io").apply { isDaemon = true } }
   }
 }

@@ -18,6 +18,7 @@ package packetproxy.common
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.InetSocketAddress
+import java.net.Socket
 
 interface Endpoint {
   @Throws(Exception::class) fun getInputStream(): InputStream
@@ -29,4 +30,8 @@ interface Endpoint {
   fun getLocalPort(): Int
 
   fun getName(): String?
+
+  // Socketベースのendpoint(SocketEndpoint/SSLSocketEndpoint)ではSO_TIMEOUTによる
+  // タイムアウト制御に使うSocketを返す。それ以外(pipe等)ではnullを返す。
+  fun getSocket(): Socket? = null
 }

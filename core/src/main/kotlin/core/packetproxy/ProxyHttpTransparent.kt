@@ -22,7 +22,6 @@ import java.net.ConnectException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
-import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Endpoint
 import packetproxy.common.EndpointFactory
 import packetproxy.common.StringUtils
@@ -81,7 +80,7 @@ constructor(
       throw Exception("Host: header field is not found in beginning of 4096 bytes of packets.")
     }
     val end = StringUtils.binaryFind(buffer, "\n".toByteArray(), start)
-    val serverCand = String(ArrayUtils.subarray(buffer, start, end))
+    val serverCand = String(buffer, start, end - start)
     var server = ""
     var port = 80
     val pattern = Pattern.compile("^ *([^:\\n\\r]+)(?::([0-9]+))?")
@@ -106,11 +105,12 @@ constructor(
     while (ins.read(input_data, 0, input_data.size).also { length = it } != -1) {
       bout.write(input_data, 0, length)
       var accepted_input_size = 0
+      val currentBuffer = bout.toByteArray()
       if (
-        bout.size() > 0 &&
-          Http.parseHttpDelimiter(bout.toByteArray()).also { accepted_input_size = it } > 0
+        currentBuffer.isNotEmpty() &&
+          Http.parseHttpDelimiter(currentBuffer).also { accepted_input_size = it } > 0
       ) {
-        hostPort = parseHostName(ArrayUtils.subarray(bout.toByteArray(), 0, accepted_input_size))
+        hostPort = parseHostName(currentBuffer.copyOfRange(0, accepted_input_size))
         break
       }
     }

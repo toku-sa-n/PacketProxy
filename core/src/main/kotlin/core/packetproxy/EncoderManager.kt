@@ -10,6 +10,7 @@ import java.io.File
 import java.lang.reflect.Modifier
 import java.net.URLClassLoader
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.jar.JarFile
 import javax.tools.DiagnosticCollector
 import javax.tools.JavaFileObject
@@ -23,6 +24,7 @@ import packetproxy.util.err
 import packetproxy.util.errWithStackTrace
 
 class EncoderManager {
+  private val modulesLoaded = AtomicBoolean(false)
   private var isDuplicated = false
   private var moduleList = HashMap<String, Class<out Encoder>>()
   val packetSummarizer =
@@ -33,14 +35,6 @@ class EncoderManager {
       override fun summarizeResponse(encoderName: String?, alpn: String?, packet: Packet): String =
         createSummarizer(encoderName, alpn).getSummarizedResponse(packet)
     }
-
-  init {
-    try {
-      loadModules()
-    } catch (exception: Exception) {
-      errWithStackTrace(exception)
-    }
-  }
 
   private fun createSummarizer(encoderName: String?, alpn: String?): Encoder {
     return try {
@@ -61,10 +55,14 @@ class EncoderManager {
 
   fun hasDuplicateModules(): Boolean = isDuplicated
 
-  fun getEncoderNameList(): Array<String> = moduleList.keys.sorted().toTypedArray()
+  fun getEncoderNameList(): Array<String> {
+    ensureModulesLoaded()
+    return moduleList.keys.sorted().toTypedArray()
+  }
 
   @Throws(Exception::class)
   fun createInstance(encoderName: String, alpn: String?): Encoder {
+    ensureModulesLoaded()
     val encoderClass =
       moduleList[encoderName] ?: throw Exception("Encoder module not found: $encoderName")
     return createInstance(encoderClass, alpn)
@@ -141,5 +139,17 @@ class EncoderManager {
   companion object {
     private val DEFAULT_PLUGIN_DIR = "${System.getProperty("user.home")}/.packetproxy/plugins"
     private val ENCODE_PACKAGE = "packetproxy.encode"
+  }
+
+  private fun ensureModulesLoaded() {
+    if (!modulesLoaded.compareAndSet(false, true)) {
+      return
+    }
+    try {
+      loadModules()
+    } catch (exception: Exception) {
+      modulesLoaded.set(false)
+      errWithStackTrace(exception)
+    }
   }
 }
