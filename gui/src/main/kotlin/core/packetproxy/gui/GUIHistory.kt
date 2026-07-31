@@ -217,9 +217,22 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     }
     apply(table, columnNames.size)
     (table.getDefaultRenderer(Boolean::class.javaObjectType) as JComponent).isOpaque = true
-    table.selectionModel.addListSelectionListener { _: ListSelectionEvent ->
+    table.selectionModel.addListSelectionListener { e: ListSelectionEvent ->
+      if (e.valueIsAdjusting) return@addListSelectionListener
       try {
         preferredPosition = selectedPacketId
+        if (preferredPosition <= 0) return@addListSelectionListener
+        val packetId = preferredPosition
+        historyUpdateService.submit {
+          val packet = packets.query(packetId) ?: return@submit
+          SwingUtilities.invokeLater {
+            try {
+              resolveAndShowPacket(packet, false)
+            } catch (exception: Exception) {
+              errWithStackTrace(exception)
+            }
+          }
+        }
       } catch (_: Exception) {
         // Nothing to do
       }
