@@ -32,8 +32,8 @@ class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modificati
       }
     jcomponent =
       createComponent(
-        arrayOf("Enabled", "Type", "Method", "Pattern", "Replaced", "Applied Server"),
-        intArrayOf(50, 100, 50, 180, 180, 150),
+        arrayOf("Enabled", "Type", "Method", "Pattern", "Replaced", "Path", "Applied Server"),
+        intArrayOf(50, 100, 50, 150, 150, 120, 130),
         tableAction,
         {
           try {
@@ -80,6 +80,7 @@ class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modificati
         modification.getMethod(),
         modification.getPattern(),
         modification.getReplaced(),
+        modification.getPath(),
         modification.getServerName(owner.modelServices.database),
       )
     )

@@ -75,6 +75,14 @@ class UpdateModificationTool(
     enabledProp.addProperty("description", "Enable or disable the rule (optional)")
     schema.add("enabled", enabledProp)
 
+    var pathProp = JsonObject()
+    pathProp.addProperty("type", "string")
+    pathProp.addProperty(
+      "description",
+      "New path filter RE2 regex (optional). Empty string applies to all paths.",
+    )
+    schema.add("path", pathProp)
+
     return addAccessTokenToSchema(schema)
   }
 
@@ -114,6 +122,9 @@ class UpdateModificationTool(
       } else {
         modification.setDisabled()
       }
+    }
+    if (arguments.has("path")) {
+      modification.setPath(arguments.get("path").asString)
     }
 
     modifications.update(modification)

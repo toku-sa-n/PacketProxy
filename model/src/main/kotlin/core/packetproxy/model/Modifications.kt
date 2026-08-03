@@ -130,9 +130,17 @@ class Modifications(private val database: Database) : PropertyChangeListener {
   }
 
   @Throws(Exception::class)
-  fun replaceOnRequest(data: ByteArray, server: Server?, client_packet: Packet): ByteArray {
+  fun replaceOnRequest(
+    data: ByteArray,
+    server: Server?,
+    client_packet: Packet,
+    requestPath: String?,
+  ): ByteArray {
     var data = data
     for (mod in queryEnabled(server)) {
+      if (!mod.matchesPath(requestPath)) {
+        continue
+      }
       if (
         mod.getDirection() == Modification.Direction.CLIENT_REQUEST ||
           mod.getDirection() == Modification.Direction.ALL
@@ -143,9 +151,17 @@ class Modifications(private val database: Database) : PropertyChangeListener {
   }
 
   @Throws(Exception::class)
-  fun replaceOnResponse(data: ByteArray, server: Server?, server_packet: Packet): ByteArray {
+  fun replaceOnResponse(
+    data: ByteArray,
+    server: Server?,
+    server_packet: Packet,
+    requestPath: String?,
+  ): ByteArray {
     var data = data
     for (mod in queryEnabled(server)) {
+      if (!mod.matchesPath(requestPath)) {
+        continue
+      }
       if (
         mod.getDirection() == Modification.Direction.SERVER_RESPONSE ||
           mod.getDirection() == Modification.Direction.ALL
@@ -195,7 +211,7 @@ class Modifications(private val database: Database) : PropertyChangeListener {
       dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='modifications'").firstResult[0]
     // Logging.log(result);
     return result ==
-      "CREATE TABLE `modifications` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `server_id` INTEGER , `direction` VARCHAR , `pattern` VARCHAR , `method` VARCHAR , `replaced` VARCHAR , UNIQUE (`server_id`,`direction`,`pattern`,`method`) )"
+      "CREATE TABLE `modifications` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `server_id` INTEGER , `direction` VARCHAR , `pattern` VARCHAR , `method` VARCHAR , `path` VARCHAR , `replaced` VARCHAR , UNIQUE (`server_id`,`direction`,`pattern`,`method`,`path`) )"
   }
 
   @Throws(Exception::class)

@@ -49,6 +49,8 @@ class Modification {
 
   @field:DatabaseField(uniqueCombo = true) private var method: Method? = null
 
+  @field:DatabaseField(uniqueCombo = true) private var path: String? = null
+
   @field:DatabaseField private var replaced: String? = null
 
   constructor()
@@ -59,6 +61,7 @@ class Modification {
     replaced: String,
     method: Method,
     server: Server?,
+    path: String = "",
   ) {
     this.enabled = false
     this.server_id = if (server != null) server.getId() else ALL_SERVER
@@ -66,6 +69,7 @@ class Modification {
     this.pattern = pattern
     this.replaced = replaced
     this.method = method
+    this.path = path
   }
 
   fun isEnabled(): Boolean = this.enabled!!
@@ -121,10 +125,30 @@ class Modification {
     this.method = method
   }
 
+  fun getPath(): String = this.path ?: ""
+
+  fun setPath(path: String) {
+    this.path = path
+  }
+
   fun getId(): Int = id
 
   fun setId(id: Int) {
     this.id = id
+  }
+
+  fun matchesPath(requestPath: String?): Boolean {
+    if (path.isNullOrEmpty()) {
+      return true
+    }
+    if (requestPath == null) {
+      return false
+    }
+    return try {
+      Pattern.compile(path!!).matcher(requestPath).find()
+    } catch (_: Exception) {
+      false
+    }
   }
 
   @Throws(Exception::class)

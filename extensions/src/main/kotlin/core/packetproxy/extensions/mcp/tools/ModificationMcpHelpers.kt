@@ -15,6 +15,7 @@ internal object ModificationMcpHelpers {
     obj.addProperty("method", modification.getMethod()?.name)
     obj.addProperty("pattern", modification.getPattern())
     obj.addProperty("replaced", modification.getReplaced())
+    obj.addProperty("path", modification.getPath())
     obj.addProperty("direction", modification.getDirection()?.name)
     obj.addProperty("server_id", modification.getServerId())
     obj.addProperty("server", resolveServerName(modification.getServerId(), servers))

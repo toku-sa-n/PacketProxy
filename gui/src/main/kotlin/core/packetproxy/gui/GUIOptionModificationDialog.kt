@@ -18,6 +18,7 @@ class GUIOptionModificationDialog(private val owner: GUIMain) : JDialog(owner) {
   private val buttonSet = JButton(i18nString("Save"))
   private val textPattern = JTextField()
   private val textReplaced = JTextField()
+  private val textPath = JTextField()
   private val methodCombo = JComboBox<String>()
   private val serverCombo = JComboBox<String>()
   private val directionCombo = JComboBox<String>()
@@ -26,13 +27,14 @@ class GUIOptionModificationDialog(private val owner: GUIMain) : JDialog(owner) {
   init {
     title = i18nString("Setting")
     val rect = owner.bounds
-    setBounds(rect.x + rect.width / 2 - 250, rect.y + rect.height / 2 - 250, 500, 500)
+    setBounds(rect.x + rect.width / 2 - 250, rect.y + rect.height / 2 - 275, 500, 550)
 
     val panel = JPanel()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     panel.add(createReplaceMethodSetting())
     panel.add(createPatternSetting())
     panel.add(createReplacedSetting())
+    panel.add(createPathSetting())
     panel.add(createTypeSetting())
     panel.add(createAppliedServers())
     panel.add(buttons())
@@ -54,6 +56,7 @@ class GUIOptionModificationDialog(private val owner: GUIMain) : JDialog(owner) {
             textReplaced.text,
             method,
             owner.modelServices.servers.queryByString(serverStr),
+            textPath.text,
           )
         dispose()
       } catch (e: Exception) {
@@ -71,6 +74,7 @@ class GUIOptionModificationDialog(private val owner: GUIMain) : JDialog(owner) {
   fun showDialog(preset: Modification): Modification? {
     textPattern.text = preset.getPattern()
     textReplaced.text = preset.getReplaced()
+    textPath.text = preset.getPath()
     methodCombo.selectedItem = preset.getMethod()?.toString()
     directionCombo.selectedItem = preset.getDirection()?.toString()
     serverCombo.selectedItem = preset.getServerName(owner.modelServices.database)
@@ -130,4 +134,6 @@ class GUIOptionModificationDialog(private val owner: GUIMain) : JDialog(owner) {
     labelAndObject(i18nString("Pattern:"), textPattern)
 
   private fun createReplacedSetting(): JComponent = labelAndObject("Replaced:", textReplaced)
+
+  private fun createPathSetting(): JComponent = labelAndObject(i18nString("Path") + ":", textPath)
 }

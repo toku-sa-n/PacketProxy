@@ -198,7 +198,9 @@ class DuplexFactory(
           packetHistory.updateIfSmall(packets, client_packet!!, data.size)
 
           var server = servers.queryByAddress(server_addr)
-          decoded_data = modifications.replaceOnRequest(decoded_data, server, client_packet!!)
+          var requestPath = extractHttpRequestPath(decoded_data)
+          decoded_data =
+            modifications.replaceOnRequest(decoded_data, server, client_packet!!, requestPath)
 
           // インターセプト対象でなければreceived()はdataをそのまま返すだけなので、
           // sha1によるハッシュ比較は対象のときだけ行えばよい
@@ -240,7 +242,9 @@ class DuplexFactory(
           packetHistory.syncContentTypeToClient(packets, client_packet, server_packet!!)
 
           var server = servers.queryByAddress(server_addr)
-          decoded_data = modifications.replaceOnResponse(decoded_data, server, server_packet!!)
+          var requestPath = extractHttpRequestPath(client_packet?.getDecodedData())
+          decoded_data =
+            modifications.replaceOnResponse(decoded_data, server, server_packet!!, requestPath)
 
           // インターセプト対象でなければreceived()はdataをそのまま返すだけなので、
           // sha1によるハッシュ比較は対象のときだけ行えばよい
@@ -543,5 +547,21 @@ class DuplexFactory(
       onClientChunkSendForced = { _ -> null },
       onServerChunkSendForced = { _ -> null },
     )
+  }
+
+  private fun extractHttpRequestPath(data: ByteArray?): String? {
+    if (data == null || data.isEmpty()) {
+      return null
+    }
+    return try {
+      var http = Http.create(data)
+      if (!http.isRequest) {
+        null
+      } else {
+        http.getPath()
+      }
+    } catch (_: Exception) {
+      null
+    }
   }
 }

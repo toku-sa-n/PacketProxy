@@ -81,6 +81,17 @@ class CreateModificationTool(
     enabledProp.addProperty("default", true)
     schema.add("enabled", enabledProp)
 
+    var pathProp = JsonObject()
+    pathProp.addProperty("type", "string")
+    pathProp.addProperty(
+      "description",
+      "Optional RE2 regex matched against the HTTP request path (no query). " +
+        "Empty or omitted applies to all paths. Examples: \"^/api/v1/\", \"/users\", \"^/exact$\". " +
+        "Response rules also use the corresponding request path.",
+    )
+    pathProp.addProperty("default", "")
+    schema.add("path", pathProp)
+
     return addAccessTokenToSchema(schema)
   }
 
@@ -107,9 +118,10 @@ class CreateModificationTool(
     var direction = ModificationMcpHelpers.parseDirection(arguments.get("direction").asString)
     var serverStr = if (arguments.has("server")) arguments.get("server").asString else "*"
     var enabled = if (arguments.has("enabled")) arguments.get("enabled").asBoolean else true
+    var path = if (arguments.has("path")) arguments.get("path").asString else ""
 
     var server = ModificationMcpHelpers.resolveServer(servers, serverStr)
-    var modification = Modification(direction, pattern, replaced, method, server)
+    var modification = Modification(direction, pattern, replaced, method, server, path)
     if (enabled) {
       modification.setEnabled()
     } else {
