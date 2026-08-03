@@ -17,6 +17,8 @@ class ToolRegistry(private val coreServices: CoreServices, private val guiResend
   private fun registerDefaultTools() {
     // 基本的なツールを登録
     val configs = coreServices.modelServices.configs
+    val modifications = coreServices.modelServices.modifications
+    val servers = coreServices.modelServices.servers
     registerTool(HistoryTool(coreServices.modelServices.packets, configs))
     registerTool(PacketDetailTool(coreServices.modelServices.packets, configs))
     registerTool(LogTool(configs))
@@ -39,6 +41,10 @@ class ToolRegistry(private val coreServices: CoreServices, private val guiResend
     )
     registerTool(JobStatusTool(coreServices.modelServices.packets, configs))
     registerTool(CreateResenderTabHttp2Tool(coreServices.uniqueId, guiResender, configs))
+    registerTool(ListModificationsTool(modifications, servers, configs))
+    registerTool(CreateModificationTool(modifications, servers, configs))
+    registerTool(UpdateModificationTool(modifications, servers, configs))
+    registerTool(DeleteModificationTool(modifications, configs))
   }
 
   fun registerTool(tool: MCPTool) {
