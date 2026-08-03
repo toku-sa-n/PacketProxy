@@ -25,12 +25,22 @@ import javax.swing.text.BadLocationException
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
+import packetproxy.util.LogLineStyle
 
 class GUILog {
   private val text: JTextPane = PlainTextCopyTextPane()
   private val scrollPane: JScrollPane
   private val mainPanel: JPanel
   private val thread_lock = Any()
+
+  private val timestampAttrs =
+    SimpleAttributeSet().apply { StyleConstants.setForeground(this, Color.GRAY) }
+
+  private val errorMessageAttrs =
+    SimpleAttributeSet().apply {
+      StyleConstants.setForeground(this, Color(180, 40, 40))
+      StyleConstants.setBold(this, true)
+    }
 
   init {
     text.isEditable = false
@@ -43,24 +53,11 @@ class GUILog {
   fun createPanel(): JComponent = mainPanel
 
   fun append(s: String?) {
-    try {
-      synchronized(thread_lock) {
-        val doc: StyledDocument = text.styledDocument
-        doc.insertString(doc.length, s + "\n", null)
-      }
-    } catch (_: BadLocationException) {}
+    appendStyled(s, isError = false)
   }
 
   fun appendErr(s: String?) {
-    try {
-      synchronized(thread_lock) {
-        val keyWord = SimpleAttributeSet()
-        StyleConstants.setBackground(keyWord, Color(240, 150, 150))
-        StyleConstants.setBold(keyWord, true)
-        val doc: StyledDocument = text.styledDocument
-        doc.insertString(doc.length, s + "\n", keyWord)
-      }
-    } catch (_: BadLocationException) {}
+    appendStyled(s, isError = true)
   }
 
   fun getLogText(): String {
@@ -72,5 +69,20 @@ class GUILog {
         ""
       }
     }
+  }
+
+  private fun appendStyled(s: String?, isError: Boolean) {
+    if (s == null) return
+    try {
+      synchronized(thread_lock) {
+        val doc: StyledDocument = text.styledDocument
+        val (timestamp, message) = LogLineStyle.splitLogLine(s)
+        if (timestamp.isNotEmpty()) {
+          doc.insertString(doc.length, timestamp, timestampAttrs)
+        }
+        val messageAttrs = if (isError) errorMessageAttrs else null
+        doc.insertString(doc.length, message + "\n", messageAttrs)
+      }
+    } catch (_: BadLocationException) {}
   }
 }

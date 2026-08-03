@@ -31,8 +31,6 @@ import java.util.*
 import javax.swing.JComponent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.yield
-import org.jline.jansi.Ansi
-import org.jline.jansi.Ansi.Color.RED
 import org.slf4j.LoggerFactory
 
 /**
@@ -120,7 +118,7 @@ class Logging {
   fun errInternal(format: Any, vararg args: Any?) {
     val fs = formatString(format, *args)
 
-    logger.error(Ansi.ansi().fg(RED).a(fs).reset().toString())
+    logger.error(fs)
     if (isGulp) return
     logSink.appendErr(fs)
   }
@@ -156,7 +154,8 @@ class Logging {
   private fun printRemaining(raf: RandomAccessFile) {
     val initialLength = logFile.length()
     while (raf.filePointer < initialLength) {
-      println(raf.readUtf8Line())
+      val line = raf.readUtf8Line() ?: continue
+      println(LogLineStyle.colorizeForConsole(line))
     }
   }
 
@@ -213,8 +212,7 @@ fun err(format: Any, vararg args: Any?) {
     instance.errInternal(format, *args)
     return
   }
-  LoggerFactory.getLogger("")
-    .error(Ansi.ansi().fg(RED).a(formatForFallback(format, *args)).reset().toString())
+  LoggerFactory.getLogger("").error(formatForFallback(format, *args))
 }
 
 fun errWithStackTrace(e: Throwable) {
