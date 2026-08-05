@@ -28,12 +28,13 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import packetproxy.common.FontManager
 import packetproxy.common.Range
+import packetproxy.common.i18nString
 
 class SearchBox(private val fontManager: FontManager) : JPanel() {
   private var baseText: JTextPane? = null
   private var emphasisArea: Range? = null
   private val searchText = JTextField()
-  private val searchCount = JLabel("Not found")
+  private val searchCount = JLabel(i18nString("Not found"))
 
   init {
     searchText.font = fontManager.getFont()
@@ -192,13 +193,13 @@ class SearchBox(private val fontManager: FontManager) : JPanel() {
   }
 
   private fun updateSearchCount(count: Int) {
-    var countLabel = "Not found"
+    var countLabel = i18nString("Not found")
     var countColor = Color.GRAY
     if (count < 0) {
-      countLabel = "Too Long"
+      countLabel = i18nString("Too Long")
       countColor = Color.RED
     } else if (count > 0) {
-      countLabel = "%d found".format(count)
+      countLabel = i18nString("%d found").format(count)
       countColor = Color.YELLOW
     }
     searchCount.background = countColor

@@ -8,6 +8,7 @@ import javax.swing.text.MutableAttributeSet
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
+import packetproxy.common.i18nString
 import packetproxy.model.DiffSet
 import packetproxy.util.errWithStackTrace
 
@@ -39,7 +40,7 @@ abstract class GUIDiffBase(protected val owner: GUIMain) {
           owner.coreServices.packetProxyUtility,
         )
         .apply { isEditable = true }
-    panelOrig.add(JLabel("Original").apply { alignmentX = 0.5f })
+    panelOrig.add(JLabel(i18nString("Original")).apply { alignmentX = 0.5f })
     scrollOrig =
       JScrollPane(textOrig).apply {
         verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
@@ -55,7 +56,7 @@ abstract class GUIDiffBase(protected val owner: GUIMain) {
           owner.coreServices.packetProxyUtility,
         )
         .apply { isEditable = true }
-    panelTarg.add(JLabel("Target").apply { alignmentX = 0.5f })
+    panelTarg.add(JLabel(i18nString("Target")).apply { alignmentX = 0.5f })
     scrollTarg =
       JScrollPane(textTarg).apply {
         verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
@@ -68,7 +69,7 @@ abstract class GUIDiffBase(protected val owner: GUIMain) {
         add(panelTarg)
       }
     jc =
-      JCheckBox("Sort & Uniq").apply {
+      JCheckBox(i18nString("Sort & Uniq")).apply {
         addActionListener(
           ActionListener {
             try {

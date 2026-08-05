@@ -16,9 +16,9 @@ import packetproxy.common.*
 import packetproxy.model.Server
 
 class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
-  private val ip = HintTextField("(ex.) aaa.bbb.ccc.com or 1.2.3.4")
-  private val port = HintTextField("(ex.) 80")
-  private val comment = HintTextField("(ex.) game server for test")
+  private val ip = HintTextField(i18nString("(ex.) aaa.bbb.ccc.com or 1.2.3.4"))
+  private val port = HintTextField(i18nString("(ex.) 80"))
+  private val comment = HintTextField(i18nString("(ex.) game server for test"))
   private val ssl = JCheckBox(i18nString("Need a SSL/TLS to connect"))
   private val dns = JCheckBox(i18nString("Spoofing A Record"))
   private val dns6 = JCheckBox(i18nString("Spoofing AAAA Record"))
@@ -52,7 +52,9 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
     panel.add(
       labeled(
         i18nString("DNS Spoofing:"),
-        JLabel("Private DNS server needs to resolve the server name to local machine IP."),
+        JLabel(
+          i18nString("Private DNS server needs to resolve the server name to local machine IP.")
+        ),
       )
     )
     panel.add(labeled(" ", dns))

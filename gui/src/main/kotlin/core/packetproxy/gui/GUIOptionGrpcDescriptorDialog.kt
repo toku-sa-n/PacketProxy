@@ -66,11 +66,11 @@ class GUIOptionGrpcDescriptorDialog(
   private val pathLabel = JLabel()
   private val protoSet = ProtoFileSet()
   private val protoTableModel =
-    object : DefaultTableModel(arrayOf("Path"), 0) {
+    object : DefaultTableModel(i18nStringArray("Path"), 0) {
       override fun isCellEditable(row: Int, column: Int) = false
     }
   private val serviceTableModel =
-    object : DefaultTableModel(arrayOf("Service", "Method"), 0) {
+    object : DefaultTableModel(i18nStringArray("Service", "Method"), 0) {
       override fun isCellEditable(row: Int, column: Int) = false
     }
   private val protoTable = JTable(protoTableModel)

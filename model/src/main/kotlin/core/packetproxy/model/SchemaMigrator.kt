@@ -20,6 +20,7 @@ import com.j256.ormlite.dao.Dao
 import com.j256.ormlite.field.FieldType
 import com.j256.ormlite.field.SqlType
 import javax.swing.JOptionPane
+import packetproxy.common.i18nString
 import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
@@ -88,15 +89,19 @@ object SchemaMigrator {
       }
     val backupMsg =
       if (backupPath != null) {
-        "\nバックアップを作成しました:\n$backupPath"
+        "\n" + i18nString("Backup created:\n%s", backupPath)
       } else {
-        "\n（バックアップの作成に失敗しました）"
+        "\n" + i18nString("Failed to create a backup.")
       }
     val option =
       JOptionPane.showConfirmDialog(
         null,
-        "${tableLabel}テーブルの形式が更新されているため\n現在のテーブルを削除しても良いですか？$backupMsg",
-        "テーブルの更新",
+        i18nString(
+          "The %s table schema has been updated.\nIs it OK to delete the current table?%s",
+          tableLabel,
+          backupMsg,
+        ),
+        i18nString("Table update"),
         JOptionPane.YES_NO_OPTION,
         JOptionPane.WARNING_MESSAGE,
       )

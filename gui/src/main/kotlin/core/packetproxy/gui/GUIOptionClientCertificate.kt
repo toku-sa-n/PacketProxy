@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.ClientCertificate
 import packetproxy.util.errWithStackTrace
 
@@ -32,7 +33,7 @@ class GUIOptionClientCertificate(owner: GUIMain) :
       }
     jcomponent =
       createComponent(
-        arrayOf("Enabled", "Type", "Host", "Subject(CN)", "Issuer"),
+        i18nStringArray("Enabled", "Type", "Host", "Subject(CN)", "Issuer"),
         intArrayOf(50, 50, 200, 100, 350),
         tableAction,
         {

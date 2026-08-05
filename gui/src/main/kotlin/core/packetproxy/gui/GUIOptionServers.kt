@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.Server
 import packetproxy.util.errWithStackTrace
 
@@ -36,7 +37,7 @@ class GUIOptionServers(owner: GUIMain) : GUIOptionComponentBase<Server>(owner) {
       }
     jcomponent =
       createComponentForServers(
-        arrayOf(
+        i18nStringArray(
           "Host",
           "Port",
           "Use SSL",

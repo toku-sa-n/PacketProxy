@@ -29,6 +29,8 @@ import javax.swing.JTextField
 import org.apache.commons.codec.binary.Hex
 import packetproxy.common.Binary
 import packetproxy.common.StringUtils
+import packetproxy.common.i18nString
+import packetproxy.common.i18nStringArray
 import packetproxy.util.errWithStackTrace
 
 class GUIHexCalc {
@@ -79,11 +81,11 @@ class GUIHexCalc {
         )
       }
     endianBox =
-      JComboBox(arrayOf("Little Endian", "Big Endian")).apply {
+      JComboBox(i18nStringArray("Little Endian", "Big Endian")).apply {
         addActionListener { intToHexTranslation() }
       }
     val label =
-      JLabel("Integer <-> Hex").apply {
+      JLabel(i18nString("Integer <-> Hex")).apply {
         horizontalAlignment = JLabel.CENTER
         maximumSize = Dimension(100, maximumSize.height)
       }
@@ -126,7 +128,7 @@ class GUIHexCalc {
         )
       }
     val label =
-      JLabel("String <-> Hex").apply {
+      JLabel(i18nString("String <-> Hex")).apply {
         horizontalAlignment = JLabel.CENTER
         maximumSize = Dimension(100, maximumSize.height)
       }
@@ -153,7 +155,10 @@ class GUIHexCalc {
       return
     }
     intHex.text =
-      StringUtils.intToHex(intBefore.text.toInt(), endianBox.selectedItem == "Little Endian")
+      StringUtils.intToHex(
+        intBefore.text.toInt(),
+        endianBox.selectedItem == i18nString("Little Endian"),
+      )
   }
 
   private fun hexToIntTranslation() {
@@ -163,7 +168,8 @@ class GUIHexCalc {
     }
     try {
       val binary = Binary(Binary.HexString(intHex.text))
-      intBefore.text = binary.toInt(endianBox.selectedItem == "Little Endian").toString()
+      intBefore.text =
+        binary.toInt(endianBox.selectedItem == i18nString("Little Endian")).toString()
     } catch (_: IllegalArgumentException) {}
   }
 

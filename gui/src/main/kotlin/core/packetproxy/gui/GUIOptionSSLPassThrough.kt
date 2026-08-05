@@ -3,6 +3,7 @@ package packetproxy.gui
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.beans.PropertyChangeEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.PropertyChangeEventType.SSL_PASS_THROUGHS
 import packetproxy.model.SSLPassThrough
 import packetproxy.util.errWithStackTrace
@@ -33,7 +34,7 @@ class GUIOptionSSLPassThrough(owner: GUIMain) : GUIOptionComponentBase<SSLPassTh
       }
     jcomponent =
       createComponent(
-        arrayOf("Enabled", "Server Name", "Applied Listen Port"),
+        i18nStringArray("Enabled", "Server Name", "Applied Listen Port"),
         intArrayOf(80, 570, 150),
         tableAction,
         {

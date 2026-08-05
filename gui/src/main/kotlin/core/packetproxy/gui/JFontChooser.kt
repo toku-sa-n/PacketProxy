@@ -78,15 +78,29 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
         add(
           JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
-            add(createPanel("Font Name", fontFamilyTextField, fontFamilyList, Dimension(200, 200)))
-            add(createPanel("Font Size", fontSizeTextField, fontSizeList, Dimension(100, 200)))
+            add(
+              createPanel(
+                i18nString("Font Name"),
+                fontFamilyTextField,
+                fontFamilyList,
+                Dimension(200, 200),
+              )
+            )
+            add(
+              createPanel(
+                i18nString("Font Size"),
+                fontSizeTextField,
+                fontSizeList,
+                Dimension(100, 200),
+              )
+            )
           }
         )
         add(
           JPanel(BorderLayout()).apply {
             preferredSize = Dimension(200, 50)
             border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
-            add(JLabel("Sample"), BorderLayout.NORTH)
+            add(JLabel(i18nString("Sample")), BorderLayout.NORTH)
             add(sampleText, BorderLayout.CENTER)
           }
         )

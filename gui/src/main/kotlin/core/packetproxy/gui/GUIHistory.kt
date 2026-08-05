@@ -71,7 +71,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   private val owner = main
   private val packetSummarizer: PacketSummarizer = main.coreServices.encoderManager.packetSummarizer
   private val columnNames =
-    arrayOf(
+    i18nStringArray(
       "#",
       "Request",
       "Status",
@@ -646,8 +646,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     dialogOnce = true
     JOptionPane.showMessageDialog(
       owner,
-      "データベースのサイズが上限値(2GB)を越えそうです。Historyを保存してください。",
-      "Warning",
+      i18nString("Database size is approaching the limit (2GB). Please save History."),
+      i18nString("Warning"),
       JOptionPane.WARNING_MESSAGE,
     )
     val fileChooser = WriteFileChooserWrapper(owner, "sqlite3")
@@ -656,11 +656,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
         override fun onApproved(file: File, extension: String) {
           try {
             main.modelServices.database.Save(file.absolutePath)
-            JOptionPane.showMessageDialog(null, "データを保存しました。")
+            JOptionPane.showMessageDialog(null, i18nString("Data saved successfully"))
             updateRequest(true)
           } catch (exception: Exception) {
             errWithStackTrace(exception)
-            JOptionPane.showMessageDialog(null, "データの保存に失敗しました。")
+            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
           }
           dialogOnce = false
         }
@@ -668,7 +668,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
         override fun onCanceled() {}
 
         override fun onError() {
-          JOptionPane.showMessageDialog(null, "データの保存に失敗しました。")
+          JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
         }
       }
     )

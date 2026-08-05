@@ -19,6 +19,7 @@ import java.io.File
 import java.util.EventListener
 import javax.swing.JFrame
 import javax.swing.JOptionPane
+import packetproxy.common.i18nString
 
 class WriteFileChooserWrapper {
   private lateinit var fileChooser: NativeFileChooser
@@ -63,8 +64,8 @@ class WriteFileChooserWrapper {
       when (
         JOptionPane.showConfirmDialog(
           owner,
-          "ファイルが既に存在しますが上書きしますか？",
-          "Existing file",
+          i18nString("The file already exists. Do you want to overwrite it?"),
+          i18nString("Existing file"),
           JOptionPane.YES_NO_CANCEL_OPTION,
         )
       ) {

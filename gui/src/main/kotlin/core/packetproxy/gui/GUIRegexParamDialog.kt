@@ -13,14 +13,14 @@ class GUIRegexParamDialog(private val owner: JFrame) : JDialog(owner) {
   private var regexParam: RegexParam? = null
 
   init {
-    title = "RegexParam setting"
+    title = i18nString("RegexParam setting")
     var rect = owner.bounds
     setBounds(rect.x + rect.width / 2 - 250, rect.y + rect.height / 2 - 250, 500, 500)
     var panel =
       JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        add(labelAndObject("Param Name:", nameField))
-        add(labelAndObject("regex to pickup", regex))
+        add(labelAndObject(i18nString("Param Name:"), nameField))
+        add(labelAndObject(i18nString("regex to pickup"), regex))
         add(buttons())
       }
     contentPane.add(panel)

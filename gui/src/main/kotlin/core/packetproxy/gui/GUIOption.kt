@@ -26,24 +26,27 @@ class GUIOption(private val owner: GUIMain) {
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     addSection(
       panel,
-      "Listen Ports",
+      i18nString("Listen Ports"),
       i18nString("Set listen port and server that packets are forwarded to."),
       GUIOptionListenPorts(owner).createPanel(),
     )
     addSection(
       panel,
-      "Servers",
+      i18nString("Servers"),
       i18nString("Set server and encode module to be used to encode packets."),
       GUIOptionServers(owner).createPanel(),
     )
     addSection(
       panel,
-      "Hostname Resolutions",
+      i18nString("Hostname Resolutions"),
       i18nString("Set ip addr and server for DNS resolution."),
       GUIOptionResolutions(owner).createPanel(),
     )
     panel.add(
-      element("Auto Modifications", i18nString("Set pattern for auto packet modification."))
+      element(
+        i18nString("Auto Modifications"),
+        i18nString("Set pattern for auto packet modification."),
+      )
     )
     panel.add(GUIOptionModifications(owner).createPanel())
     panel.add(
@@ -53,7 +56,7 @@ class GUIOption(private val owner: GUIMain) {
     )
     panel.add(GUIHexCalc().create())
     panel.add(separator())
-    panel.add(element("Intercept Rules", ""))
+    panel.add(element(i18nString("Intercept Rules"), ""))
     val interceptRule =
       JCheckBox(i18nString("Use these intercept rules")).also { checkbox ->
         checkbox.isSelected = owner.modelServices.interceptOptions.isEnabled()
@@ -71,7 +74,7 @@ class GUIOption(private val owner: GUIMain) {
     panel.add(separator())
     addSection(
       panel,
-      "Client Certificates",
+      i18nString("Client Certificates"),
       i18nString("Set client certificate to be used on SSL/TLS."),
       GUIOptionClientCertificate(owner).createPanel(),
     )
@@ -85,7 +88,7 @@ class GUIOption(private val owner: GUIMain) {
     )
     addSection(
       panel,
-      "SSL PassThrough",
+      i18nString("SSL PassThrough"),
       i18nString(
         "Set HTTPS server that packets are forwarded to without analyzing. These settings are enabled only if 'HTTP_PROXY' type is used."
       ),
@@ -93,7 +96,7 @@ class GUIOption(private val owner: GUIMain) {
     )
     addSection(
       panel,
-      "Private DNS server",
+      i18nString("Private DNS server"),
       i18nString("Use private DNS server that resolves server name to the IP address of this pc."),
       GUIOptionPrivateDNS(
           owner.coreServices.privateDns,
@@ -104,7 +107,7 @@ class GUIOption(private val owner: GUIMain) {
     )
     addSection(
       panel,
-      "OpenVPN Server with Docker",
+      i18nString("OpenVPN Server with Docker"),
       i18nString(
         "Use OpenVPN Server as Docker Container to proxy HTTP/HTTPS without DNS Spoofing."
       ),
@@ -112,29 +115,29 @@ class GUIOption(private val owner: GUIMain) {
     )
     addSection(
       panel,
-      "Priority Order of HTTP Versions",
+      i18nString("Priority Order of HTTP Versions"),
       i18nString("Set order of priority between HTTP1 and HTTP2."),
       GUIOptionHttp(owner.modelServices.configs).createPanel(),
     )
-    panel.add(title("PacketProxy CA Certificates & Private Keys"))
+    panel.add(title(i18nString("PacketProxy CA Certificates & Private Keys")))
     panel.add(createCaPanel())
     panel.add(separator())
     addSection(
       panel,
-      "Character encodings",
+      i18nString("Character encodings"),
       i18nString("Add/Remove character encodings to be used to display contents of packet."),
       GUIOptionCharSets(owner).createPanel(),
     )
     addSection(
       panel,
-      "Extensions",
+      i18nString("Extensions"),
       i18nString("Enable/Disable loaded extensions"),
       GUIOptionExtensions(owner).createPanel(),
     )
-    addSection(panel, "Fonts", "", GUIOptionFonts(owner).createPanel())
+    addSection(panel, i18nString("Fonts"), "", GUIOptionFonts(owner).createPanel())
     addSection(
       panel,
-      "Import/Export configs (Experimental)",
+      i18nString("Import/Export configs (Experimental)"),
       i18nString(
         "Import/Export configs by GET/POST http://localhost:32349/config with 'Authorization: [AccessToken]' header"
       ),

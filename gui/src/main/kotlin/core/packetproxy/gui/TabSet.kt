@@ -7,6 +7,7 @@ import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
 import packetproxy.common.Range
+import packetproxy.common.i18nString
 import packetproxy.model.PropertyChangeEventType.SELECTED_INDEX
 import packetproxy.util.SearchBox
 import packetproxy.util.err
@@ -28,9 +29,9 @@ class TabSet(private val owner: GUIMain, search: Boolean, copy: Boolean) {
   init {
     rawPanel.setParentTabs(this)
     binaryPanel.setParentTabs(this)
-    dataPane.addTab("Raw", rawPanel.createPanel())
-    dataPane.addTab("Binary", binaryPanel.createPanel())
-    dataPane.addTab("Json", jsonPanel.createPanel())
+    dataPane.addTab(i18nString("Raw"), rawPanel.createPanel())
+    dataPane.addTab(i18nString("Binary"), binaryPanel.createPanel())
+    dataPane.addTab(i18nString("Json"), jsonPanel.createPanel())
     dataPane.addChangeListener {
       try {
         update()
@@ -44,7 +45,7 @@ class TabSet(private val owner: GUIMain, search: Boolean, copy: Boolean) {
       basePanel.add(searchBox, BorderLayout.SOUTH)
     }
     if (copy) {
-      copyButton = JButton("copy to clipboard")
+      copyButton = JButton(i18nString("copy to clipboard"))
       basePanel.add(copyButton)
     }
   }

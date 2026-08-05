@@ -42,7 +42,7 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
     forwardPorts.addPropertyChangeListener(this)
     jcomponent =
       createComponent(
-        arrayOf("Proto", "src port", "dst port"),
+        i18nStringArray("Proto", "src port", "dst port"),
         intArrayOf(80, 80, 80),
         object : MouseAdapter() {
           override fun mouseClicked(e: MouseEvent) {

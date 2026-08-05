@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.Resolution
 import packetproxy.util.errWithStackTrace
 
@@ -31,7 +32,7 @@ class GUIOptionResolutions(owner: GUIMain) : GUIOptionComponentBase<Resolution>(
       }
     jcomponent =
       createComponent(
-        arrayOf("IP Addr", "Host", "Override", "Comment"),
+        i18nStringArray("IP Addr", "Host", "Override", "Comment"),
         intArrayOf(200, 200, 50, 100),
         tableAction,
         {

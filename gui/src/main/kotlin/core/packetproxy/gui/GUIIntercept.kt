@@ -3,6 +3,7 @@ package packetproxy.gui
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import javax.swing.*
+import packetproxy.common.i18nString
 import packetproxy.util.errWithStackTrace
 
 class GUIIntercept(private val owner: GUIMain) : PropertyChangeListener {
@@ -22,14 +23,14 @@ class GUIIntercept(private val owner: GUIMain) : PropertyChangeListener {
 
   fun createPanel(): JComponent {
     enabled =
-      JToggleButton("intercept is off").apply {
+      JToggleButton(i18nString("intercept is off")).apply {
         addActionListener {
           if (isSelected) controller.enableInterceptMode()
           else controller.disableInterceptMode(interceptData)
         }
       }
     forward =
-      JButton("forward").apply {
+      JButton(i18nString("forward")).apply {
         isEnabled = false
         addActionListener {
           try {
@@ -40,7 +41,7 @@ class GUIIntercept(private val owner: GUIMain) : PropertyChangeListener {
         }
       }
     drop =
-      JButton("drop").apply {
+      JButton(i18nString("drop")).apply {
         isEnabled = false
         addActionListener {
           try {
@@ -76,7 +77,8 @@ class GUIIntercept(private val owner: GUIMain) : PropertyChangeListener {
 
   override fun propertyChange(event: PropertyChangeEvent) {
     try {
-      enabled.text = if (model.isInterceptEnabled()) "intercept is on" else "intercept is off"
+      enabled.text =
+        i18nString(if (model.isInterceptEnabled()) "intercept is on" else "intercept is off")
       var data = model.getData() ?: ByteArray(0)
       var client = model.getClientPacket()
       var server = model.getServerPacket()

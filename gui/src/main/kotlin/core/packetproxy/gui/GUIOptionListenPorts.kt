@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.ListenPort
 import packetproxy.util.errWithStackTrace
 
@@ -31,7 +32,7 @@ class GUIOptionListenPorts(owner: GUIMain) : GUIOptionComponentBase<ListenPort>(
       }
     jcomponent =
       createComponent(
-        arrayOf("Enabled", "Protocol", "Listen Port", "Port Type", "CA", "Forward Server"),
+        i18nStringArray("Enabled", "Protocol", "Listen Port", "Port Type", "CA", "Forward Server"),
         intArrayOf(50, 50, 80, 120, 250, 300),
         action,
         {

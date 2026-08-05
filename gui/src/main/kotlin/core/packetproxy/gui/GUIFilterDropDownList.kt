@@ -18,7 +18,7 @@ class GUIFilterDropDownList(
   init {
     isUndecorated = true
     var model =
-      object : DefaultTableModel(arrayOf("filter name", "filter"), 0) {
+      object : DefaultTableModel(i18nStringArray("filter name", "filter"), 0) {
         override fun isCellEditable(row: Int, column: Int) = false
       }
     table =

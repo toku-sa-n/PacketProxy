@@ -2,6 +2,8 @@ package packetproxy.gui
 
 import javax.swing.*
 import javax.swing.table.TableRowSorter
+import packetproxy.common.i18nString
+import packetproxy.common.i18nStringArray
 import packetproxy.model.OptionTableModel
 import packetproxy.model.RegexParam
 import packetproxy.util.errWithStackTrace
@@ -15,7 +17,7 @@ class GUIRegexParamsTableDialog(
   private lateinit var table: JTable
 
   init {
-    title = "regex params"
+    title = i18nString("regex params")
     contentPane.add(createPanel())
     var r = owner.bounds
     setBounds(r.x + 50, r.y + r.height / 2 - 150, r.width - 100, 300)
@@ -34,7 +36,7 @@ class GUIRegexParamsTableDialog(
   }
 
   fun createPanel(): JComponent {
-    var names = arrayOf("Base Packet ID", "Param Name", "Regex to pickup")
+    var names = i18nStringArray("Base Packet ID", "Param Name", "Regex to pickup")
     model =
       object : OptionTableModel(names, 0) {
         override fun isCellEditable(row: Int, column: Int) = false
@@ -46,7 +48,7 @@ class GUIRegexParamsTableDialog(
       }
     var buttons = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     buttons.add(
-      JButton("Add").apply {
+      JButton(i18nString("Add")).apply {
         addActionListener {
           try {
             GUIRegexParamDialog(owner).showDialog(RegexParam(basePacketId, "", ""))?.let {
@@ -60,7 +62,7 @@ class GUIRegexParamsTableDialog(
       }
     )
     buttons.add(
-      JButton("Remove").apply {
+      JButton(i18nString("Remove")).apply {
         addActionListener {
           if (table.selectedRow >= 0) {
             regexParams.removeAt(table.selectedRow)

@@ -330,17 +330,17 @@ class GUIHistoryContextMenuFactory {
             try {
               val data = dataSupplier()
               FileUtils.writeByteArrayToFile(file, data)
-              JOptionPane.showMessageDialog(owner, String.format("%sに保存しました！", file.path))
+              JOptionPane.showMessageDialog(owner, i18nString("Saved to %s!", file.path))
             } catch (ex: Exception) {
               errWithStackTrace(ex)
-              JOptionPane.showMessageDialog(null, "データの保存に失敗しました。")
+              JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
             }
           }
 
           override fun onCanceled() {}
 
           override fun onError() {
-            JOptionPane.showMessageDialog(null, "データの保存に失敗しました。")
+            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
           }
         }
       )

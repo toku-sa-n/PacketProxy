@@ -47,7 +47,7 @@ class BinaryTextPane(
     titleEncoders.isEnabled = false
     menu.add(titleEncoders)
 
-    var base64Encoder = JMenuItem("Base64 Encoder")
+    var base64Encoder = JMenuItem(i18nString("Base64 Encoder"))
     base64Encoder.addActionListener {
       try {
         var start = selectionStart / 3

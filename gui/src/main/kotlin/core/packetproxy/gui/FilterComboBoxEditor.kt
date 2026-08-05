@@ -22,9 +22,11 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.ComboBoxEditor
 import javax.swing.event.EventListenerList
+import packetproxy.common.i18nString
 
 class FilterComboBoxEditor : ComboBoxEditor {
-  private val editor = HintTextField("フィルタ文字列　(ex: request == example.com && type == image)")
+  private val editor =
+    HintTextField(i18nString("filter string... (ex: request == example.com && type == image)"))
   private var caret = 0
   private val listenerList = EventListenerList()
 

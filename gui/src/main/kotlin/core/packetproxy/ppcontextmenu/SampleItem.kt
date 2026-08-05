@@ -19,6 +19,7 @@ import java.io.File
 import javax.swing.JFrame
 import javax.swing.JOptionPane
 import org.apache.commons.io.FileUtils
+import packetproxy.common.i18nString
 import packetproxy.gui.GUIPacket
 import packetproxy.gui.NativeFileChooser
 
@@ -29,7 +30,7 @@ class SampleItem : PPContextMenu() {
   override fun action() {
     val saveFile = NativeFileChooser()
     saveFile.setAcceptAllFileFilterUsed(false)
-    saveFile.addChoosableFileFilter("データファイル (.dat)", "dat")
+    saveFile.addChoosableFileFilter(i18nString("Data file (.dat)"), "dat")
     val mainFrame = this.dependentData!!.get("main_frame") as JFrame
     val selected = saveFile.showSaveDialog(mainFrame)
     if (selected != NativeFileChooser.APPROVE_OPTION) return
@@ -37,6 +38,6 @@ class SampleItem : PPContextMenu() {
     val guiPacket = this.dependentData!!.get("gui_packet") as GUIPacket
     val data = guiPacket.getPacket().getReceivedData()
     FileUtils.writeByteArrayToFile(file, data)
-    JOptionPane.showMessageDialog(mainFrame, String.format("%sに保存しました！", file.path))
+    JOptionPane.showMessageDialog(mainFrame, i18nString("Saved to %s!", file.path))
   }
 }

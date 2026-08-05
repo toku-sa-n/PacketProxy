@@ -149,9 +149,9 @@ abstract class GUIOptionComponentBase<T>(protected val owner: GUIMain) : Propert
     removeAction: ActionListener?,
   ): JPanel {
     val panel = JPanel()
-    val add = JButton("Add")
-    val edit = JButton("Edit")
-    val remove = JButton("Remove")
+    val add = JButton(i18nString("Add"))
+    val edit = JButton(i18nString("Edit"))
+    val remove = JButton(i18nString("Remove"))
     val height = add.minimumSize.height
     for (button in arrayOf(add, edit, remove)) {
       button.maximumSize = Dimension(100, height)

@@ -203,7 +203,7 @@ class RawTextPane(
     }
 
   private fun menuItem(name: String, transform: () -> String) =
-    JMenuItem(name).apply {
+    JMenuItem(i18nString(name)).apply {
       addActionListener {
         try {
           GUIDecoderDialog(owner).apply {

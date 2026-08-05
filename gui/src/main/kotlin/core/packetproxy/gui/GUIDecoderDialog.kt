@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import javax.swing.JComponent
 import javax.swing.JDialog
+import packetproxy.common.i18nString
 import packetproxy.model.OneShotPacket
 import packetproxy.util.errWithStackTrace
 
@@ -9,7 +10,7 @@ class GUIDecoderDialog(private val owner: GUIMain) : JDialog(owner) {
   private val mainPanel = GUIPacketData(owner)
 
   init {
-    title = "Decoder"
+    title = i18nString("Decoder")
     val rectangle = owner.bounds
     val width = rectangle.width - 100
     val height = rectangle.height - 100

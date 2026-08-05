@@ -3,13 +3,14 @@ package packetproxy.gui
 import java.awt.event.ActionListener
 import javax.swing.JCheckBox
 import javax.swing.JLabel
+import packetproxy.common.i18nString
 import packetproxy.model.DiffEventAdapter
 import packetproxy.model.DiffJson
 import packetproxy.model.DiffSet
 import packetproxy.util.errWithStackTrace
 
 class GUIDiffJson(owner: GUIMain) : GUIDiffBase(owner) {
-  private var jcCh = JCheckBox("Character based (default: Line based)")
+  private var jcCh = JCheckBox(i18nString("Character based (default: Line based)"))
 
   init {
     jcCh.addActionListener(

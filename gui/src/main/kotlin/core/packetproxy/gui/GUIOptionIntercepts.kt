@@ -1,6 +1,7 @@
 package packetproxy.gui
 
 import java.awt.event.MouseAdapter
+import packetproxy.common.i18nStringArray
 import packetproxy.model.InterceptOption
 import packetproxy.util.errWithStackTrace
 
@@ -12,7 +13,14 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
     interceptOptions.addPropertyChangeListener(this)
     jcomponent =
       createComponent(
-        arrayOf("Enabled", "Direction", "Action and Condition", "Type", "Pattern", "Target Server"),
+        i18nStringArray(
+          "Enabled",
+          "Direction",
+          "Action and Condition",
+          "Type",
+          "Pattern",
+          "Target Server",
+        ),
         intArrayOf(50, 160, 300, 50, 80, 90),
         object : MouseAdapter() {},
         {

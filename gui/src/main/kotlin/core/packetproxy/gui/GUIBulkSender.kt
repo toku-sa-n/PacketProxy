@@ -3,6 +3,7 @@ package packetproxy.gui
 import java.awt.Component
 import java.util.function.Consumer
 import javax.swing.*
+import packetproxy.common.i18nString
 import packetproxy.model.OneShotPacket
 
 class GUIBulkSender(private val owner: GUIMain) {
@@ -48,7 +49,7 @@ class GUIBulkSender(private val owner: GUIMain) {
         },
       )
     var clear =
-      JButton("clear").apply {
+      JButton(i18nString("clear")).apply {
         addActionListener {
           sendTable.clear()
           recvTable.clear()

@@ -17,6 +17,7 @@ package packetproxy.gui
 
 import javax.swing.JFrame
 import javax.swing.JOptionPane
+import packetproxy.common.i18nStringArray
 
 /**
  * マージ行（Request+Response両方ある行）の場合はどちらのデータを使うかユーザに選択させる。 単一パケット行の場合は request
@@ -35,7 +36,7 @@ fun resolve(
   }
   // macOS の JOptionPane はボタンを右から左に描画するため、
   // 視覚的に左から「Request | Response」の順にするには逆順で定義する。
-  val options = arrayOf("Response", "Request")
+  val options = i18nStringArray("Response", "Request")
   val choice =
     JOptionPane.showOptionDialog(
       owner,

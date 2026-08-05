@@ -10,6 +10,7 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JSplitPane
+import packetproxy.common.i18nString
 import packetproxy.controller.ResendController.ResendWorker
 import packetproxy.controller.SinglePacketAttackController
 import packetproxy.model.OneShotPacket
@@ -174,7 +175,7 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
         resizeWeight = 0.5
       }
     private val resendButton =
-      JButton("send").apply {
+      JButton(i18nString("send")).apply {
         addActionListener {
           try {
             var sendPacket = sendPanel.getOneShotPacket() ?: return@addActionListener
@@ -201,13 +202,13 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
         }
       }
     private val resendMultipleButton =
-      JButton("send x 20").apply {
+      JButton(i18nString("send x 20")).apply {
         addActionListener {
           try {
             var sendPacket = sendPanel.getOneShotPacket() ?: return@addActionListener
             main.coreServices.resendController.resend(sendPacket, 20)
             clearLog()
-            showLog("結果は履歴ウィンドウで確認してください！")
+            showLog(i18nString("Check the result in the History window!"))
             rollback()
           } catch (e: Exception) {
             errWithStackTrace(e)
@@ -215,7 +216,7 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
         }
       }
     private val attackButton =
-      JButton("send x 20 (single-packet attack)").apply {
+      JButton(i18nString("send x 20 (single-packet attack)")).apply {
         addActionListener {
           try {
             var sendPacket = sendPanel.getOneShotPacket() ?: return@addActionListener

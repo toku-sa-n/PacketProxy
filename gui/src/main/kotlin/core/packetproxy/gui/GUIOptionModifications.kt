@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.Modification
 import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
@@ -32,7 +33,15 @@ class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modificati
       }
     jcomponent =
       createComponent(
-        arrayOf("Enabled", "Type", "Method", "Pattern", "Replaced", "Path", "Applied Server"),
+        i18nStringArray(
+          "Enabled",
+          "Type",
+          "Method",
+          "Pattern",
+          "Replaced",
+          "Path",
+          "Applied Server",
+        ),
         intArrayOf(50, 100, 50, 150, 150, 120, 130),
         tableAction,
         {

@@ -8,8 +8,7 @@ import packetproxy.model.Filter
 import packetproxy.util.errWithStackTrace
 
 class GUIFilterConfig(private var owner: JFrame) {
-  private var model =
-    ProjectTableModel(arrayOf("#", i18nString("Filter name"), i18nString("Filter")), 0)
+  private var model = ProjectTableModel(i18nStringArray("#", "Filter name", "Filter"), 0)
   private var table = JTable(model)
 
   init {
@@ -31,7 +30,7 @@ class GUIFilterConfig(private var owner: JFrame) {
     }
     var buttons = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     listOf("Add", "Edit", "Remove").forEach { title ->
-      buttons.add(JButton(title).apply { addActionListener { handle(title) } })
+      buttons.add(JButton(i18nString(title)).apply { addActionListener { handle(title) } })
     }
     return JPanel().apply {
       layout = BoxLayout(this, BoxLayout.X_AXIS)

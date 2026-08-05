@@ -64,7 +64,7 @@ class GUIOptionHubServer(private val frame: GUIMain) : PropertyChangeListener {
     val row = JPanel()
     row.background = Color.WHITE
     row.layout = BoxLayout(row, BoxLayout.X_AXIS)
-    row.add(JLabel("AccessToken:"))
+    row.add(JLabel(i18nString("AccessToken:")))
     token = JTextField()
     token.isEditable = false
     token.maximumSize = Dimension(Short.MAX_VALUE.toInt(), token.minimumSize.height)

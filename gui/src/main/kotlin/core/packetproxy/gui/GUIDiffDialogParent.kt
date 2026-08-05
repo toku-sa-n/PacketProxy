@@ -4,6 +4,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.*
 import javax.swing.event.ChangeListener
+import packetproxy.common.i18nString
 import packetproxy.util.errWithStackTrace
 
 class GUIDiffDialogParent(private val owner: GUIMain) : JDialog(owner) {
@@ -14,7 +15,7 @@ class GUIDiffDialogParent(private val owner: GUIMain) : JDialog(owner) {
   private var jsonPanel = GUIDiffJson(owner)
 
   init {
-    title = "Diff"
+    title = i18nString("Diff")
     var rect = owner.bounds
     setBounds(rect.x + 50, rect.y + 50, rect.width - 100, rect.height - 100)
     contentPane.layout = BoxLayout(contentPane, BoxLayout.Y_AXIS)
@@ -52,9 +53,9 @@ class GUIDiffDialogParent(private val owner: GUIMain) : JDialog(owner) {
 
   fun createPanel(): JComponent {
     mainPanel.layout = BoxLayout(mainPanel, BoxLayout.Y_AXIS)
-    dataPane.addTab("Raw", rawPanel.createPanel())
-    dataPane.addTab("Binary", binaryPanel.createPanel())
-    dataPane.addTab("Json", jsonPanel.createPanel())
+    dataPane.addTab(i18nString("Raw"), rawPanel.createPanel())
+    dataPane.addTab(i18nString("Binary"), binaryPanel.createPanel())
+    dataPane.addTab(i18nString("Json"), jsonPanel.createPanel())
     dataPane.addChangeListener(ChangeListener { update() })
     mainPanel.add(dataPane)
     return mainPanel

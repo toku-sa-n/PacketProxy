@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.Extension
 import packetproxy.util.errWithStackTrace
 
@@ -31,7 +32,7 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
       }
     jcomponent =
       createComponent(
-        arrayOf("Enabled", "Name", "Path"),
+        i18nStringArray("Enabled", "Name", "Path"),
         intArrayOf(30, 300, 300),
         action,
         {

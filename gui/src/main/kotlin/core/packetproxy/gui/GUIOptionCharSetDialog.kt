@@ -20,18 +20,18 @@ import packetproxy.model.CharSet
 class GUIOptionCharSetDialog(private val owner: JFrame) : JDialog(owner) {
   private val cancel = JButton(i18nString("Cancel"))
   private val save = JButton(i18nString("Save"))
-  private val textCharset = HintTextField("(ex.) Shift_JIS")
+  private val textCharset = HintTextField(i18nString("(ex.) Shift_JIS"))
   private lateinit var tableModel: CharSetsTableModel
   private lateinit var sorter: TableRowSorter<CharSetsTableModel>
   private var charsets = mutableListOf<CharSet>()
 
   init {
-    title = "設定"
+    title = i18nString("Setting")
     val rect = owner.bounds
     setBounds(rect.x + rect.width / 2 - 250, rect.y + rect.height / 2 - 250, 500, 500)
     val panel = JPanel()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-    panel.add(labeled("文字コード名:", textCharset))
+    panel.add(labeled(i18nString("CharSet name:"), textCharset))
     panel.add(createTable())
     panel.add(buttons())
     contentPane.add(panel)
@@ -71,7 +71,7 @@ class GUIOptionCharSetDialog(private val owner: JFrame) : JDialog(owner) {
         .filter { it !in available }
         .map { arrayOf<Any>(false, it) }
         .toTypedArray()
-    tableModel = CharSetsTableModel(data, arrayOf("", "CharSetName"))
+    tableModel = CharSetsTableModel(data, i18nStringArray("", "CharSetName"))
     val table = JTable(tableModel)
     table.columnModel.getColumn(0).minWidth = 50
     table.columnModel.getColumn(0).maxWidth = 50

@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.util.function.Consumer
 import javax.swing.*
+import packetproxy.common.i18nStringArray
 import packetproxy.model.OneShotPacket
 import packetproxy.model.OptionTableModel
 import packetproxy.model.PacketSummarizer
@@ -15,7 +16,8 @@ class GUIVulCheckRecvTable(
   private lateinit var table: JTable
 
   fun createPanel(): JComponent {
-    var names = arrayOf("#", "Name", "Server Response", "Length", "Time[msec]", "Encode", "ALPN")
+    var names =
+      i18nStringArray("#", "Name", "Server Response", "Length", "Time[msec]", "Encode", "ALPN")
     model =
       object : OptionTableModel(names, 0) {
         override fun isCellEditable(row: Int, column: Int) = false

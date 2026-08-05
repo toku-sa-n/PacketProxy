@@ -57,6 +57,9 @@ fun i18nString(message: String): String {
   return localized ?: message
 }
 
+fun i18nStringArray(vararg messages: String): Array<String> =
+  messages.map { i18nString(it) }.toTypedArray()
+
 // "Start listening port %d."のような文字列を"Start_listening_port_%d."に変換する
 private fun normalize(message: String): String {
   return message

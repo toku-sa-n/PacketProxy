@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.util.function.Consumer
 import javax.swing.*
+import packetproxy.common.i18nStringArray
 import packetproxy.model.OneShotPacket
 import packetproxy.model.OptionTableModel
 import packetproxy.model.PacketSummarizer
@@ -23,7 +24,8 @@ class GUIBulkSenderTable(
 
   fun createPanel(): JComponent {
     var names =
-      if (type == Type.CLIENT) arrayOf("#", "Client Request") else arrayOf("#", "Server Response")
+      if (type == Type.CLIENT) i18nStringArray("#", "Client Request")
+      else i18nStringArray("#", "Server Response")
     model =
       object : OptionTableModel(names, 0) {
         override fun isCellEditable(row: Int, column: Int) = false

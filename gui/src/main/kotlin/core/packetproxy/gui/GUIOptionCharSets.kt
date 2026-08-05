@@ -2,6 +2,7 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import packetproxy.common.i18nStringArray
 import packetproxy.model.CharSet
 import packetproxy.util.errWithStackTrace
 
@@ -25,7 +26,7 @@ class GUIOptionCharSets(owner: GUIMain) : GUIOptionComponentBase<CharSet>(owner)
       }
     jcomponent =
       createComponent(
-        arrayOf("CharSetName"),
+        i18nStringArray("CharSetName"),
         intArrayOf(200, 80, 50, 160, 60, 60, 100),
         action,
         {

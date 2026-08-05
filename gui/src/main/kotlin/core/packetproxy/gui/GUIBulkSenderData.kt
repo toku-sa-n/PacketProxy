@@ -3,6 +3,7 @@ package packetproxy.gui
 import java.util.function.Consumer
 import javax.swing.*
 import javax.swing.event.ChangeListener
+import packetproxy.common.i18nString
 import packetproxy.util.errWithStackTrace
 
 class GUIBulkSenderData(
@@ -27,8 +28,8 @@ class GUIBulkSenderData(
     binaryPanel = GUIHistoryBinary(owner)
     dataPane =
       JTabbedPane().apply {
-        addTab("Raw", rawPanel.createPanel())
-        addTab("Binary", binaryPanel.createPanel())
+        addTab(i18nString("Raw"), rawPanel.createPanel())
+        addTab(i18nString("Binary"), binaryPanel.createPanel())
         addChangeListener(ChangeListener { update() })
       }
     mainPanel.add(dataPane)

@@ -261,10 +261,10 @@ class GUIRequestResponsePanel(private val owner: GUIMain) {
         panel.minimumSize = Dimension(MIN_PANEL_SIZE, MIN_PANEL_SIZE)
       }
 
-      tabs.addTab("Received Packet", receivedTabs.tabPanel)
-      tabs.addTab("Decoded", decodedTabs.tabPanel)
-      tabs.addTab("Modified", modifiedTabs.tabPanel)
-      tabs.addTab("Encoded (Sent Packet)", sentTabs.tabPanel)
+      tabs.addTab(i18nString("Received Packet"), receivedTabs.tabPanel)
+      tabs.addTab(i18nString("Decoded"), decodedTabs.tabPanel)
+      tabs.addTab(i18nString("Modified"), modifiedTabs.tabPanel)
+      tabs.addTab(i18nString("Encoded (Sent Packet)"), sentTabs.tabPanel)
       tabs.addTab("All", createAllPanel())
       tabs.selectedIndex = TabType.DECODED.index
 
