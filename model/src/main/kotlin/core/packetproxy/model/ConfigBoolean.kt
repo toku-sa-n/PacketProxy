@@ -16,22 +16,25 @@
 package packetproxy.model
 
 class ConfigBoolean(private val configs: Configs, private val key: String) {
-  private var config = configs.query(key)
-
-  init {
-    if (config == null) {
-      configs.create(Config(key, "false"))
-    }
-  }
+  private var config = ensureConfig()
 
   fun getState(): Boolean {
-    config = configs.query(key)
-    return config!!.value == "true"
+    config = ensureConfig()
+    return config.value == "true"
   }
 
   fun setState(state: Boolean) {
-    config = configs.query(key)
-    config!!.value = if (state) "true" else "false"
-    configs.update(config!!)
+    config = ensureConfig()
+    config.value = if (state) "true" else "false"
+    configs.update(config)
+  }
+
+  private fun ensureConfig(defaultValue: String = "false"): Config {
+    var current = configs.query(key)
+    if (current == null) {
+      configs.create(Config(key, defaultValue))
+      current = configs.query(key)
+    }
+    return checkNotNull(current) { "Failed to ensure config key=$key" }
   }
 }

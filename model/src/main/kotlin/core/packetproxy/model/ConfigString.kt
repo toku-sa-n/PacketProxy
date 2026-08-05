@@ -16,22 +16,25 @@
 package packetproxy.model
 
 class ConfigString(private val configs: Configs, private val key: String) {
-  private var config = configs.query(key)
-
-  init {
-    if (config == null) {
-      configs.create(Config(key, ""))
-    }
-  }
+  private var config = ensureConfig()
 
   fun getString(): String {
-    config = configs.query(key)
-    return config!!.value!!
+    config = ensureConfig()
+    return config.value!!
   }
 
   fun setString(value: String) {
-    config = configs.query(key)
-    config!!.value = value
-    configs.update(config!!)
+    config = ensureConfig()
+    config.value = value
+    configs.update(config)
+  }
+
+  private fun ensureConfig(defaultValue: String = ""): Config {
+    var current = configs.query(key)
+    if (current == null) {
+      configs.create(Config(key, defaultValue))
+      current = configs.query(key)
+    }
+    return checkNotNull(current) { "Failed to ensure config key=$key" }
   }
 }

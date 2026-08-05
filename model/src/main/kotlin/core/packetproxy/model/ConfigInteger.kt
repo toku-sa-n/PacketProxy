@@ -16,22 +16,25 @@
 package packetproxy.model
 
 class ConfigInteger(private val configs: Configs, private val key: String) {
-  private var config = configs.query(key)
-
-  init {
-    if (config == null) {
-      configs.create(Config(key, "0"))
-    }
-  }
+  private var config = ensureConfig()
 
   fun getInteger(): Int {
-    config = configs.query(key)
-    return config!!.value!!.toInt()
+    config = ensureConfig()
+    return config.value!!.toInt()
   }
 
   fun setInteger(value: Int) {
-    config = configs.query(key)
-    config!!.value = value.toString()
-    configs.update(config!!)
+    config = ensureConfig()
+    config.value = value.toString()
+    configs.update(config)
+  }
+
+  private fun ensureConfig(defaultValue: String = "0"): Config {
+    var current = configs.query(key)
+    if (current == null) {
+      configs.create(Config(key, defaultValue))
+      current = configs.query(key)
+    }
+    return checkNotNull(current) { "Failed to ensure config key=$key" }
   }
 }
