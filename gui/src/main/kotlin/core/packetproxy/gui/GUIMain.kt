@@ -175,6 +175,8 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
 
   fun getGuiVulCheckHelper(): GUIVulCheckHelper = guiVulCheckHelper
 
+  fun getGuiExtensions(): GUIExtensions = guiExtensions
+
   private fun setIcon() {
     setIconForWindows()
     addDockIconForMac()

@@ -24,7 +24,9 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
             val enabled = table.getValueAt(row, 0) as Boolean
             val extension = getSelectedTableContent()
             extension.setEnabled(!enabled)
-            extensions.update(extension)
+            val updated = extensions.update(extension)
+            if (!enabled && updated != null) owner.getGuiExtensions().addExtension(updated)
+            else if (enabled) owner.getGuiExtensions().removeExtension(extension)
           } catch (ex: Exception) {
             errWithStackTrace(ex)
           }
@@ -50,6 +52,7 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
               updated != null &&
                 (updated.getName() != old.getName() || updated.getPath() != old.getPath())
             ) {
+              owner.getGuiExtensions().removeExtension(old)
               extensions.delete(old)
               extensions.create(updated)
             }
@@ -60,6 +63,7 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
         {
           try {
             val extension = getSelectedTableContent()
+            owner.getGuiExtensions().removeExtension(extension)
             extensions.delete(extension)
           } catch (e: Exception) {
             errWithStackTrace(e)

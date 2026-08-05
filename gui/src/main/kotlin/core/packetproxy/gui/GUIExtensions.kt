@@ -31,6 +31,7 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
   private val mainPanel = JPanel()
   private val tabs = JTabbedPane()
   private val extensionMenus = mutableMapOf<String, JMenuItem>()
+  private var jarsLoaded = false
 
   init {
     tabs.addChangeListener {}
@@ -40,20 +41,23 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
 
   @Throws(Exception::class)
   fun addExtension(extension: Extension) {
+    val name = extension.getName()
+    if (name != null && tabs.indexOfTab(name) >= 0) return
+
     (extension as? GuiServiceExtension)?.initialize(main)
-    extension.getEncoders().forEach { (name, encoderClass) ->
+    extension.getEncoders().forEach { (encoderName, encoderClass) ->
       if (Encoder::class.java.isAssignableFrom(encoderClass)) {
         main.coreServices.encoderManager.addEncoder(
-          name,
+          encoderName,
           encoderClass.asSubclass(Encoder::class.java),
         )
       }
     }
 
-    extension.createPanel()?.let { tabs.addTab(extension.getName(), it) }
-    extension.historyClickHandler(guiHistory::getPacket)?.let {
-      guiHistory.addMenu(it)
-      extension.getName()?.let { name -> extensionMenus[name] = it }
+    extension.createPanel()?.let { tabs.addTab(name, it) }
+    extension.historyClickHandler(guiHistory::getPacket)?.let { menuItem ->
+      guiHistory.addMenu(menuItem)
+      name?.let { extensionMenus[it] = menuItem }
     }
   }
 
@@ -72,7 +76,10 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
 
   @Throws(Exception::class)
   fun createPanel(): JComponent {
-    loadJars()
+    if (!jarsLoaded) {
+      loadJars()
+      jarsLoaded = true
+    }
     return mainPanel
   }
 
