@@ -19,7 +19,6 @@ import com.j256.ormlite.dao.Dao
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
-import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.SSL_PASS_THROUGHS
@@ -33,8 +32,9 @@ class SSLPassThroughs(private val database: Database) : PropertyChangeListener {
   private var cache = DaoQueryCache<SSLPassThrough>()
 
   init {
-    if (!isLatestVersion()) {
-      RecreateTable()
+    SchemaMigrator.ensureCompatible(database, dao, "sslpassthroughs") {
+      database.dropTable(SSLPassThrough::class.java)
+      dao = database.createTable(SSLPassThrough::class.java, this)
     }
     if (dao.countOf() == 0L) {
       create(SSLPassThrough(".*\\.apple\\.com", SSLPassThrough.ALL_PORTS))
@@ -210,30 +210,6 @@ class SSLPassThroughs(private val database: Database) : PropertyChangeListener {
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  @Throws(Exception::class)
-  private fun isLatestVersion(): Boolean {
-    val result =
-      dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='sslpassthroughs'").firstResult[0]
-    return result ==
-      "CREATE TABLE `sslpassthroughs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `server_name` VARCHAR , `listen_port` INTEGER , UNIQUE (`server_name`,`listen_port`) )"
-  }
-
-  @Throws(Exception::class)
-  private fun RecreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "SSLPassThroughsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option == JOptionPane.YES_OPTION) {
-      database.dropTable(SSLPassThrough::class.java)
-      dao = database.createTable(SSLPassThrough::class.java, this)
     }
   }
 }

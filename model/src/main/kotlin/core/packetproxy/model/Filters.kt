@@ -19,7 +19,6 @@ import com.j256.ormlite.dao.Dao
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
-import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.FILTERS
@@ -31,8 +30,9 @@ class Filters(private val database: Database) : PropertyChangeListener {
   private var dao: Dao<Filter, Int> = database.createTable(Filter::class.java, this)
 
   init {
-    if (!isLatestVersion()) {
-      RecreateTable()
+    SchemaMigrator.ensureCompatible(database, dao, "filters") {
+      database.dropTable(Filter::class.java)
+      dao = database.createTable(Filter::class.java, this)
     }
   }
 
@@ -109,30 +109,6 @@ class Filters(private val database: Database) : PropertyChangeListener {
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  @Throws(Exception::class)
-  private fun isLatestVersion(): Boolean {
-    val result = dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='filters'").firstResult[0]
-    // Logging.log(result);
-    return result ==
-      "CREATE TABLE `filters` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `name` VARCHAR , `filter` VARCHAR ,  UNIQUE (`name`))"
-  }
-
-  @Throws(Exception::class)
-  private fun RecreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "filtersテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option == JOptionPane.YES_OPTION) {
-      database.dropTable(Filter::class.java)
-      dao = database.createTable(Filter::class.java, this)
     }
   }
 }

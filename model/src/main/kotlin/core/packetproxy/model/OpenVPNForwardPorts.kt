@@ -19,7 +19,6 @@ import com.j256.ormlite.dao.Dao
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
-import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.FORWARD_PORTS
@@ -33,8 +32,9 @@ class OpenVPNForwardPorts(private val database: Database) : PropertyChangeListen
   private var cache = DaoQueryCache<OpenVPNForwardPort>()
 
   init {
-    if (!isLatestVersion()) {
-      RecreateTable()
+    SchemaMigrator.ensureCompatible(database, dao, "openvpn_forward_ports") {
+      database.dropTable(OpenVPNForwardPort::class.java)
+      dao = database.createTable(OpenVPNForwardPort::class.java, this)
     }
     if (dao.countOf() == 0L) {
       create(OpenVPNForwardPort(OpenVPNForwardPort.TYPE.TCP, 80, 8080))
@@ -143,32 +143,6 @@ class OpenVPNForwardPorts(private val database: Database) : PropertyChangeListen
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  @Throws(Exception::class)
-  private fun isLatestVersion(): Boolean {
-    val result =
-      dao
-        .queryRaw("SELECT sql FROM sqlite_master WHERE name='openvpn_forward_ports'")
-        .firstResult[0]
-    return result ==
-      "CREATE TABLE `openvpn_forward_ports` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `type` VARCHAR , `fromPort` INTEGER , `toPort` INTEGER , UNIQUE (`type`,`fromPort`,`toPort`) )"
-  }
-
-  @Throws(Exception::class)
-  private fun RecreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "OpenVPNForwardPortsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option == JOptionPane.YES_OPTION) {
-      database.dropTable(OpenVPNForwardPort::class.java)
-      dao = database.createTable(OpenVPNForwardPort::class.java, this)
     }
   }
 }

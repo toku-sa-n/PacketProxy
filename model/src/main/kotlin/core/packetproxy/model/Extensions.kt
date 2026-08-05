@@ -22,7 +22,6 @@ import java.beans.PropertyChangeSupport
 import java.io.File
 import java.net.URLClassLoader
 import java.util.jar.JarFile
-import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.EXTENSIONS
@@ -40,8 +39,9 @@ class Extensions(private val database: Database) : PropertyChangeListener {
   private var cache = DaoQueryCache<Extension>()
 
   init {
-    if (!isLatestVersion()) {
-      RecreateTable()
+    SchemaMigrator.ensureCompatible(database, dao, "extensions") {
+      database.dropTable(Extension::class.java)
+      dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
     }
 
     // load presets
@@ -253,30 +253,6 @@ class Extensions(private val database: Database) : PropertyChangeListener {
 
   private fun initializeExtension(extension: Extension) {
     extensionInitializer?.invoke(extension)
-  }
-
-  @Throws(Exception::class)
-  private fun isLatestVersion(): Boolean {
-    val result =
-      dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='extensions'").firstResult[0]
-    return result ==
-      "CREATE TABLE `extensions` (`name` VARCHAR , `enabled` BOOLEAN , `path` VARCHAR , PRIMARY KEY (`name`) )"
-  }
-
-  @Throws(Exception::class)
-  private fun RecreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "Extensionsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option == JOptionPane.YES_OPTION) {
-      database.dropTable(Extension::class.java)
-      dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
-    }
   }
 
   companion object {

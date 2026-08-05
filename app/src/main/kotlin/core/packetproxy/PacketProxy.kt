@@ -96,6 +96,11 @@ class PacketProxy(private val app: AppInitializer) {
             )
           if (option == JOptionPane.YES_OPTION) {
             try {
+              try {
+                app.requireModelServices().database.backupCurrent()
+              } catch (backupError: Exception) {
+                Logging.errWithStackTrace(backupError)
+              }
               val resource =
                 File(System.getProperty("user.home"), ".packetproxy/db/resources.sqlite3")
               if (resource.exists()) {

@@ -32,15 +32,7 @@ class Servers(private val database: Database) : PropertyChangeListener {
   private var cache = DaoQueryCache<Server>()
 
   init {
-    ensureDescriptorPathColumn()
-  }
-
-  private fun ensureDescriptorPathColumn() {
-    try {
-      dao.executeRawNoArgs("ALTER TABLE servers ADD COLUMN descriptor_path VARCHAR")
-    } catch (ignored: Exception) {
-      // column already exists
-    }
+    SchemaMigrator.ensureColumns(dao)
   }
 
   @Throws(Exception::class)
@@ -241,13 +233,13 @@ class Servers(private val database: Database) : PropertyChangeListener {
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(Server::class.java, this)
           cache.clear()
-          ensureDescriptorPathColumn()
+          SchemaMigrator.ensureColumns(dao)
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
           dao = database.createTable(Server::class.java, this)
           cache.clear()
-          ensureDescriptorPathColumn()
+          SchemaMigrator.ensureColumns(dao)
         }
       }
     } catch (e: Exception) {

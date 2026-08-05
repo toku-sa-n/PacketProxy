@@ -21,7 +21,6 @@ import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.swing.JOptionPane
 import packetproxy.common.Logger
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.util.errWithStackTrace
@@ -36,9 +35,11 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
 
   init {
     database.addPropertyChangeListener(this)
+    SchemaMigrator.ensureColumns(dao)
     if (restore) {
-      if (!isLatestVersion()) {
-        recreateTable()
+      SchemaMigrator.ensureCompatible(database, dao, "packets") {
+        database.dropTable(Packet::class.java)
+        dao = database.createTable(Packet::class.java)
       }
       log("load history...")
       log("load %d records.", dao.countOf())
@@ -249,25 +250,6 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     handleDatabaseMessage(event.newValue as DatabaseMessage)
   }
 
-  private fun isLatestVersion(): Boolean =
-    dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='packets'").firstResult[0] ==
-      "CREATE TABLE `packets` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `direction` VARCHAR , `decoded_data` BLOB , `modified_data` BLOB , `sent_data` BLOB , `received_data` BLOB , `listen_port` INTEGER , `client_ip` VARCHAR , `client_port` INTEGER , `server_ip` VARCHAR , `server_name` VARCHAR , `server_port` INTEGER , `use_ssl` BOOLEAN , `content_type` VARCHAR , `encoder_name` VARCHAR , `alpn` VARCHAR , `modified` BOOLEAN , `resend` BOOLEAN , `date` BIGINT , `conn` INTEGER , `group` BIGINT , `color` VARCHAR , `job_id` VARCHAR , `temporary_id` VARCHAR )"
-
-  private fun recreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "packetsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option != JOptionPane.YES_OPTION) {
-      return
-    }
-    database.dropTable(Packet::class.java)
-    dao = database.createTable(Packet::class.java)
-  }
 
   private fun flushPendingUpdates() {
     while (true) {

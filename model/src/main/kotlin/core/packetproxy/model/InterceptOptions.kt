@@ -19,7 +19,6 @@ import com.j256.ormlite.dao.Dao
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
-import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.InterceptOption.Direction
 import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
@@ -35,8 +34,9 @@ class InterceptOptions(private val database: Database) : PropertyChangeListener 
   private var cache = DaoQueryCache<InterceptOption>()
 
   init {
-    if (!isLatestVersion()) {
-      RecreateTable()
+    SchemaMigrator.ensureCompatible(database, dao, "interceptOptions") {
+      database.dropTable(InterceptOption::class.java)
+      dao = database.createTable(InterceptOption::class.java, this)
     }
   }
 
@@ -306,34 +306,9 @@ class InterceptOptions(private val database: Database) : PropertyChangeListener 
   }
 
   @Throws(Exception::class)
-  private fun isLatestVersion(): Boolean {
-    val result =
-      dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='interceptOptions'").firstResult[0]
-    // Logging.log(result);
-    return result ==
-      "CREATE TABLE `interceptOptions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `direction` VARCHAR , `type` VARCHAR , `relationship` VARCHAR , `method` VARCHAR , `pattern` VARCHAR , `server_id` INTEGER , UNIQUE (`direction`,`type`,`relationship`,`method`,`pattern`,`server_id`) )"
-  }
-
-  @Throws(Exception::class)
   fun setEnabled(enabled: Boolean) {
     this.enabled.setState(enabled)
   }
 
   @Throws(Exception::class) fun isEnabled(): Boolean = this.enabled.getState()
-
-  @Throws(Exception::class)
-  private fun RecreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "InterceptOptionsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option == JOptionPane.YES_OPTION) {
-      database.dropTable(InterceptOption::class.java)
-      dao = database.createTable(InterceptOption::class.java, this)
-    }
-  }
 }

@@ -5,7 +5,6 @@ import com.j256.ormlite.stmt.DeleteBuilder
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
-import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.util.errWithStackTrace
 
@@ -15,8 +14,9 @@ class ResenderPackets(private val database: Database) : PropertyChangeListener {
 
   fun initTable(restore: Boolean) {
     if (restore) {
-      if (!isLatestVersion()) {
-        recreateTable()
+      SchemaMigrator.ensureCompatible(database, dao, "resender_packets") {
+        database.dropTable(ResenderPacket::class.java)
+        dao = database.createTable(ResenderPacket::class.java, this)
       }
       return
     }
@@ -75,28 +75,5 @@ class ResenderPackets(private val database: Database) : PropertyChangeListener {
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
-  }
-
-  private fun isLatestVersion(): Boolean {
-    val result =
-      dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='resender_packets'").firstResult[0]
-    return result ==
-      "CREATE TABLE `resender_packets` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `resends_index` INTEGER , `resend_index` INTEGER , `direction` VARCHAR , `data` BLOB , `listen_port` INTEGER , `client_ip` VARCHAR , `client_port` INTEGER , `server_ip` VARCHAR , `server_port` INTEGER , `server_name` VARCHAR , `use_ssl` BOOLEAN , `encoder_name` VARCHAR , `alpn` VARCHAR , `auto_modified` BOOLEAN , `conn` INTEGER , `group` BIGINT , UNIQUE (`resends_index`,`resend_index`,`direction`) )"
-  }
-
-  private fun recreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "resender_packetsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option != JOptionPane.YES_OPTION) {
-      return
-    }
-    database.dropTable(ResenderPacket::class.java)
-    dao = database.createTable(ResenderPacket::class.java, this)
   }
 }

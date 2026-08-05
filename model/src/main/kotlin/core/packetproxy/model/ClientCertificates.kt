@@ -19,7 +19,6 @@ import com.j256.ormlite.dao.Dao
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
-import javax.swing.JOptionPane
 import packetproxy.common.ClientKeyManager
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.CLIENT_CERTIFICATES
@@ -37,8 +36,9 @@ class ClientCertificates(
     database.createTable(ClientCertificate::class.java, this)
 
   init {
-    if (!isLatestVersion()) {
-      RecreateTable()
+    SchemaMigrator.ensureCompatible(database, dao, "clientCertificates") {
+      database.dropTable(ClientCertificate::class.java)
+      dao = database.createTable(ClientCertificate::class.java, this)
     }
   }
 
@@ -131,28 +131,4 @@ class ClientCertificates(
   @Throws(Exception::class)
   fun queryEnabled(): List<ClientCertificate> =
     dao.queryBuilder().where().eq("enabled", true).query()
-
-  @Throws(Exception::class)
-  private fun isLatestVersion(): Boolean {
-    val result =
-      dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='clientCertificates'").firstResult[0]
-    return result ==
-      "CREATE TABLE `clientCertificates` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `type` VARCHAR , `serverId` INTEGER , `subject` VARCHAR , `issuer` VARCHAR , `path` VARCHAR , `storePassword` VARCHAR , `keyPassword` VARCHAR , UNIQUE (`type`,`serverId`,`path`) )"
-  }
-
-  @Throws(Exception::class)
-  private fun RecreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "client_certificatesテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option == JOptionPane.YES_OPTION) {
-      database.dropTable(ClientCertificate::class.java)
-      dao = database.createTable(ClientCertificate::class.java, this)
-    }
-  }
 }

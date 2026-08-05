@@ -19,7 +19,6 @@ import com.j256.ormlite.dao.Dao
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
-import javax.swing.JOptionPane
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.MODIFICATIONS_UPDATED
 import packetproxy.util.errWithStackTrace
@@ -31,8 +30,10 @@ class Modifications(private val database: Database) : PropertyChangeListener {
   private var cache = DaoQueryCache<Modification>()
 
   init {
-    if (!isLatestVersion()) {
-      RecreateTable()
+    SchemaMigrator.ensureCompatible(database, dao, "modifications") {
+      database.dropTable(Modification::class.java)
+      dao = database.createTable(Modification::class.java, this)
+      cache.clear()
     }
   }
 
@@ -202,32 +203,6 @@ class Modifications(private val database: Database) : PropertyChangeListener {
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  @Throws(Exception::class)
-  private fun isLatestVersion(): Boolean {
-    val result =
-      dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='modifications'").firstResult[0]
-    // Logging.log(result);
-    return result ==
-      "CREATE TABLE `modifications` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `enabled` BOOLEAN , `server_id` INTEGER , `direction` VARCHAR , `pattern` VARCHAR , `method` VARCHAR , `path` VARCHAR , `replaced` VARCHAR , UNIQUE (`server_id`,`direction`,`pattern`,`method`,`path`) )"
-  }
-
-  @Throws(Exception::class)
-  private fun RecreateTable() {
-    val option =
-      JOptionPane.showConfirmDialog(
-        null,
-        "Modificationsテーブルの形式が更新されているため\n現在のテーブルを削除して再起動しても良いですか？",
-        "テーブルの更新",
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    if (option == JOptionPane.YES_OPTION) {
-      database.dropTable(Modification::class.java)
-      dao = database.createTable(Modification::class.java, this)
-      cache.clear()
     }
   }
 }

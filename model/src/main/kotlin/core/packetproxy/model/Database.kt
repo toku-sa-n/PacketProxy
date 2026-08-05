@@ -32,6 +32,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Comparator
+import java.util.stream.Collectors
 import packetproxy.util.err
 import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
@@ -166,6 +170,37 @@ class Database {
   fun isAlertFileSize(): Boolean =
     File(databasePath.toString()).length() / 1048576 > ALERT_DB_FILE_SIZE_MB
 
+  /**
+   * Checkpoints WAL and copies the current DB into
+   * `<dbDir>/backups/<basename>-yyyyMMdd-HHmmss-SSS.sqlite3`. Keeps the newest [MAX_BACKUPS] files
+   * that share the same basename prefix.
+   */
+  fun backupCurrent(): Path {
+    val parent =
+      databasePath.parent
+        ?: throw IllegalStateException("Database path has no parent: $databasePath")
+    val backupsDir = parent.resolve("backups")
+    Files.createDirectories(backupsDir)
+    val fileName = databasePath.fileName.toString()
+    val baseName =
+      if (fileName.endsWith(".sqlite3")) {
+        fileName.removeSuffix(".sqlite3")
+      } else {
+        fileName
+      }
+    val timestamp = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS").format(LocalDateTime.now())
+    var dest = backupsDir.resolve("$baseName-$timestamp.sqlite3")
+    var suffix = 0
+    while (Files.exists(dest)) {
+      suffix += 1
+      dest = backupsDir.resolve("$baseName-$timestamp-$suffix.sqlite3")
+    }
+    checkpointAndCopyDatabase(dest)
+    rotateBackups(backupsDir, baseName)
+    log("Database backed up to %s", dest.toAbsolutePath())
+    return dest
+  }
+
   fun createDB() {
     if (!Files.exists(databaseDir)) {
       log("%s directory is not found...", databaseDir.toAbsolutePath())
@@ -191,6 +226,31 @@ class Database {
   private fun checkpointAndCopyDatabase(dest: Path) {
     source.readWriteConnection.executePragma("pragma wal_checkpoint(truncate)")
     Files.copy(databasePath, dest, StandardCopyOption.REPLACE_EXISTING)
+  }
+
+  private fun rotateBackups(backupsDir: Path, baseName: String) {
+    val prefix = "$baseName-"
+    val backups =
+      Files.list(backupsDir).use { stream ->
+        stream
+          .filter { Files.isRegularFile(it) }
+          .filter {
+            val name = it.fileName.toString()
+            name.startsWith(prefix) && name.endsWith(".sqlite3")
+          }
+          .sorted(
+            Comparator.comparingLong { path: Path -> Files.getLastModifiedTime(path).toMillis() }
+              .reversed()
+          )
+          .collect(Collectors.toList())
+      }
+    backups.drop(MAX_BACKUPS).forEach { old ->
+      try {
+        Files.deleteIfExists(old)
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      }
+    }
   }
 
   /**
@@ -251,6 +311,7 @@ class Database {
 
   companion object {
     private val ALERT_DB_FILE_SIZE_MB = 1536
+    private const val MAX_BACKUPS = 5
 
     private fun migrateTableWithoutHistory(srcDBPath: Path, dstDBPath: Path) {
       try {
