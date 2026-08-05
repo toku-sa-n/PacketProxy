@@ -43,13 +43,7 @@ class Extensions(private val database: Database) : PropertyChangeListener {
       database.dropTable(Extension::class.java)
       dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
     }
-
-    // load presets
-    for (clazz in presetExtensions.values) {
-      val constructor = clazz.getConstructor()
-      val extension = constructor.newInstance() as Extension
-      create(extension)
-    }
+    ensurePresets()
   }
 
   fun addPropertyChangeListener(listener: PropertyChangeListener) {
@@ -190,6 +184,7 @@ class Extensions(private val database: Database) : PropertyChangeListener {
     if (ret != null) {
       return ret
     }
+    ensurePresets()
     ret = dao.queryBuilder().query()
     val newHash = HashMap<String, Extension>()
     for (i in ret.indices) {
@@ -238,16 +233,34 @@ class Extensions(private val database: Database) : PropertyChangeListener {
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
+          ext_instances.clear()
           cache.clear()
+          ensurePresets()
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
           dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
+          ext_instances.clear()
           cache.clear()
+          ensurePresets()
         }
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
+    }
+  }
+
+  private fun ensurePresets() {
+    for (clazz in presetExtensions.values) {
+      try {
+        val extension = clazz.getConstructor().newInstance() as Extension
+        val name = extension.getName() ?: continue
+        if (!dao.idExists(name)) {
+          create(extension)
+        }
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      }
     }
   }
 
