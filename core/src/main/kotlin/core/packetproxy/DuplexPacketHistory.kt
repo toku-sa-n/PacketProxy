@@ -20,20 +20,16 @@ import packetproxy.common.UniqueID
 import packetproxy.encode.Encoder
 import packetproxy.http.Http
 import packetproxy.model.Packet
+import packetproxy.model.PacketSummarizer
 import packetproxy.model.Packets
 
 /** Shared History recording helpers used by Duplex event listeners. */
-class DuplexPacketHistory(private val uniqueId: UniqueID) {
-  // 1MB以上のパケットは最後のタイミングだけHistoryに記録する、それ未満はパケットが更新されるたびにHistoryを更新する
-  val SKIP_LENGTH = 1 * 1024 * 1024
+class DuplexPacketHistory(
+  private val uniqueId: UniqueID,
+  private val packetSummarizer: PacketSummarizer,
+) {
   // 10MB以上のパケットはHistoryには記録しない
   val TOO_LARGE_LENGTH = 10 * 1024 * 1024
-
-  fun updateIfSmall(packets: Packets, packet: Packet, dataSize: Int) {
-    if (dataSize < SKIP_LENGTH) {
-      packets.update(packet)
-    }
-  }
 
   fun groupIdOrNew(clientPacket: Packet?): Long =
     if (clientPacket != null) {
@@ -44,15 +40,20 @@ class DuplexPacketHistory(private val uniqueId: UniqueID) {
     }
 
   fun syncContentTypeToClient(packets: Packets, clientPacket: Packet?, serverPacket: Packet) {
-    if (serverPacket.getContentType() != "") {
-      clientPacket!!.setContentType(serverPacket.getContentType() ?: "")
-      packets.update(clientPacket)
+    if (clientPacket == null) {
+      return
     }
+    val contentType = serverPacket.getContentType() ?: ""
+    if (contentType.isEmpty()) {
+      return
+    }
+    clientPacket.setContentType(contentType)
+    packets.updateContentType(clientPacket.getId(), contentType)
   }
 
   /**
-   * Decodes a server response, records it in History, and returns decoded data (empty if dropped).
-   * Used by OneShot / SPA / OriginalDuplex listeners.
+   * Decodes a server response, records it in History once, and returns decoded data (empty if
+   * dropped). Used by OneShot / SPA / OriginalDuplex listeners.
    */
   fun decodeAndRecordServerResponse(
     packets: Packets,
@@ -61,9 +62,7 @@ class DuplexPacketHistory(private val uniqueId: UniqueID) {
     serverPacket: Packet,
     data: ByteArray,
   ): ByteArray {
-    packets.update(serverPacket)
     serverPacket.setReceivedData(data)
-    updateIfSmall(packets, serverPacket, data.size)
 
     var decodedData = encoder.decodeServerResponse(clientPacket, serverPacket)
     serverPacket.setDecodedData(decodedData)
@@ -71,13 +70,15 @@ class DuplexPacketHistory(private val uniqueId: UniqueID) {
     syncContentTypeToClient(packets, clientPacket, serverPacket)
 
     serverPacket.setModifiedData(decodedData)
-    packets.update(serverPacket)
     if (decodedData.isEmpty()) {
       /* drop */
       serverPacket.setModified()
+      serverPacket.refreshPersistedSummaries(packetSummarizer)
       packets.update(serverPacket)
       return ByteArray(0)
     }
+    serverPacket.refreshPersistedSummaries(packetSummarizer)
+    packets.update(serverPacket)
     return decodedData
   }
 

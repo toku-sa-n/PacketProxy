@@ -76,6 +76,12 @@ class Packet : PacketInfo {
 
   @field:DatabaseField private var temporary_id: String? = null
 
+  @field:DatabaseField private var summarized_request: String? = null
+
+  @field:DatabaseField private var summarized_response: String? = null
+
+  @field:DatabaseField private var display_length = 0
+
   constructor()
 
   constructor(
@@ -256,15 +262,65 @@ class Packet : PacketInfo {
     this.temporary_id = temporary_id
   }
 
+  fun getSummarizedRequestColumn(): String? = summarized_request
+
+  fun getSummarizedResponseColumn(): String? = summarized_response
+
+  fun getDisplayLength(): Int = display_length
+
+  fun setSummarizedRequestColumn(value: String?) {
+    summarized_request = value
+  }
+
+  fun setSummarizedResponseColumn(value: String?) {
+    summarized_response = value
+  }
+
+  fun setDisplayLength(value: Int) {
+    display_length = value
+  }
+
+  fun refreshPersistedSummaries(summarizer: PacketSummarizer) {
+    val displayData =
+      when {
+        modified_data != null && modified_data!!.isNotEmpty() -> modified_data!!
+        decoded_data != null && decoded_data!!.isNotEmpty() -> decoded_data!!
+        else -> received_data ?: byteArrayOf()
+      }
+    display_length = displayData.size
+    when (direction) {
+      Direction.CLIENT -> {
+        summarized_request = summarizer.summarizeRequest(encoder_name, alpn, this)
+        summarized_response = ""
+      }
+      Direction.SERVER -> {
+        summarized_request = ""
+        summarized_response = summarizer.summarizeResponse(encoder_name, alpn, this)
+      }
+      null -> {
+        summarized_request = ""
+        summarized_response = ""
+      }
+    }
+  }
+
   @Throws(Exception::class)
   fun getSummarizedRequest(summarizer: PacketSummarizer = NoOpPacketSummarizer()): String {
     if (getDirection() != Direction.CLIENT) return ""
+    val persisted = summarized_request
+    if (!persisted.isNullOrEmpty()) {
+      return persisted
+    }
     return summarizer.summarizeRequest(encoder_name, null, this)
   }
 
   @Throws(Exception::class)
   fun getSummarizedResponse(summarizer: PacketSummarizer = NoOpPacketSummarizer()): String {
     if (getDirection() != Direction.SERVER) return ""
+    val persisted = summarized_response
+    if (!persisted.isNullOrEmpty()) {
+      return persisted
+    }
     return summarizer.summarizeResponse(encoder_name, null, this)
   }
 
@@ -304,5 +360,8 @@ class Packet : PacketInfo {
     date = Date()
     this.conn = conn
     this.group = group
+    summarized_request = ""
+    summarized_response = ""
+    display_length = 0
   }
 }

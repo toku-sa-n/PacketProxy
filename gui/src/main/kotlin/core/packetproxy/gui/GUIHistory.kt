@@ -47,10 +47,12 @@ import javax.swing.JScrollPane
 import javax.swing.JSplitPane
 import javax.swing.JTable
 import javax.swing.JToggleButton
+import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 import javax.swing.SwingWorker
 import javax.swing.event.ListSelectionEvent
 import javax.swing.event.TableModelEvent
+import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
@@ -71,8 +73,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   private val columnNames =
     arrayOf(
       "#",
-      "Client Request",
-      "Server Response",
+      "Request",
+      "Status",
       "Length",
       "Client IP",
       "Client Port",
@@ -87,7 +89,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       "Group",
     )
   private val columnWidth =
-    intArrayOf(60, 550, 50, 80, 160, 80, 160, 80, 100, 30, 30, 100, 100, 50, 30)
+    intArrayOf(50, 420, 70, 70, 100, 55, 100, 55, 110, 45, 45, 90, 80, 45, 45)
   private lateinit var splitPanel: JSplitPane
   private lateinit var mainPanel: JPanel
   private lateinit var tableModel: OptionTableModel
@@ -105,9 +107,9 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   private var preferredPosition = 0
   private val historyUpdateService = Executors.newSingleThreadExecutor()
   private val updatePacketIds = HashSet<Int>()
-  // Int値のPACKETSプロパティ変更(packet id)をEDT上で1回のinvokeLaterにまとめてドレインするための
-  // 保留キュー。絶対値(packet id)が同じ場合は最新の値(符号含む)で上書きし、最新の状態だけを反映する。
-  private val pendingIntPacketUpdates = LinkedHashMap<Int, Int>()
+  // Int値のPACKETSプロパティ変更(packet id)をEDT上で1回のinvokeLaterにまとめてドレインする。
+  // 未処理の create(-id) は update(+id) で潰さない（レスポンス単独行化を防ぐ）。
+  private val packetNotificationCoalescer = PacketHistoryNotificationCoalescer()
   private val intPacketUpdateScheduled = AtomicBoolean(false)
   private val idRow = Hashtable<Int, Int>()
   private var dialogOnce = false
@@ -161,32 +163,19 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
         ): Component {
           val component = super.prepareRenderer(renderer, row, column)
           try {
-            val selectedRows = this.selectedRows
-            var selected = false
-            var firstSelected = false
-            if (selectedRows.size >= 2) {
-              for (selectedRow in selectedRows) {
-                if (selectedRow == row) {
-                  selected = true
-                  firstSelected = this.selectedRow == row
-                  break
-                }
-              }
-            } else {
-              selected = selectedRow == row
-              firstSelected = selected
-            }
+            val selected = isRowSelected(row)
+            val firstSelected = selected && this.selectedRow == row
             val packetId = getValueAt(row, COL_ID) as Int
-            val modified = getValueAt(row, columnModel.getColumnIndex("Modified")) as Boolean
-            val resend = getValueAt(row, columnModel.getColumnIndex("Resend")) as Boolean
+            val modified = getValueAt(row, COL_MODIFIED) as Boolean
+            val resend = getValueAt(row, COL_RESEND) as Boolean
             when {
               selected && firstSelected -> {
                 component.foreground = Color.WHITE
-                component.background = Color(0x80, 0x80, 0xFF)
+                component.background = Color(0x5B, 0x7C, 0xFF)
               }
               selected -> {
                 component.foreground = Color.WHITE
-                component.background = Color(0xC0, 0xC0, 0xFF)
+                component.background = Color(0x9A, 0xB0, 0xFF)
               }
               colorManager.contains(packetId) -> {
                 component.foreground = Color.BLACK
@@ -194,11 +183,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
               }
               resend -> {
                 component.foreground = Color.BLACK
-                component.background = Color(0x87, 0xCE, 0xFA)
+                component.background = Color(0xB8, 0xD9, 0xF0)
               }
               modified -> {
                 component.foreground = Color.BLACK
-                component.background = Color(0xFF, 0xC0, 0xCB)
+                component.background = Color(0xF0, 0xC8, 0xD0)
               }
               else -> {
                 component.foreground = Color.BLACK
@@ -212,9 +201,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
         }
       }
     table.rowHeight = main.modelServices.fontManager.getUIFontHeight(table)
+    table.autoResizeMode = JTable.AUTO_RESIZE_OFF
     for (i in columnNames.indices) {
       table.getColumn(columnNames[i]).preferredWidth = columnWidth[i]
     }
+    applyNumericColumnAlignment()
     apply(table, columnNames.size)
     (table.getDefaultRenderer(Boolean::class.javaObjectType) as JComponent).isOpaque = true
     table.selectionModel.addListSelectionListener { e: ListSelectionEvent ->
@@ -266,7 +257,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     splitPanel = JSplitPane(JSplitPane.VERTICAL_SPLIT)
     splitPanel.add(scrollPane)
     splitPanel.add(guiPacket.createPanel())
-    splitPanel.dividerLocation = 200
+    splitPanel.dividerLocation = 300
+    splitPanel.resizeWeight = 0.35
     splitPanel.alignmentX = Component.CENTER_ALIGNMENT
 
     mainPanel = JPanel()
@@ -310,7 +302,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   }
 
   fun updateAll() {
-    val packetList = packets.queryAll()
+    val packetList = packets.queryAllMetadata()
     tableModel.rowCount = 0
     idRow.clear()
     pairingService.clear()
@@ -704,7 +696,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   // 大量のInt値(packet id)通知が短時間に届いても、EDT上のinvokeLaterを1回にまとめてから
   // まとめて処理することで、EDTタスクの積み増しによるコマ落ちを防ぐ。
   private fun scheduleIntegerPacketUpdate(value: Int) {
-    synchronized(pendingIntPacketUpdates) { pendingIntPacketUpdates[Math.abs(value)] = value }
+    packetNotificationCoalescer.offer(value)
     if (!intPacketUpdateScheduled.compareAndSet(false, true)) {
       return
     }
@@ -713,18 +705,32 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
 
   private fun drainPendingIntegerPacketUpdates() {
     intPacketUpdateScheduled.set(false)
-    val values =
-      synchronized(pendingIntPacketUpdates) {
-        val copied = pendingIntPacketUpdates.values.toList()
-        pendingIntPacketUpdates.clear()
-        copied
+    val values = packetNotificationCoalescer.drain()
+    historyUpdateService.submit {
+      try {
+        // create を update より先に処理し、CLIENT 行登録後に SERVER をマージできるようにする
+        val (createNotifications, updateIds) =
+          PacketHistoryNotificationCoalescer.partitionCreatesBeforeUpdates(values)
+        val createdPackets = ArrayList<Packet>(createNotifications.size)
+        for (value in createNotifications) {
+          val packet = packets.queryByIdMetadata(-value) ?: continue
+          createdPackets.add(packet)
+        }
+        SwingUtilities.invokeLater {
+          try {
+            for (packet in createdPackets) {
+              handleLoadedCreatedPacket(packet)
+            }
+            for (id in updateIds) {
+              updateRequestOne(id)
+            }
+          } catch (exception: Exception) {
+            errWithStackTrace(exception)
+          }
+        }
+      } catch (exception: Exception) {
+        errWithStackTrace(exception)
       }
-    try {
-      for (value in values) {
-        handleIntegerPacketValue(value)
-      }
-    } catch (exception: Exception) {
-      errWithStackTrace(exception)
     }
   }
 
@@ -739,8 +745,12 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       updateRequestOne(value)
       return
     }
-    val packetId = -value
-    val packet = requireNotNull(packets.query(packetId))
+    val packet = requireNotNull(packets.queryByIdMetadata(-value))
+    handleLoadedCreatedPacket(packet)
+  }
+
+  private fun handleLoadedCreatedPacket(packet: Packet) {
+    val packetId = packet.getId()
     val groupId = packet.getGroup()
     val isResponse = packet.getDirection() == Packet.Direction.SERVER
     val packetCount = countAndTrackPacket(packet)
@@ -801,20 +811,28 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       COL_SERVER_RESPONSE,
     )
     val currentLength = tableModel.getValueAt(rowIndex, COL_LENGTH) as Int
-    tableModel.setValueAt(currentLength + getDisplayData(responsePacket).size, rowIndex, COL_LENGTH)
-    val requestPacket = requireNotNull(packets.query(requestPacketId))
-    tableModel.setValueAt(
-      resolveContentType(requestPacket, responsePacket),
-      rowIndex,
-      COL_CONTENT_TYPE,
-    )
+    tableModel.setValueAt(currentLength + displayLengthOf(responsePacket), rowIndex, COL_LENGTH)
+    val existingContentType = tableModel.getValueAt(rowIndex, COL_CONTENT_TYPE) as? String
+    val contentType =
+      if (existingContentType.isNullOrEmpty()) responsePacket.getContentType()
+      else existingContentType
+    tableModel.setValueAt(contentType, rowIndex, COL_CONTENT_TYPE)
     val currentModified = tableModel.getValueAt(rowIndex, COL_MODIFIED) as Boolean
     tableModel.setValueAt(currentModified || responsePacket.getModified(), rowIndex, COL_MODIFIED)
     pairingService.markGroupHasResponse(groupId)
     pairingService.registerPairing(responsePacketId, requestPacketId)
     idRow[responsePacketId] = rowIndex
     if (refreshSelection && requestPacketId == selectedPacketId) {
-      resolveAndShowPacket(requestPacket, true)
+      historyUpdateService.submit {
+        val requestPacket = packets.query(requestPacketId) ?: return@submit
+        SwingUtilities.invokeLater {
+          try {
+            resolveAndShowPacket(requestPacket, true)
+          } catch (exception: Exception) {
+            errWithStackTrace(exception)
+          }
+        }
+      }
     }
   }
 
@@ -909,14 +927,27 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     if (responsePacketId == -1) {
       return
     }
-    val requestPacket = requireNotNull(packets.query(requestPacketId))
+    val requestMeta = packets.queryByIdMetadata(requestPacketId)
     tableModel.setValueAt("", rowIndex, COL_SERVER_RESPONSE)
-    tableModel.setValueAt(getDisplayData(requestPacket).size, rowIndex, COL_LENGTH)
-    val responsePacket = requireNotNull(packets.query(responsePacketId))
-    tableModel.addRow(makeRowDataFromPacket(responsePacket))
-    idRow[responsePacketId] = tableModel.rowCount - 1
+    if (requestMeta != null) {
+      tableModel.setValueAt(displayLengthOf(requestMeta), rowIndex, COL_LENGTH)
+    }
+    val responsePacket = packets.queryByIdMetadata(responsePacketId)
+    if (responsePacket != null) {
+      tableModel.addRow(makeRowDataFromPacket(responsePacket))
+      idRow[responsePacketId] = tableModel.rowCount - 1
+    }
     if (requestPacketId == selectedPacketId) {
-      resolveAndShowPacket(requestPacket, true)
+      historyUpdateService.submit {
+        val requestPacket = packets.query(requestPacketId) ?: return@submit
+        SwingUtilities.invokeLater {
+          try {
+            resolveAndShowPacket(requestPacket, true)
+          } catch (exception: Exception) {
+            errWithStackTrace(exception)
+          }
+        }
+      }
     }
   }
 
@@ -957,7 +988,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
             updatePacketIds.clear()
           }
           for (id in updateTargets) {
-            publish(packets.query(id))
+            packets.queryByIdMetadata(id)?.let { publish(it) }
           }
           return if (cursorUpdate) packets.query(selectedId) else null
         }
@@ -1032,13 +1063,15 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
           COL_SERVER_RESPONSE,
         )
         val requestPacketId = pairingService.getRequestIdForResponse(packetId)
-        val requestPacket = requireNotNull(packets.query(requestPacketId))
-        tableModel.setValueAt(
-          getDisplayData(requestPacket).size + getDisplayData(packet).size,
-          rowIndex,
-          COL_LENGTH,
-        )
-        tableModel.setValueAt(resolveContentType(requestPacket, packet), rowIndex, COL_CONTENT_TYPE)
+        val requestPacket = packets.queryByIdMetadata(requestPacketId)
+        val requestLength =
+          if (requestPacket != null) displayLengthOf(requestPacket)
+          else (tableModel.getValueAt(rowIndex, COL_LENGTH) as? Int ?: 0)
+        tableModel.setValueAt(requestLength + displayLengthOf(packet), rowIndex, COL_LENGTH)
+        val contentType =
+          if (requestPacket != null) resolveContentType(requestPacket, packet)
+          else packet.getContentType()
+        tableModel.setValueAt(contentType, rowIndex, COL_CONTENT_TYPE)
         val currentModified = tableModel.getValueAt(rowIndex, COL_MODIFIED) as Boolean
         tableModel.setValueAt(currentModified || packet.getModified(), rowIndex, COL_MODIFIED)
       }
@@ -1061,18 +1094,25 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     }
   }
 
+  private fun displayLengthOf(packet: Packet): Int {
+    val persisted = packet.getDisplayLength()
+    if (persisted > 0) {
+      return persisted
+    }
+    return getDisplayData(packet).size
+  }
+
   private fun makeRowDataFromPacket(packet: Packet): Array<Any?> {
     val clientIp = packet.getClientIP() ?: ""
     val clientPort = if (packet.getClientPort() == 0) "" else packet.getClientPort().toString()
     val serverIp = packet.getServerIP() ?: ""
     val serverPort = if (packet.getServerPort() == 0) "" else packet.getServerPort().toString()
-    val data = getDisplayData(packet)
-    val dateFormat = SimpleDateFormat("HH:mm:ss yyyy/MM/dd Z")
+    val dateFormat = SimpleDateFormat("MM/dd HH:mm:ss")
     return arrayOf(
       packet.getId(),
       packet.getSummarizedRequest(packetSummarizer),
       packet.getSummarizedResponse(packetSummarizer),
-      data.size,
+      displayLengthOf(packet),
       clientIp,
       clientPort,
       serverIp,
@@ -1085,6 +1125,14 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       packet.getAlpn(),
       packet.getGroup(),
     )
+  }
+
+  private fun applyNumericColumnAlignment() {
+    val rightAligned = DefaultTableCellRenderer()
+    rightAligned.horizontalAlignment = SwingConstants.RIGHT
+    for (columnIndex in NUMERIC_RIGHT_ALIGNED_COLUMNS) {
+      table.getColumn(columnNames[columnIndex]).cellRenderer = rightAligned
+    }
   }
 
   private fun sortByText(text: String): Boolean {
@@ -1109,7 +1157,12 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     private val COL_ID = 0
     private val COL_SERVER_RESPONSE = 2
     private val COL_LENGTH = 3
+    private val COL_CLIENT_PORT = 5
+    private val COL_SERVER_PORT = 7
+    private val COL_RESEND = 9
     private val COL_MODIFIED = 10
     private val COL_CONTENT_TYPE = 11
+    private val NUMERIC_RIGHT_ALIGNED_COLUMNS =
+      intArrayOf(COL_ID, COL_SERVER_RESPONSE, COL_LENGTH, COL_CLIENT_PORT, COL_SERVER_PORT)
   }
 }

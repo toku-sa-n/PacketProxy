@@ -193,9 +193,8 @@ class DuplexFactory(
           var decoded_data = encoder.decodeClientRequest(client_packet!!)
           client_packet!!.setDecodedData(decoded_data)
           // groupIdはencoder.setGroupId()で変更される可能性があるため、
-          // GUIHistoryへの通知（packets.update）はgroupId確定後に行う
+          // groupId確定後にHistoryへ載せる（SERVER到着前に group 追跡できるようにする）
           encoder.setGroupId(client_packet!!) /* 実行するのはsetDecodedDataのあと */
-          packetHistory.updateIfSmall(packets, client_packet!!, data.size)
 
           var server = servers.queryByAddress(server_addr)
           var requestPath = extractHttpRequestPath(decoded_data)
@@ -225,9 +224,11 @@ class DuplexFactory(
           if (intercepted_data.isEmpty()) {
             /* drop */
             client_packet!!.setModified()
-            packets.update(client_packet!!)
+            persistPacket(client_packet!!)
             return@clientChunkReceived ByteArray(0)
           }
+          // send 前に History へ登録し、同一 group の SERVER が単独行化しないようにする
+          persistPacket(client_packet!!)
           intercepted_data
         },
       onServerChunkReceived = serverChunkReceived@{ data ->
@@ -238,7 +239,6 @@ class DuplexFactory(
           server_packet!!.setDecodedData(decoded_data)
           encoder.setGroupId(server_packet!!) /* 実行するのはsetDecodedDataのあと */
           server_packet!!.setContentType(encoder.getContentType(client_packet, server_packet!!))
-          packetHistory.updateIfSmall(packets, server_packet!!, data.size)
           packetHistory.syncContentTypeToClient(packets, client_packet, server_packet!!)
 
           var server = servers.queryByAddress(server_addr)
@@ -268,7 +268,7 @@ class DuplexFactory(
           if (intercepted_data.isEmpty()) {
             /* drop */
             server_packet!!.setModified()
-            packets.update(server_packet!!)
+            persistPacket(server_packet!!)
             return@serverChunkReceived ByteArray(0)
           }
           intercepted_data
@@ -276,7 +276,7 @@ class DuplexFactory(
       onClientChunkSend = { _ ->
         var encoded_data = encoder.encodeClientRequest(client_packet!!)
         client_packet!!.setSentData(encoded_data)
-        packets.update(client_packet!!)
+        persistPacket(client_packet!!)
         encoded_data
       },
       onServerChunkSend = { _ ->
@@ -295,7 +295,7 @@ class DuplexFactory(
           server_packet!!.setSentData(encoded_data)
         }
 
-        packets.update(server_packet!!)
+        persistPacket(server_packet!!)
         encoded_data
       },
       onClientChunkSendForced = { data ->
@@ -308,7 +308,7 @@ class DuplexFactory(
         )
         var encoded_data = encoder.encodeClientRequest(forcedClientPacket)
         forcedClientPacket.setSentData(encoded_data)
-        packets.update(forcedClientPacket)
+        persistPacket(forcedClientPacket)
         encoded_data
       },
       onServerChunkSendForced = { data ->
@@ -321,7 +321,7 @@ class DuplexFactory(
         )
         var encoded_data = encoder.encodeServerResponse(client_packet, forcedServerPacket)
         forcedServerPacket.setSentData(encoded_data)
-        packets.update(forcedServerPacket)
+        persistPacket(forcedServerPacket)
         encoded_data
       },
     )
@@ -389,11 +389,10 @@ class DuplexFactory(
         client_packet!!.setReceivedData(data)
         client_packet!!.setDecodedData(data)
         client_packet!!.setModifiedData(data)
-        packetHistory.updateIfSmall(packets, client_packet!!, data.size)
         var encoded_data = encoder.encodeClientRequest(client_packet!!)
         client_packet!!.setSentData(encoded_data)
         packetHistory.applyOmitIfTooLarge(client_packet!!, data, oneshot.getEncoder())
-        packets.update(client_packet!!)
+        persistPacket(client_packet!!)
         encoded_data
       },
       onServerChunkSend = { data -> data },
@@ -433,7 +432,7 @@ class DuplexFactory(
         client_packet!!.setResend()
         client_packet!!.setReceivedData(oneshot.getData())
         client_packet!!.setSentData(encoder.encodeClientRequest(client_packet!!))
-        packets.update(client_packet!!)
+        persistPacket(client_packet!!)
 
         var group_id = client_packet!!.getGroup()
 
@@ -468,7 +467,7 @@ class DuplexFactory(
       onServerChunkSend = { _ ->
         var encoded_data = encoder.encodeServerResponse(client_packet, server_packet!!)
         server_packet!!.setSentData(encoded_data)
-        packets.update(server_packet!!)
+        persistPacket(server_packet!!)
         encoded_data
       },
       onClientChunkSendForced = { _ -> null },
@@ -537,16 +536,20 @@ class DuplexFactory(
         client_packet!!.setModified()
         client_packet!!.setDecodedData(data)
         client_packet!!.setModifiedData(data)
-        packetHistory.updateIfSmall(packets, client_packet!!, data.size)
         var encoded_data = encoder.encodeClientRequest(client_packet!!)
         client_packet!!.setSentData(encoded_data)
-        packets.update(client_packet!!)
+        persistPacket(client_packet!!)
         encoded_data
       },
       onServerChunkSend = { data -> data },
       onClientChunkSendForced = { _ -> null },
       onServerChunkSendForced = { _ -> null },
     )
+  }
+
+  private fun persistPacket(packet: Packet) {
+    packet.refreshPersistedSummaries(encoderManager.packetSummarizer)
+    packets.update(packet)
   }
 
   private fun extractHttpRequestPath(data: ByteArray?): String? {

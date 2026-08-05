@@ -36,7 +36,7 @@ class CoreServices(val modelServices: ModelServices, val logging: Logging) {
   val duplexManager = DuplexManager()
   val encoderManager = EncoderManager()
   val vulCheckerManager = VulCheckerManager()
-  val duplexPacketHistory = DuplexPacketHistory(uniqueId)
+  val duplexPacketHistory = DuplexPacketHistory(uniqueId, encoderManager.packetSummarizer)
   val duplexFactory =
     DuplexFactory(
       modelServices.packets,

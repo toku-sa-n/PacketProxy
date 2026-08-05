@@ -36,10 +36,14 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
   init {
     database.addPropertyChangeListener(this)
     SchemaMigrator.ensureColumns(dao)
+    ensurePairIndex()
+    ensureFts()
     if (restore) {
       SchemaMigrator.ensureCompatible(database, dao, "packets") {
         database.dropTable(Packet::class.java)
         dao = database.createTable(Packet::class.java)
+        ensurePairIndex()
+        ensureFts()
       }
       log("load history...")
       log("load %d records.", dao.countOf())
@@ -55,7 +59,10 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
   }
 
   fun create(packet: Packet) {
-    synchronized(dao) { dao.createIfNotExists(packet) }
+    synchronized(dao) {
+      dao.createIfNotExists(packet)
+      syncFts(packet)
+    }
     firePropertyChange()
   }
 
@@ -73,11 +80,19 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     }
     val id = packet.getId()
     if (id > 0) {
-      synchronized(dao) { dao.update(packet) }
+      synchronized(dao) {
+        dao.update(packet)
+        syncFts(packet)
+      }
       firePropertyChange(id)
       return
     }
-    val status = synchronized(dao) { dao.createOrUpdate(packet) }
+    val status =
+      synchronized(dao) {
+        val result = dao.createOrUpdate(packet)
+        syncFts(packet)
+        result
+      }
     firePropertyChange(if (status.isCreated) packet.getId() * -1 else packet.getId())
   }
 
@@ -86,13 +101,70 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     schedulePendingUpdates()
   }
 
+  /** Update content_type without rewriting BLOB columns. No-op when id <= 0. */
+  fun updateContentType(id: Int, contentType: String?) {
+    if (id <= 0) {
+      return
+    }
+    synchronized(dao) {
+      dao
+        .updateBuilder()
+        .apply {
+          updateColumnValue("content_type", contentType)
+          where().eq("id", id)
+        }
+        .update()
+    }
+    firePropertyChange(id)
+  }
+
+  /** Update color without rewriting BLOB columns. No-op when id <= 0. */
+  fun updateColor(id: Int, color: String?) {
+    if (id <= 0) {
+      return
+    }
+    synchronized(dao) {
+      dao
+        .updateBuilder()
+        .apply {
+          updateColumnValue("color", color)
+          where().eq("id", id)
+        }
+        .update()
+    }
+    firePropertyChange(id)
+  }
+
+  /** Update modified flag without rewriting BLOB columns. No-op when id <= 0. */
+  fun updateModified(id: Int, modified: Boolean) {
+    if (id <= 0) {
+      return
+    }
+    synchronized(dao) {
+      dao
+        .updateBuilder()
+        .apply {
+          updateColumnValue("modified", modified)
+          where().eq("id", id)
+        }
+        .update()
+    }
+    firePropertyChange(id)
+  }
+
   fun deleteAll() {
-    synchronized(dao) { dao.deleteBuilder().delete() }
+    synchronized(dao) {
+      dao.deleteBuilder().delete()
+      dao.executeRaw("DELETE FROM packets_fts")
+    }
     firePropertyChange()
   }
 
   fun delete(packet: Packet) {
-    synchronized(dao) { dao.delete(packet) }
+    synchronized(dao) {
+      dao.delete(packet)
+      deleteFts(packet.getId())
+    }
     firePropertyChange()
   }
 
@@ -140,10 +212,76 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
         "color",
         "job_id",
         "temporary_id",
+        "summarized_request",
+        "summarized_response",
+        "display_length",
       )
       .offset(offset)
       .limit(limit)
       .orderBy("id", ascending)
+      .query()
+
+  fun queryByIdMetadata(id: Int): Packet? =
+    dao
+      .queryBuilder()
+      .selectColumns(
+        "id",
+        "direction",
+        "listen_port",
+        "client_ip",
+        "client_port",
+        "server_ip",
+        "server_name",
+        "server_port",
+        "use_ssl",
+        "content_type",
+        "encoder_name",
+        "alpn",
+        "modified",
+        "resend",
+        "date",
+        "conn",
+        "group",
+        "color",
+        "job_id",
+        "temporary_id",
+        "summarized_request",
+        "summarized_response",
+        "display_length",
+      )
+      .where()
+      .eq("id", id)
+      .queryForFirst()
+
+  fun queryAllMetadata(): List<Packet> =
+    dao
+      .queryBuilder()
+      .selectColumns(
+        "id",
+        "direction",
+        "listen_port",
+        "client_ip",
+        "client_port",
+        "server_ip",
+        "server_name",
+        "server_port",
+        "use_ssl",
+        "content_type",
+        "encoder_name",
+        "alpn",
+        "modified",
+        "resend",
+        "date",
+        "conn",
+        "group",
+        "color",
+        "job_id",
+        "temporary_id",
+        "summarized_request",
+        "summarized_response",
+        "display_length",
+      )
+      .orderBy("id", true)
       .query()
 
   fun queryAll(): List<Packet> = dao.queryBuilder().orderBy("id", true).query()
@@ -151,40 +289,14 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
   fun queryMoreThan(date: Int): List<Packet> = dao.queryBuilder().where().gt("id", date).query()
 
   fun queryFullText(search: String, start: Int): List<Packet> =
-    dao
-      .queryBuilder()
-      .selectColumns("group")
-      .where()
-      .ge("id", start)
-      .and()
-      .like("decoded_data", "%%%s%%".format(search))
-      .query()
+    queryFts(search).filter { it.getId() >= start }
 
   fun queryFullTextById(search: String, id: Int): List<Packet> =
-    dao
-      .queryBuilder()
-      .selectColumns("group")
-      .where()
-      .eq("id", id)
-      .and()
-      .like("decoded_data", "%%%s%%".format(search))
-      .query()
+    queryFts(search).filter { it.getId() == id }
 
-  fun queryFullText(search: String): List<Packet> =
-    dao
-      .queryRaw(
-        "SELECT `group`,`id` FROM `packets` WHERE `decoded_data` GLOB '*%s*';".format(search),
-        dao.rawRowMapper,
-      )
-      .results
+  fun queryFullText(search: String): List<Packet> = queryFts(search)
 
-  fun queryFullText_i(search: String): List<Packet> =
-    dao
-      .queryBuilder()
-      .selectColumns("group")
-      .where()
-      .like("decoded_data", "%%%s%%".format(search))
-      .query()
+  fun queryFullText_i(search: String): List<Packet> = queryFts(search)
 
   fun queryPairedPacket(
     group: Long,
@@ -232,6 +344,14 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
             dao.executeRaw("ALTER TABLE `packets` ADD COLUMN job_id VARCHAR")
           if (!result.contains("`temporary_id` VARCHAR"))
             dao.executeRaw("ALTER TABLE `packets` ADD COLUMN temporary_id VARCHAR")
+          if (!result.contains("`summarized_request`"))
+            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_request VARCHAR")
+          if (!result.contains("`summarized_response`"))
+            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_response VARCHAR")
+          if (!result.contains("`display_length`"))
+            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN display_length INTEGER DEFAULT 0")
+          ensurePairIndex()
+          ensureFts()
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
@@ -250,6 +370,81 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     handleDatabaseMessage(event.newValue as DatabaseMessage)
   }
 
+  private fun ensurePairIndex() {
+    dao.executeRaw(
+      "CREATE INDEX IF NOT EXISTS packets_pair_idx ON packets(`group`, `conn`, `direction`)"
+    )
+  }
+
+  private fun ensureFts() {
+    dao.executeRaw(
+      """
+      CREATE VIRTUAL TABLE IF NOT EXISTS packets_fts USING fts5(
+        packet_id UNINDEXED,
+        group_id UNINDEXED,
+        body,
+        tokenize = 'unicode61'
+      )
+      """
+        .trimIndent()
+    )
+  }
+
+  private fun syncFts(packet: Packet) {
+    val id = packet.getId()
+    if (id <= 0) {
+      return
+    }
+    deleteFts(id)
+    val bodyBytes =
+      when {
+        packet.getDecodedData().isNotEmpty() -> packet.getDecodedData()
+        packet.getModifiedData().isNotEmpty() -> packet.getModifiedData()
+        else -> packet.getReceivedData()
+      }
+    val body =
+      try {
+        String(bodyBytes, Charsets.UTF_8)
+      } catch (_: Exception) {
+        String(bodyBytes, Charsets.ISO_8859_1)
+      }
+    val escaped = body.replace("'", "''")
+    dao.executeRaw(
+      "INSERT INTO packets_fts(packet_id, group_id, body) VALUES (%d, %d, '%s')"
+        .format(id, packet.getGroup(), escaped.take(200_000))
+    )
+  }
+
+  private fun deleteFts(id: Int) {
+    if (id <= 0) {
+      return
+    }
+    dao.executeRaw("DELETE FROM packets_fts WHERE packet_id = %d".format(id))
+  }
+
+  private fun queryFts(search: String): List<Packet> {
+    if (search.isEmpty()) {
+      return emptyList()
+    }
+    // FTS5 MATCH is case-insensitive with unicode61; quote the phrase for literal match.
+    val escaped = search.replace("\"", "\"\"").replace("'", "''")
+    val match = "\"$escaped\""
+    val rows =
+      dao.queryRaw(
+        "SELECT group_id, packet_id FROM packets_fts WHERE packets_fts MATCH '%s'".format(match)
+      )
+    val results = ArrayList<Packet>()
+    for (row in rows.results) {
+      try {
+        val packetId = row[1].toInt()
+        val packet = queryByIdMetadata(packetId) ?: continue
+        results.add(packet)
+      } catch (_: Exception) {
+        // skip bad rows
+      }
+    }
+    return results
+  }
 
   private fun flushPendingUpdates() {
     while (true) {
@@ -262,8 +457,29 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
           pendingUpdates.clear()
           copied
         }
-      for (packet in batch) {
-        updateSync(packet)
+      if (database.isAlertFileSize()) {
+        firePropertyChange(true)
+      }
+      val notifiedIds = ArrayList<Int>(batch.size)
+      synchronized(dao) {
+        dao.callBatchTasks {
+          for (packet in batch) {
+            val id = packet.getId()
+            if (id > 0) {
+              dao.update(packet)
+              syncFts(packet)
+              notifiedIds.add(id)
+              continue
+            }
+            val status = dao.createOrUpdate(packet)
+            syncFts(packet)
+            notifiedIds.add(if (status.isCreated) packet.getId() * -1 else packet.getId())
+          }
+          null
+        }
+      }
+      for (notifiedId in notifiedIds) {
+        firePropertyChange(notifiedId)
       }
     }
   }
