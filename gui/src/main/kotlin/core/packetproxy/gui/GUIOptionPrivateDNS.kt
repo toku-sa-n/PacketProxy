@@ -3,6 +3,7 @@ package packetproxy.gui
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
+import java.awt.event.ItemEvent
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.net.Inet4Address
@@ -14,66 +15,53 @@ import javax.swing.ButtonGroup
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JRadioButton
 import javax.swing.JTextField
+import javax.swing.border.LineBorder
+import javax.swing.border.TitledBorder
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
+import javax.swing.text.AbstractDocument
+import javax.swing.text.AttributeSet
+import javax.swing.text.DocumentFilter
 import packetproxy.DNSSpoofingIPGetter
 import packetproxy.PrivateDNS
-import packetproxy.common.*
+import packetproxy.common.FontManager
+import packetproxy.common.i18nString
 import packetproxy.model.ConfigBoolean
 import packetproxy.model.Configs
 import packetproxy.model.PropertyChangeEventType.CONFIGS
 import packetproxy.util.errWithStackTrace
 
-class GUIOptionPrivateDNS(private val privateDns: PrivateDNS, private val configs: Configs) :
-  PropertyChangeListener, packetproxy.DnsSpoofingConfig {
-  private val checkBox = JCheckBox(i18nString("Use private DNS server"))
-  private val ipv4 = JTextField()
-  private val ipv6 = JTextField()
-  private val auto =
-    JRadioButton(
-      i18nString("Auto (Replace resolved IP with local IP of suitable NIC automatically)"),
-      true,
-    )
-  private val manual = JRadioButton(i18nString("Manual"))
+class GUIOptionPrivateDNS(
+  private val privateDns: PrivateDNS,
+  private val configs: Configs,
+  private val fontManager: FontManager,
+) : PropertyChangeListener, packetproxy.DnsSpoofingConfig {
+  companion object {
+    private const val MAX_PORT_DIGITS = 5
+    private val ERROR_COLOR = Color(0xB0, 0x00, 0x20)
+    private val ERROR_BACKGROUND_COLOR = Color(0xFF, 0xCD, 0xD2)
+  }
+
+  private val checkBox = createCheckBox()
+  private val ipv4 = createAddressField()
+  private val ipv6 = createAddress6Field()
+  private lateinit var auto: JRadioButton
+  private lateinit var manual: JRadioButton
   private lateinit var interfaces: JComboBox<String>
   private lateinit var port: JTextField
   private lateinit var setPort: JButton
-  private val panel = JPanel()
+  private lateinit var portErrorLabel: JLabel
+  private var portFieldDefaultBackgroundColor: Color? = null
+  private var portFieldDocumentListener: DocumentListener? = null
+  private val panel = createPanel()
 
   init {
-    ipv4.text = localIp()
-    ipv6.text = localIp6()
-    ipv4.isEnabled = false
-    ipv6.isEnabled = false
-    panel.background = Color.WHITE
-    panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-    checkBox.addActionListener {
-      if (!checkBox.isSelected) privateDns.stop()
-      else if (!privateDns.start(DNSSpoofingIPGetter(this))) {
-        checkBox.isSelected = false
-        showError()
-      }
-    }
-    panel.add(checkBox)
-    panel.add(interfacePanel())
-    panel.add(portPanel())
-    val group = ButtonGroup()
-    group.add(auto)
-    group.add(manual)
-    auto.addActionListener { updateManual() }
-    manual.addActionListener { updateManual() }
-    val manualRow = JPanel()
-    manualRow.background = Color.WHITE
-    manualRow.layout = BoxLayout(manualRow, BoxLayout.X_AXIS)
-    manualRow.add(manual)
-    manualRow.add(ipv4)
-    manualRow.add(ipv6)
-    panel.add(auto)
-    panel.add(manualRow)
-    panel.alignmentX = Component.LEFT_ALIGNMENT
     configs.addPropertyChangeListener(this)
     updateState()
   }
@@ -91,13 +79,16 @@ class GUIOptionPrivateDNS(private val privateDns: PrivateDNS, private val config
   fun updateState() {
     try {
       checkBox.isSelected = ConfigBoolean(configs, "PrivateDNS").getState()
-      port.text = privateDns.getConfiguredPort().toString()
-      if (checkBox.isSelected && !privateDns.start(DNSSpoofingIPGetter(this))) {
+      updatePortFieldText(privateDns.getConfiguredPort().toString())
+      if (!checkBox.isSelected) return
+      if (!privateDns.start(DNSSpoofingIPGetter(this))) {
         checkBox.isSelected = false
         showError()
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
+    } finally {
+      updatePortSetButtonEnabled()
     }
   }
 
@@ -105,7 +96,87 @@ class GUIOptionPrivateDNS(private val privateDns: PrivateDNS, private val config
     if (CONFIGS.matches(evt)) updateState()
   }
 
-  private fun interfacePanel(): JPanel {
+  private fun createPanel(): JPanel {
+    auto =
+      JRadioButton(
+        i18nString("Auto (Replace resolved IP with local IP of suitable NIC automatically)"),
+        true,
+      )
+    auto.minimumSize = Dimension(Short.MAX_VALUE.toInt(), auto.maximumSize.height)
+    auto.addActionListener { updateManual() }
+    manual = JRadioButton(i18nString("Manual"), false)
+    manual.addActionListener { updateManual() }
+
+    val rewriteGroup = ButtonGroup()
+    rewriteGroup.add(auto)
+    rewriteGroup.add(manual)
+
+    val manualPanel = JPanel()
+    manualPanel.background = Color.WHITE
+    manualPanel.layout = BoxLayout(manualPanel, BoxLayout.X_AXIS)
+    manualPanel.add(manual)
+    manualPanel.add(ipv4)
+    manualPanel.add(ipv6)
+
+    val rewriteRuleBorder = TitledBorder(i18nString("Rewrite Rule"))
+    rewriteRuleBorder.border = LineBorder(Color.BLACK, 1)
+    rewriteRuleBorder.titleFont = fontManager.getUIFont()
+    rewriteRuleBorder.titleJustification = TitledBorder.LEFT
+    rewriteRuleBorder.titlePosition = TitledBorder.TOP
+
+    val rewriteRule = JPanel()
+    rewriteRule.layout = BoxLayout(rewriteRule, BoxLayout.Y_AXIS)
+    rewriteRule.background = Color.WHITE
+    rewriteRule.border = rewriteRuleBorder
+    rewriteRule.add(auto)
+    rewriteRule.add(manualPanel)
+    rewriteRule.maximumSize =
+      Dimension(rewriteRule.preferredSize.width, rewriteRule.minimumSize.height)
+
+    return JPanel().apply {
+      background = Color.WHITE
+      layout = BoxLayout(this, BoxLayout.Y_AXIS)
+      add(checkBox)
+      add(createInterfaceSetting())
+      add(createPortSetting())
+      add(rewriteRule)
+      alignmentX = Component.LEFT_ALIGNMENT
+    }
+  }
+
+  private fun createCheckBox(): JCheckBox {
+    val box = JCheckBox(i18nString("Use private DNS server"))
+    box.addActionListener {
+      if (!box.isSelected) {
+        privateDns.stop()
+        return@addActionListener
+      }
+      if (!privateDns.start(DNSSpoofingIPGetter(this))) {
+        box.isSelected = false
+        showError()
+      }
+    }
+    box.minimumSize = Dimension(Short.MAX_VALUE.toInt(), box.maximumSize.height)
+    return box
+  }
+
+  private fun createAddressField(): JTextField {
+    val text = JTextField(localIp())
+    text.maximumSize = Dimension(300, 30)
+    text.preferredSize = Dimension(200, 30)
+    text.isEnabled = false
+    return text
+  }
+
+  private fun createAddress6Field(): JTextField {
+    val text = JTextField(localIp6())
+    text.maximumSize = Dimension(600, 30)
+    text.preferredSize = Dimension(500, 30)
+    text.isEnabled = false
+    return text
+  }
+
+  private fun createInterfaceSetting(): JComponent {
     val addresses = mutableListOf("0.0.0.0")
     try {
       NetworkInterface.getNetworkInterfaces()
@@ -118,46 +189,196 @@ class GUIOptionPrivateDNS(private val privateDns: PrivateDNS, private val config
       errWithStackTrace(e)
     }
     interfaces = JComboBox(addresses.toTypedArray())
+    interfaces.maximumRowCount = interfaces.itemCount
     interfaces.selectedItem = "0.0.0.0"
-    interfaces.addItemListener {
-      if (
-        it.stateChange == java.awt.event.ItemEvent.SELECTED &&
-          privateDns.isRunning() &&
-          !privateDns.restart(DNSSpoofingIPGetter(this))
-      ) {
-        checkBox.isSelected = false
-        showError()
-      }
+    interfaces.addItemListener { event ->
+      if (event.stateChange != ItemEvent.SELECTED || event.item == null) return@addItemListener
+      restartForBindingInterfaceChange()
     }
+    interfaces.maximumSize = Dimension(interfaces.minimumSize.width, interfaces.minimumSize.height)
+
     return JPanel().apply {
       background = Color.WHITE
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       add(interfaces)
       add(JLabel(i18nString("will be used for Binding Interface")))
+      maximumSize = Dimension(Short.MAX_VALUE.toInt(), maximumSize.height)
     }
   }
 
-  private fun portPanel(): JPanel {
-    port = JTextField(privateDns.getConfiguredPort().toString())
-    port.maximumSize = Dimension(100, port.minimumSize.height)
-    setPort = JButton(i18nString("Set"))
-    setPort.addActionListener {
-      port.text.toIntOrNull()?.let { privateDns.setPort(it, DNSSpoofingIPGetter(this)) }
+  private fun createPortSetting(): JComponent {
+    val portLabel = JLabel(i18nString("Port"))
+    return JPanel().apply {
+      background = Color.WHITE
+      layout = BoxLayout(this, BoxLayout.Y_AXIS)
+      add(createPortSettingRow(portLabel))
+      add(createPortSettingMessageRow(portLabel))
+      maximumSize = Dimension(Short.MAX_VALUE.toInt(), maximumSize.height)
+      updatePortSetButtonEnabled()
     }
+  }
+
+  private fun createPortSettingRow(portLabel: JLabel): JPanel {
+    port = createDnsPortField()
+    setPort = createDnsPortSetButton()
     return JPanel().apply {
       background = Color.WHITE
       layout = BoxLayout(this, BoxLayout.X_AXIS)
-      add(JLabel(i18nString("Port")))
+      add(portLabel)
       add(Box.createHorizontalStrut(4))
       add(port)
       add(setPort)
       add(JLabel(i18nString("will be used for Binding Port")))
+      maximumSize = Dimension(Short.MAX_VALUE.toInt(), maximumSize.height)
     }
   }
+
+  private fun createPortSettingMessageRow(portLabel: JLabel): JPanel {
+    portErrorLabel = JLabel(" ")
+    portErrorLabel.foreground = ERROR_COLOR
+    return JPanel().apply {
+      background = Color.WHITE
+      layout = BoxLayout(this, BoxLayout.X_AXIS)
+      add(Box.createRigidArea(Dimension(portLabel.preferredSize.width, 0)))
+      add(Box.createHorizontalStrut(4))
+      add(portErrorLabel)
+      maximumSize = Dimension(Short.MAX_VALUE.toInt(), maximumSize.height)
+    }
+  }
+
+  private fun createDnsPortField(): JTextField {
+    val field = JTextField(privateDns.getConfiguredPort().toString())
+    field.maximumSize = Dimension(100, field.minimumSize.height)
+    portFieldDefaultBackgroundColor = field.background
+    installDnsPortFieldDocumentFilter(field)
+    installDnsPortFieldDocumentListener(field)
+    return field
+  }
+
+  private fun installDnsPortFieldDocumentFilter(field: JTextField) {
+    (field.document as AbstractDocument).documentFilter =
+      object : DocumentFilter() {
+        override fun insertString(
+          fb: FilterBypass,
+          offset: Int,
+          string: String?,
+          attr: AttributeSet?,
+        ) {
+          if (string == null) return
+          val nextLength = fb.document.length + string.length
+          if (isDigitsOnly(string) && nextLength <= MAX_PORT_DIGITS) {
+            super.insertString(fb, offset, string, attr)
+          }
+        }
+
+        override fun replace(
+          fb: FilterBypass,
+          offset: Int,
+          length: Int,
+          text: String?,
+          attrs: AttributeSet?,
+        ) {
+          if (text == null) {
+            super.replace(fb, offset, length, text, attrs)
+            return
+          }
+          val nextLength = fb.document.length - length + text.length
+          if (isDigitsOnly(text) && nextLength <= MAX_PORT_DIGITS) {
+            super.replace(fb, offset, length, text, attrs)
+          }
+        }
+      }
+  }
+
+  private fun installDnsPortFieldDocumentListener(field: JTextField) {
+    portFieldDocumentListener =
+      object : DocumentListener {
+        override fun insertUpdate(e: DocumentEvent) = updatePortSetButtonEnabled()
+
+        override fun removeUpdate(e: DocumentEvent) = updatePortSetButtonEnabled()
+
+        override fun changedUpdate(e: DocumentEvent) = updatePortSetButtonEnabled()
+      }
+    field.document.addDocumentListener(portFieldDocumentListener)
+  }
+
+  private fun createDnsPortSetButton(): JButton {
+    val button = JButton(i18nString("Set"))
+    button.addActionListener {
+      val portValue = parsePortText(port.text) ?: return@addActionListener
+      privateDns.setPort(portValue, DNSSpoofingIPGetter(this))
+    }
+    return button
+  }
+
+  private fun isDigitsOnly(text: String): Boolean = text.all { it in '0'..'9' }
 
   private fun updateManual() {
     ipv4.isEnabled = manual.isSelected
     ipv6.isEnabled = manual.isSelected
+  }
+
+  private fun updatePortSetButtonEnabled() {
+    if (!::setPort.isInitialized || !::port.isInitialized) return
+    val portValue = parsePortText(port.text)
+    if (portValue == null) {
+      setPort.isEnabled = false
+      clearPortError()
+      return
+    }
+    if (!privateDns.isPortInRange(portValue)) {
+      setPort.isEnabled = false
+      setPortError(i18nString("Port number must be between 1 and 65535"))
+      return
+    }
+    clearPortError()
+    setPort.isEnabled = privateDns.isPortChangeNeeded(portValue)
+  }
+
+  private fun setPortError(message: String) {
+    if (::portErrorLabel.isInitialized) portErrorLabel.text = message
+    if (::port.isInitialized) {
+      port.isOpaque = true
+      port.background = ERROR_BACKGROUND_COLOR
+    }
+  }
+
+  private fun clearPortError() {
+    if (::portErrorLabel.isInitialized) portErrorLabel.text = " "
+    if (::port.isInitialized) {
+      portFieldDefaultBackgroundColor?.let { port.background = it }
+    }
+  }
+
+  private fun parsePortText(portText: String): Int? =
+    try {
+      portText.trim().toInt()
+    } catch (_: Exception) {
+      null
+    }
+
+  private fun updatePortFieldText(text: String) {
+    if (!::port.isInitialized) return
+    portFieldDocumentListener?.let { port.document.removeDocumentListener(it) }
+    try {
+      port.text = text
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    } finally {
+      portFieldDocumentListener?.let { port.document.addDocumentListener(it) }
+    }
+  }
+
+  private fun restartForBindingInterfaceChange() {
+    try {
+      if (!privateDns.isRunning()) return
+      if (!privateDns.restart(DNSSpoofingIPGetter(this))) {
+        checkBox.isSelected = false
+        showError()
+      }
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    }
   }
 
   private fun localIp(): String =

@@ -95,7 +95,12 @@ class GUIOption(private val owner: GUIMain) {
       panel,
       "Private DNS server",
       i18nString("Use private DNS server that resolves server name to the IP address of this pc."),
-      GUIOptionPrivateDNS(owner.coreServices.privateDns, owner.modelServices.configs).getPanel(),
+      GUIOptionPrivateDNS(
+          owner.coreServices.privateDns,
+          owner.modelServices.configs,
+          owner.modelServices.fontManager,
+        )
+        .getPanel(),
     )
     addSection(
       panel,
