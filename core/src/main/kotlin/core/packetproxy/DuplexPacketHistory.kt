@@ -83,10 +83,10 @@ class DuplexPacketHistory(
   }
 
   /**
-   * When data exceeds TOO_LARGE_LENGTH, replaces decoded/modified/sent display data with an omit
+   * When data exceeds TOO_LARGE_LENGTH, replaces received/decoded/modified/sent with an omit
    * message. Returns true if omission was applied.
    */
-  fun applyOmitIfTooLarge(clientPacket: Packet, data: ByteArray, encoderName: String?): Boolean {
+  fun applyOmitIfTooLarge(packet: Packet, data: ByteArray, encoderName: String?): Boolean {
     if (data.size <= TOO_LARGE_LENGTH) {
       return false
     }
@@ -94,13 +94,46 @@ class DuplexPacketHistory(
       String.format("*** Data cannot be displayed (reason: Data too large: %d) ***", data.size)
         .toByteArray(StandardCharsets.UTF_8)
     if (encoderName == "HTTP") {
-      var http = Http.create(data)
-      http.body = omitData
-      omitData = http.toByteArray()
+      try {
+        var http = Http.create(data)
+        http.body = omitData
+        omitData = http.toByteArray()
+      } catch (_: Exception) {
+        // fall through with plain omit message
+      }
     }
-    clientPacket.setDecodedData(omitData)
-    clientPacket.setModifiedData(omitData)
-    clientPacket.setSentData(omitData)
+    packet.setReceivedData(omitData)
+    packet.setDecodedData(omitData)
+    packet.setModifiedData(omitData)
+    packet.setSentData(omitData)
     return true
+  }
+
+  /**
+   * Runs [persist] with large payloads omitted for History. Restores original stage data afterward
+   * so subsequent encode/forward still sees the full payload.
+   */
+  fun <T> persistOmittingIfTooLarge(
+    packet: Packet,
+    data: ByteArray,
+    encoderName: String?,
+    persist: () -> T,
+  ): T {
+    if (data.size <= TOO_LARGE_LENGTH) {
+      return persist()
+    }
+    val received = packet.getReceivedData()
+    val decoded = packet.getDecodedData()
+    val modified = packet.getModifiedData()
+    val sent = packet.getSentData()
+    applyOmitIfTooLarge(packet, data, encoderName)
+    try {
+      return persist()
+    } finally {
+      packet.setReceivedData(received)
+      packet.setDecodedData(decoded)
+      packet.setModifiedData(modified)
+      packet.setSentData(sent)
+    }
   }
 }

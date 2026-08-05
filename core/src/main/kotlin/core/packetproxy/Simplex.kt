@@ -15,7 +15,6 @@
  */
 package packetproxy
 
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
@@ -28,6 +27,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import javax.net.ssl.SSLException
 import javax.swing.event.EventListenerList
+import packetproxy.common.ReassemblyBuffer
 import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
@@ -65,7 +65,7 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
   }
 
   abstract class SimplexEventAdapter : SimplexEventListener {
-    var inputData = ByteArrayOutputStream()
+    var inputData = java.io.ByteArrayOutputStream()
 
     @Throws(Exception::class)
     override fun onChunkArrived(data: ByteArray) {
@@ -172,7 +172,7 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
   // Socketが利用できる場合、Socket#setSoTimeout()で読み込みタイムアウトを制御する。
   // newSingleThreadExecutor()によるスレッド生成/Future#get()のオーバーヘッドを避けられる。
   private fun runWithSocketTimeout(socket: Socket) {
-    val bout = ByteArrayOutputStream()
+    val bout = ReassemblyBuffer()
     try {
       while (!flag_break_loop) {
         socket.soTimeout = if (bout.size() > 0) TIMEOUT else 0
@@ -199,6 +199,11 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
       } catch (e1: Exception) {
         errWithStackTrace(e)
       }
+    } catch (e: IllegalStateException) {
+      errWithStackTrace(e)
+      try {
+        `in`!!.close()
+      } catch (_: Exception) {}
     } catch (e: SSLException) {
       // ignore
     } catch (e: SocketException) {
@@ -212,7 +217,7 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
 
   // Socketを持たないpipe由来のストリーム等では、従来通りExecutor + Future#get()でタイムアウトを実現する。
   private fun runWithExecutorTimeout() {
-    val bout = ByteArrayOutputStream()
+    val bout = ReassemblyBuffer()
     val executor = Executors.newSingleThreadExecutor()
     val readTask = Callable {
       var ret: Int
@@ -246,6 +251,11 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
       } catch (e1: Exception) {
         errWithStackTrace(e)
       }
+    } catch (e: IllegalStateException) {
+      errWithStackTrace(e)
+      try {
+        `in`!!.close()
+      } catch (_: Exception) {}
     } catch (e: SSLException) {
       // ignore
     } catch (e: SocketException) {
@@ -258,15 +268,13 @@ constructor(private var `in`: InputStream?, private var out: OutputStream?) : Th
     }
   }
 
-  private fun processAvailableChunks(bout: ByteArrayOutputStream) {
+  private fun processAvailableChunks(bout: ReassemblyBuffer) {
     while (bout.size() > 0) {
       val currentBuffer = bout.toByteArray()
       val accepted_input_size = callOnPacketReceived(currentBuffer)
       if (accepted_input_size < 0 || accepted_input_size > currentBuffer.size) break
       val accepted_array = currentBuffer.copyOfRange(0, accepted_input_size)
-      val unaccepted_array = currentBuffer.copyOfRange(accepted_input_size, currentBuffer.size)
-      bout.reset()
-      bout.write(unaccepted_array)
+      bout.discard(accepted_input_size)
 
       callOnChunkArrived(accepted_array)
 

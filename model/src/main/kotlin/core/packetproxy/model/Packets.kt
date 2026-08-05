@@ -26,12 +26,18 @@ import packetproxy.model.Database.DatabaseMessage
 import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
-class Packets(private val database: Database, restore: Boolean) : PropertyChangeListener {
+class Packets(
+  private val database: Database,
+  restore: Boolean,
+  private val configs: Configs? = null,
+) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
   private var dao: Dao<Packet, Int> = database.createTable(Packet::class.java)
   private val executor = Executors.newSingleThreadExecutor()
+  private val ftsExecutor = Executors.newSingleThreadExecutor()
   private val pendingUpdates = LinkedHashMap<String, Packet>()
   private val updateScheduled = AtomicBoolean(false)
+  private val pruneScheduled = AtomicBoolean(false)
 
   init {
     database.addPropertyChangeListener(this)
@@ -59,11 +65,11 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
   }
 
   fun create(packet: Packet) {
-    synchronized(dao) {
-      dao.createIfNotExists(packet)
-      syncFts(packet)
-    }
+    packet.compactForPersist()
+    synchronized(dao) { dao.createIfNotExists(packet) }
+    scheduleFts(packet)
     firePropertyChange()
+    scheduleAutoPrune()
   }
 
   fun refresh() {
@@ -78,22 +84,19 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     if (database.isAlertFileSize()) {
       firePropertyChange(true)
     }
+    packet.compactForPersist()
     val id = packet.getId()
     if (id > 0) {
-      synchronized(dao) {
-        dao.update(packet)
-        syncFts(packet)
-      }
+      synchronized(dao) { dao.update(packet) }
+      scheduleFts(packet)
       firePropertyChange(id)
+      scheduleAutoPrune()
       return
     }
-    val status =
-      synchronized(dao) {
-        val result = dao.createOrUpdate(packet)
-        syncFts(packet)
-        result
-      }
+    val status = synchronized(dao) { dao.createOrUpdate(packet) }
+    scheduleFts(packet)
     firePropertyChange(if (status.isCreated) packet.getId() * -1 else packet.getId())
+    scheduleAutoPrune()
   }
 
   fun update(packet: Packet) {
@@ -191,100 +194,45 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
   fun queryPageMetadata(offset: Long, limit: Long, ascending: Boolean): List<Packet> =
     dao
       .queryBuilder()
-      .selectColumns(
-        "id",
-        "direction",
-        "listen_port",
-        "client_ip",
-        "client_port",
-        "server_ip",
-        "server_name",
-        "server_port",
-        "use_ssl",
-        "content_type",
-        "encoder_name",
-        "alpn",
-        "modified",
-        "resend",
-        "date",
-        "conn",
-        "group",
-        "color",
-        "job_id",
-        "temporary_id",
-        "summarized_request",
-        "summarized_response",
-        "display_length",
-      )
+      .selectColumns(*METADATA_COLUMNS)
       .offset(offset)
       .limit(limit)
       .orderBy("id", ascending)
       .query()
 
   fun queryByIdMetadata(id: Int): Packet? =
-    dao
-      .queryBuilder()
-      .selectColumns(
-        "id",
-        "direction",
-        "listen_port",
-        "client_ip",
-        "client_port",
-        "server_ip",
-        "server_name",
-        "server_port",
-        "use_ssl",
-        "content_type",
-        "encoder_name",
-        "alpn",
-        "modified",
-        "resend",
-        "date",
-        "conn",
-        "group",
-        "color",
-        "job_id",
-        "temporary_id",
-        "summarized_request",
-        "summarized_response",
-        "display_length",
-      )
-      .where()
-      .eq("id", id)
-      .queryForFirst()
+    dao.queryBuilder().selectColumns(*METADATA_COLUMNS).where().eq("id", id).queryForFirst()
 
   fun queryAllMetadata(): List<Packet> =
-    dao
-      .queryBuilder()
-      .selectColumns(
-        "id",
-        "direction",
-        "listen_port",
-        "client_ip",
-        "client_port",
-        "server_ip",
-        "server_name",
-        "server_port",
-        "use_ssl",
-        "content_type",
-        "encoder_name",
-        "alpn",
-        "modified",
-        "resend",
-        "date",
-        "conn",
-        "group",
-        "color",
-        "job_id",
-        "temporary_id",
-        "summarized_request",
-        "summarized_response",
-        "display_length",
-      )
-      .orderBy("id", true)
-      .query()
+    dao.queryBuilder().selectColumns(*METADATA_COLUMNS).orderBy("id", true).query()
 
   fun queryAll(): List<Packet> = dao.queryBuilder().orderBy("id", true).query()
+
+  /** Invokes [action] for each page of full packets (including BLOBs). */
+  fun forEachPage(pageSize: Long = 100L, action: (List<Packet>) -> Unit) {
+    var offset = 0L
+    while (true) {
+      val page = queryPage(offset, pageSize, true)
+      if (page.isEmpty()) {
+        return
+      }
+      action(page)
+      offset += page.size
+    }
+  }
+
+  /** Invokes [action] for each page of metadata-only packets. */
+  fun forEachMetadataPage(pageSize: Long = 500L, action: (List<Packet>) -> Unit) {
+    var offset = 0L
+    while (true) {
+      val page = queryPageMetadata(offset, pageSize, true)
+      if (page.isEmpty()) {
+        return
+      }
+      action(page)
+      offset += page.size
+    }
+  }
 
   fun queryMoreThan(date: Int): List<Packet> = dao.queryBuilder().where().gt("id", date).query()
 
@@ -324,9 +272,37 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     changes.firePropertyChange(PropertyChangeEventType.PACKETS.toString(), null, arg)
   }
 
-  fun outputAllPackets(filename: String): String = Logger(queryAll()).outputToFile(filename)
+  fun outputAllPackets(filename: String): String {
+    val outFile = java.io.File(filename)
+    outFile.parentFile?.mkdirs()
+    outFile.bufferedWriter().use { writer ->
+      forEachPage(50L) { page -> writer.write(Logger(page).toLogString()) }
+    }
+    return filename
+  }
 
   fun isEmpty(): Boolean = dao.queryBuilder().limit(1L).query().isEmpty()
+
+  /** Deletes up to [limit] oldest packets by id. Returns number deleted. */
+  fun deleteOldest(limit: Int): Int {
+    if (limit <= 0) {
+      return 0
+    }
+    val oldest =
+      dao.queryBuilder().selectColumns("id").orderBy("id", true).limit(limit.toLong()).query()
+    if (oldest.isEmpty()) {
+      return 0
+    }
+    synchronized(dao) {
+      for (packet in oldest) {
+        val id = packet.getId()
+        dao.deleteById(id)
+        deleteFts(id)
+      }
+    }
+    firePropertyChange()
+    return oldest.size
+  }
 
   fun handleDatabaseMessage(message: DatabaseMessage) {
     try {
@@ -336,6 +312,7 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(Packet::class.java)
+          SchemaMigrator.ensureColumns(dao)
           val result =
             dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='packets'").firstResult[0]
           if (!result.contains("`color` VARCHAR"))
@@ -390,36 +367,67 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     )
   }
 
-  private fun syncFts(packet: Packet) {
+  private fun scheduleFts(packet: Packet) {
     val id = packet.getId()
     if (id <= 0) {
       return
     }
-    deleteFts(id)
+    // Snapshot fields needed for FTS so later in-memory mutation does not affect indexing.
+    val contentType = packet.getContentType()
+    val group = packet.getGroup()
     val bodyBytes =
       when {
-        packet.getDecodedData().isNotEmpty() -> packet.getDecodedData()
-        packet.getModifiedData().isNotEmpty() -> packet.getModifiedData()
-        else -> packet.getReceivedData()
+        packet.getDecodedData().isNotEmpty() -> packet.getDecodedData().copyOf()
+        packet.getModifiedData().isNotEmpty() -> packet.getModifiedData().copyOf()
+        else -> packet.getReceivedData().copyOf()
       }
-    val body =
+    ftsExecutor.execute {
       try {
-        String(bodyBytes, Charsets.UTF_8)
-      } catch (_: Exception) {
-        String(bodyBytes, Charsets.ISO_8859_1)
+        synchronized(dao) {
+          deleteFts(id)
+          if (!shouldSkipFts(contentType) && bodyBytes.isNotEmpty()) {
+            val indexedBytes =
+              if (bodyBytes.size > FTS_BODY_MAX_BYTES) bodyBytes.copyOf(FTS_BODY_MAX_BYTES)
+              else bodyBytes
+            val body =
+              try {
+                String(indexedBytes, Charsets.UTF_8)
+              } catch (_: Exception) {
+                String(indexedBytes, Charsets.ISO_8859_1)
+              }
+            dao.executeRaw(
+              "INSERT INTO packets_fts(packet_id, group_id, body) VALUES (?, ?, ?)",
+              id.toString(),
+              group.toString(),
+              body.take(FTS_BODY_MAX_CHARS),
+            )
+          }
+        }
+      } catch (e: Exception) {
+        errWithStackTrace(e)
       }
-    val escaped = body.replace("'", "''")
-    dao.executeRaw(
-      "INSERT INTO packets_fts(packet_id, group_id, body) VALUES (%d, %d, '%s')"
-        .format(id, packet.getGroup(), escaped.take(200_000))
-    )
+    }
+  }
+
+  private fun shouldSkipFts(contentType: String?): Boolean {
+    if (contentType.isNullOrEmpty()) {
+      return false
+    }
+    val lower = contentType.lowercase()
+    return lower.startsWith("image/") ||
+      lower.startsWith("audio/") ||
+      lower.startsWith("video/") ||
+      lower == "application/octet-stream" ||
+      lower.startsWith("application/pdf") ||
+      lower.startsWith("application/zip") ||
+      lower.startsWith("application/gzip")
   }
 
   private fun deleteFts(id: Int) {
     if (id <= 0) {
       return
     }
-    dao.executeRaw("DELETE FROM packets_fts WHERE packet_id = %d".format(id))
+    dao.executeRaw("DELETE FROM packets_fts WHERE packet_id = ?", id.toString())
   }
 
   private fun queryFts(search: String): List<Packet> {
@@ -427,12 +435,10 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
       return emptyList()
     }
     // FTS5 MATCH is case-insensitive with unicode61; quote the phrase for literal match.
-    val escaped = search.replace("\"", "\"\"").replace("'", "''")
+    val escaped = search.replace("\"", "\"\"")
     val match = "\"$escaped\""
     val rows =
-      dao.queryRaw(
-        "SELECT group_id, packet_id FROM packets_fts WHERE packets_fts MATCH '%s'".format(match)
-      )
+      dao.queryRaw("SELECT group_id, packet_id FROM packets_fts WHERE packets_fts MATCH ?", match)
     val results = ArrayList<Packet>()
     for (row in rows.results) {
       try {
@@ -461,26 +467,75 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
         firePropertyChange(true)
       }
       val notifiedIds = ArrayList<Int>(batch.size)
+      val ftsTargets = ArrayList<Packet>(batch.size)
       synchronized(dao) {
         dao.callBatchTasks {
           for (packet in batch) {
+            packet.compactForPersist()
             val id = packet.getId()
             if (id > 0) {
               dao.update(packet)
-              syncFts(packet)
+              ftsTargets.add(packet)
               notifiedIds.add(id)
               continue
             }
             val status = dao.createOrUpdate(packet)
-            syncFts(packet)
+            ftsTargets.add(packet)
             notifiedIds.add(if (status.isCreated) packet.getId() * -1 else packet.getId())
           }
           null
         }
       }
+      for (packet in ftsTargets) {
+        scheduleFts(packet)
+      }
       for (notifiedId in notifiedIds) {
         firePropertyChange(notifiedId)
       }
+    }
+  }
+
+  private fun scheduleAutoPrune() {
+    val cfg = configs ?: return
+    if (!ConfigBoolean(cfg, KEY_AUTO_PRUNE_ENABLED).getState()) {
+      return
+    }
+    if (!pruneScheduled.compareAndSet(false, true)) {
+      return
+    }
+    executor.execute {
+      try {
+        runAutoPrune(cfg)
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      } finally {
+        pruneScheduled.set(false)
+      }
+    }
+  }
+
+  private fun runAutoPrune(cfg: Configs) {
+    val maxPackets = ConfigInteger(cfg, KEY_AUTO_PRUNE_MAX_PACKETS, "100000").getInteger()
+    val maxDbMb = ConfigInteger(cfg, KEY_AUTO_PRUNE_MAX_DB_MB, "1024").getInteger()
+    var guard = 0
+    while (guard++ < 100) {
+      val count = countOf()
+      val dbMb = database.getDatabasePath().toFile().length() / 1048576
+      val overCount = maxPackets > 0 && count > maxPackets
+      val overSize = maxDbMb > 0 && dbMb > maxDbMb
+      if (!overCount && !overSize) {
+        return
+      }
+      val excess =
+        when {
+          overCount -> (count - maxPackets).toInt().coerceAtLeast(1)
+          else -> PRUNE_BATCH_SIZE
+        }
+      val deleted = deleteOldest(minOf(excess, PRUNE_BATCH_SIZE))
+      if (deleted <= 0) {
+        return
+      }
+      log("auto-prune: deleted %d oldest packets (count=%d, dbMb=%d)", deleted, count, dbMb)
     }
   }
 
@@ -499,6 +554,7 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
     executor.execute {
       try {
         flushPendingUpdates()
+        scheduleAutoPrune()
       } catch (e: Exception) {
         errWithStackTrace(e)
       } finally {
@@ -508,5 +564,41 @@ class Packets(private val database: Database, restore: Boolean) : PropertyChange
         }
       }
     }
+  }
+
+  companion object {
+    const val KEY_AUTO_PRUNE_ENABLED = "history.auto_prune.enabled"
+    const val KEY_AUTO_PRUNE_MAX_PACKETS = "history.auto_prune.max_packets"
+    const val KEY_AUTO_PRUNE_MAX_DB_MB = "history.auto_prune.max_db_mb"
+    private const val FTS_BODY_MAX_BYTES = 64 * 1024
+    private const val FTS_BODY_MAX_CHARS = 64_000
+    private const val PRUNE_BATCH_SIZE = 500
+    private val METADATA_COLUMNS =
+      arrayOf(
+        "id",
+        "direction",
+        "listen_port",
+        "client_ip",
+        "client_port",
+        "server_ip",
+        "server_name",
+        "server_port",
+        "use_ssl",
+        "content_type",
+        "encoder_name",
+        "alpn",
+        "modified",
+        "resend",
+        "date",
+        "conn",
+        "group",
+        "color",
+        "job_id",
+        "temporary_id",
+        "summarized_request",
+        "summarized_response",
+        "display_length",
+        "blob_flags",
+      )
   }
 }

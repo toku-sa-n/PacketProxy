@@ -49,6 +49,7 @@ import packetproxy.gui.GUIRequestResponsePanel
 import packetproxy.gui.GuiServiceExtension
 import packetproxy.http.*
 import packetproxy.model.Extension
+import packetproxy.model.Packet
 import packetproxy.model.Packets
 import packetproxy.model.SessionProfile
 import packetproxy.model.SessionProfiles
@@ -364,7 +365,25 @@ class EndpointOverviewExtension : Extension(), CoreServiceExtension, GuiServiceE
   private fun scanHistory() {
     Thread {
         try {
-          val aggregated = aggregateEndpoints(packets.queryAll())
+          val metadata = packets.queryAllMetadata()
+          val requestIdByGroup = HashMap<Long, Int>()
+          val responseIdByGroup = HashMap<Long, Int>()
+          for (p in metadata) {
+            when (p.getDirection()) {
+              Packet.Direction.CLIENT -> requestIdByGroup[p.getGroup()] = p.getId()
+              Packet.Direction.SERVER -> responseIdByGroup[p.getGroup()] = p.getId()
+              null -> {}
+            }
+          }
+          val paired = ArrayList<Packet>(requestIdByGroup.size * 2)
+          for ((group, reqId) in requestIdByGroup) {
+            val resId = responseIdByGroup[group] ?: continue
+            val req = packets.query(reqId) ?: continue
+            val res = packets.query(resId) ?: continue
+            paired.add(req)
+            paired.add(res)
+          }
+          val aggregated = aggregateEndpoints(paired)
           SwingUtilities.invokeLater {
             endpoints = aggregated.values
             populateTree(endpoints)

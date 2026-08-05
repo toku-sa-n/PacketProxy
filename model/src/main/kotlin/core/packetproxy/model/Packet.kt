@@ -40,6 +40,9 @@ class Packet : PacketInfo {
 
   @field:DatabaseField(dataType = DataType.BYTE_ARRAY) private var received_data: ByteArray? = null
 
+  // Bit flags for stage BLOB aliasing (empty stored BLOB + flag means "same as prior stage").
+  @field:DatabaseField private var blob_flags = 0
+
   @field:DatabaseField private var listen_port = 0
 
   @field:DatabaseField private var client_ip: String? = null
@@ -166,17 +169,29 @@ class Packet : PacketInfo {
 
   fun setModifiedData(data: ByteArray) {
     modified_data = data
+    blob_flags = blob_flags and FLAG_MODIFIED_ALIASES_DECODED.inv()
   }
 
-  fun getModifiedData(): ByteArray = modified_data ?: byteArrayOf()
+  fun getModifiedData(): ByteArray {
+    if ((blob_flags and FLAG_MODIFIED_ALIASES_DECODED) != 0) {
+      return getDecodedData()
+    }
+    return modified_data ?: byteArrayOf()
+  }
 
   fun getOneShotFromModifiedData(): OneShotPacket = getOneShotPacket(getModifiedData())
 
   fun setSentData(data: ByteArray) {
     sent_data = data
+    blob_flags = blob_flags and FLAG_SENT_ALIASES_MODIFIED.inv()
   }
 
-  fun getSentData(): ByteArray = sent_data ?: byteArrayOf()
+  fun getSentData(): ByteArray {
+    if ((blob_flags and FLAG_SENT_ALIASES_MODIFIED) != 0) {
+      return getModifiedData()
+    }
+    return sent_data ?: byteArrayOf()
+  }
 
   fun setReceivedData(data: ByteArray) {
     received_data = data
@@ -188,11 +203,53 @@ class Packet : PacketInfo {
 
   fun setDecodedData(data: ByteArray) {
     decoded_data = data
+    blob_flags = blob_flags and FLAG_DECODED_ALIASES_RECEIVED.inv()
   }
 
-  fun getDecodedData(): ByteArray = decoded_data ?: byteArrayOf()
+  fun getDecodedData(): ByteArray {
+    if ((blob_flags and FLAG_DECODED_ALIASES_RECEIVED) != 0) {
+      return getReceivedData()
+    }
+    return decoded_data ?: byteArrayOf()
+  }
 
   fun getOneShotFromDecodedData(): OneShotPacket = getOneShotPacket(getDecodedData())
+
+  /**
+   * Collapses identical stage BLOBs before DB write. Empty stored arrays + [blob_flags] mean the
+   * stage aliases the previous one; getters resolve the chain.
+   */
+  fun compactForPersist() {
+    val received = received_data ?: byteArrayOf()
+    var flags = 0
+
+    val decoded = decoded_data ?: byteArrayOf()
+    if (decoded.isNotEmpty() && decoded.contentEquals(received)) {
+      decoded_data = byteArrayOf()
+      flags = flags or FLAG_DECODED_ALIASES_RECEIVED
+    }
+    val effectiveDecoded =
+      if ((flags and FLAG_DECODED_ALIASES_RECEIVED) != 0) received
+      else (decoded_data ?: byteArrayOf())
+
+    val modified = modified_data ?: byteArrayOf()
+    if (modified.isNotEmpty() && modified.contentEquals(effectiveDecoded)) {
+      modified_data = byteArrayOf()
+      flags = flags or FLAG_MODIFIED_ALIASES_DECODED
+    }
+    val effectiveModified =
+      if ((flags and FLAG_MODIFIED_ALIASES_DECODED) != 0) effectiveDecoded
+      else (modified_data ?: byteArrayOf())
+
+    val sent = sent_data ?: byteArrayOf()
+    if (sent.isNotEmpty() && sent.contentEquals(effectiveModified)) {
+      sent_data = byteArrayOf()
+      flags = flags or FLAG_SENT_ALIASES_MODIFIED
+    }
+    blob_flags = flags
+  }
+
+  fun getBlobFlags(): Int = blob_flags
 
   fun setModified() {
     modified = true
@@ -283,9 +340,9 @@ class Packet : PacketInfo {
   fun refreshPersistedSummaries(summarizer: PacketSummarizer) {
     val displayData =
       when {
-        modified_data != null && modified_data!!.isNotEmpty() -> modified_data!!
-        decoded_data != null && decoded_data!!.isNotEmpty() -> decoded_data!!
-        else -> received_data ?: byteArrayOf()
+        getModifiedData().isNotEmpty() -> getModifiedData()
+        getDecodedData().isNotEmpty() -> getDecodedData()
+        else -> getReceivedData()
       }
     display_length = displayData.size
     when (direction) {
@@ -363,5 +420,12 @@ class Packet : PacketInfo {
     summarized_request = ""
     summarized_response = ""
     display_length = 0
+    blob_flags = 0
+  }
+
+  companion object {
+    const val FLAG_DECODED_ALIASES_RECEIVED = 1
+    const val FLAG_MODIFIED_ALIASES_DECODED = 2
+    const val FLAG_SENT_ALIASES_MODIFIED = 4
   }
 }

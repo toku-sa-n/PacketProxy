@@ -310,41 +310,28 @@ class SecurityHeadersExtension : Extension(), CoreServiceExtension {
     Thread {
         try {
           clearTable()
-          val history = packets.queryAll()
-          val requestMap = buildRequestMap(history)
+          val metadata = packets.queryAllMetadata()
+          val requestIdByGroup = HashMap<Long, Int>()
+          for (p in metadata) {
+            if (p.getDirection() == Packet.Direction.CLIENT) {
+              requestIdByGroup[p.getGroup()] = p.getId()
+            }
+          }
 
-          for (p in history) {
+          for (p in metadata) {
             if (p.getDirection() != Packet.Direction.SERVER) {
               continue
             }
-
-            val req = requestMap[p.getGroup()] ?: continue
-            analyzePacket(p, req)
+            val reqId = requestIdByGroup[p.getGroup()] ?: continue
+            val req = packets.query(reqId) ?: continue
+            val res = packets.query(p.getId()) ?: continue
+            analyzePacket(res, req)
           }
         } catch (e: Exception) {
           e.printStackTrace()
         }
       }
       .start()
-  }
-
-  /**
-   * Builds a map of request packets indexed by group ID. Uses early return pattern to avoid nested
-   * conditions.
-   *
-   * @param packets All packets to process
-   * @return Map of group ID to request packet
-   */
-  private fun buildRequestMap(packets: List<Packet>): Map<Long, Packet> {
-    val requestMap = mutableMapOf<Long, Packet>()
-
-    for (p in packets) {
-      if (p.getDirection() == Packet.Direction.CLIENT) {
-        requestMap[p.getGroup()] = p
-      }
-    }
-
-    return requestMap
   }
 
   /**

@@ -431,12 +431,6 @@ private constructor(
   }
 
   companion object {
-    val CONTINUE_PATTERN: Pattern =
-      Pattern.compile("HTTP/1.1 100 Continue\r?\n\r?\n", Pattern.CASE_INSENSITIVE)
-    val PLAIN_PATTERN: Pattern =
-      Pattern.compile("\nContent-Length *: *([0-9]+)", Pattern.CASE_INSENSITIVE)
-    val CHUNKED_PATTERN: Pattern =
-      Pattern.compile("\nTransfer-Encoding *: *chunked", Pattern.CASE_INSENSITIVE)
     val GZIP_PATTERN: Pattern =
       Pattern.compile("\nContent-Encoding *: *gzip", Pattern.CASE_INSENSITIVE)
     val ZSTD_PATTERN: Pattern =
@@ -471,25 +465,15 @@ private constructor(
         return -1
       }
 
-      var header = ArrayUtils.subarray(data, 0, header_size)
-      var header_str = String(header, StandardCharsets.UTF_8)
-
-      var continue_matcher = CONTINUE_PATTERN.matcher(header_str)
-      if (continue_matcher.find()) {
-        header_size = continue_matcher.end()
-        return header_size
+      // 100 Continue: finish at end of that interim response header block.
+      val continueEnd = find100ContinueEnd(data, header_size)
+      if (continueEnd >= 0) {
+        return continueEnd
       }
 
-      var plain_matcher = PLAIN_PATTERN.matcher(header_str)
-      var content_length: Int
-      if (plain_matcher.find()) {
-        content_length = plain_matcher.group(1).toInt()
-      } else {
-        content_length = 0
-      }
-
-      var matcher = CHUNKED_PATTERN.matcher(header_str)
-      if (matcher.find()) {
+      val content_length = findContentLength(data, header_size)
+      val isChunked = hasTransferEncodingChunked(data, header_size)
+      if (isChunked) {
         var body = ArrayUtils.subarray(data, header_size, data.size)
         var finishFlag = "0\r\n\r\n".toByteArray()
         if (body.size < finishFlag.size) {
@@ -519,6 +503,90 @@ private constructor(
         return -1
       }
       return header_size + content_length
+    }
+
+    /** Returns end offset of a leading "HTTP/1.1 100 Continue" header block, or -1. */
+    private fun find100ContinueEnd(data: ByteArray, headerSize: Int): Int {
+      if (headerSize < 20) {
+        return -1
+      }
+      if (!regionEqualsIgnoreCaseAscii(data, 0, "HTTP/1.1 100 CONTINUE".toByteArray())) {
+        return -1
+      }
+      return headerSize
+    }
+
+    private fun findContentLength(data: ByteArray, headerSize: Int): Int {
+      val name = "content-length".toByteArray(StandardCharsets.US_ASCII)
+      var i = 0
+      while (i < headerSize) {
+        val atLineStart = i == 0 || data[i - 1] == '\n'.code.toByte()
+        if (atLineStart && regionEqualsIgnoreCaseAscii(data, i, name)) {
+          var p = i + name.size
+          while (p < headerSize && data[p] == ' '.code.toByte()) {
+            p++
+          }
+          if (p >= headerSize || data[p] != ':'.code.toByte()) {
+            i++
+            continue
+          }
+          p++
+          while (p < headerSize && data[p] == ' '.code.toByte()) {
+            p++
+          }
+          var end = p
+          while (
+            end < headerSize && data[end] >= '0'.code.toByte() && data[end] <= '9'.code.toByte()
+          ) {
+            end++
+          }
+          if (end > p) {
+            return String(data, p, end - p, StandardCharsets.US_ASCII).toInt()
+          }
+        }
+        i++
+      }
+      return 0
+    }
+
+    private fun hasTransferEncodingChunked(data: ByteArray, headerSize: Int): Boolean {
+      val name = "transfer-encoding".toByteArray(StandardCharsets.US_ASCII)
+      val chunked = "chunked".toByteArray(StandardCharsets.US_ASCII)
+      var i = 0
+      while (i < headerSize) {
+        val atLineStart = i == 0 || data[i - 1] == '\n'.code.toByte()
+        if (atLineStart && regionEqualsIgnoreCaseAscii(data, i, name)) {
+          var p = i + name.size
+          while (p < headerSize && data[p] != '\n'.code.toByte()) {
+            if (regionEqualsIgnoreCaseAscii(data, p, chunked)) {
+              return true
+            }
+            p++
+          }
+        }
+        i++
+      }
+      return false
+    }
+
+    private fun regionEqualsIgnoreCaseAscii(
+      data: ByteArray,
+      offset: Int,
+      expect: ByteArray,
+    ): Boolean {
+      if (offset < 0 || offset + expect.size > data.size) {
+        return false
+      }
+      for (i in expect.indices) {
+        var a = data[offset + i].toInt() and 0xff
+        var b = expect[i].toInt() and 0xff
+        if (a >= 'A'.code && a <= 'Z'.code) a += 32
+        if (b >= 'A'.code && b <= 'Z'.code) b += 32
+        if (a != b) {
+          return false
+        }
+      }
+      return true
     }
 
     @JvmStatic fun isHTTP(data: ByteArray): Boolean = HttpHeader.isHTTPHeader(data)

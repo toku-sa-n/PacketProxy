@@ -391,7 +391,6 @@ class DuplexFactory(
         client_packet!!.setModifiedData(data)
         var encoded_data = encoder.encodeClientRequest(client_packet!!)
         client_packet!!.setSentData(encoded_data)
-        packetHistory.applyOmitIfTooLarge(client_packet!!, data, oneshot.getEncoder())
         persistPacket(client_packet!!)
         encoded_data
       },
@@ -549,7 +548,17 @@ class DuplexFactory(
 
   private fun persistPacket(packet: Packet) {
     packet.refreshPersistedSummaries(encoderManager.packetSummarizer)
-    packets.update(packet)
+    val largest =
+      listOf(
+          packet.getReceivedData(),
+          packet.getDecodedData(),
+          packet.getModifiedData(),
+          packet.getSentData(),
+        )
+        .maxByOrNull { it.size } ?: byteArrayOf()
+    packetHistory.persistOmittingIfTooLarge(packet, largest, packet.getEncoder()) {
+      packets.update(packet)
+    }
   }
 
   private fun extractHttpRequestPath(data: ByteArray?): String? {

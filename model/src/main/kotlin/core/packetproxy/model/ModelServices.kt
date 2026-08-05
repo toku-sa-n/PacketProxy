@@ -27,10 +27,10 @@ class ModelServices(val database: Database, restorePackets: Boolean) {
   }
 
   val clientKeyManager = ClientKeyManager()
-  val packets = Packets(database, restorePackets)
+  val configs = Configs(database)
+  val packets = Packets(database, restorePackets, configs)
   val servers = Servers(database)
   val listenPorts = ListenPorts(database)
-  val configs = Configs(database)
   val filters = Filters(database)
   val modifications = Modifications(database)
   val interceptOptions = InterceptOptions(database)

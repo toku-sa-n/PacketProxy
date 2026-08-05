@@ -50,8 +50,8 @@ class JobStatusTool(private val packets: Packets, configs: Configs) :
   private fun getJobDetail(jobId: String): JsonObject {
     log("JobStatusTool: Getting detail for job $jobId")
 
-    // job_idが一致するパケットを取得
-    var allPackets = packets.queryAll()
+    // job_idが一致するパケットを取得（メタデータのみで十分）
+    var allPackets = packets.queryAllMetadata()
     var jobPackets = ArrayList<Packet>()
 
     log("JobStatusTool: Searching for job $jobId in " + allPackets.size + " total packets")
@@ -163,8 +163,8 @@ class JobStatusTool(private val packets: Packets, configs: Configs) :
   private fun getAllJobsStatus(): JsonObject {
     log("JobStatusTool: Getting status for all jobs")
 
-    // 全パケットからjob_idが設定されているものを取得
-    var allPackets = packets.queryAll()
+    // 全パケットからjob_idが設定されているものを取得（メタデータのみで十分）
+    var allPackets = packets.queryAllMetadata()
     var jobs = HashMap<String, JobSummary>()
 
     log("JobStatusTool: Total packets in database: " + allPackets.size)

@@ -53,6 +53,9 @@ class Modification {
 
   @field:DatabaseField private var replaced: String? = null
 
+  private var compiledPattern: Pattern? = null
+  private var compiledPathPattern: Pattern? = null
+
   constructor()
 
   constructor(
@@ -111,6 +114,7 @@ class Modification {
 
   fun setPattern(pattern: String) {
     this.pattern = pattern
+    compiledPattern = null
   }
 
   fun getReplaced(): String? = this.replaced
@@ -129,6 +133,7 @@ class Modification {
 
   fun setPath(path: String) {
     this.path = path
+    compiledPathPattern = null
   }
 
   fun getId(): Int = id
@@ -145,7 +150,7 @@ class Modification {
       return false
     }
     return try {
-      Pattern.compile(path!!).matcher(requestPath).find()
+      pathPattern().matcher(requestPath).find()
     } catch (_: Exception) {
       false
     }
@@ -168,20 +173,32 @@ class Modification {
     replaceBinary(data, pattern!!.toByteArray(), replaced!!.toByteArray(), packet)
 
   private fun replaceRegex(data: ByteArray, packet: Packet): ByteArray {
-    val pattern = Pattern.compile(this.pattern!!, Pattern.MULTILINE)
-    val matcher = pattern.matcher(String(data))
-    var result = String(data)
-    var matched = false
-    while (matcher.find()) {
-      matched = true
-      result = matcher.replaceAll(this.replaced)
-      packet.setModified()
-    }
-    if (!matched) {
+    val text = String(data)
+    val compiled = regexPattern()
+    if (!compiled.matcher(text).find()) {
       // バイナリデータが壊れる可能性があるので、マッチしなかった場合はそのまま返す
       return data
     }
-    return result.toByteArray()
+    packet.setModified()
+    return compiled.matcher(text).replaceAll(this.replaced).toByteArray()
+  }
+
+  private fun regexPattern(): Pattern {
+    var cached = compiledPattern
+    if (cached == null) {
+      cached = Pattern.compile(this.pattern!!, Pattern.MULTILINE)
+      compiledPattern = cached
+    }
+    return cached
+  }
+
+  private fun pathPattern(): Pattern {
+    var cached = compiledPathPattern
+    if (cached == null) {
+      cached = Pattern.compile(path!!)
+      compiledPathPattern = cached
+    }
+    return cached
   }
 
   @Throws(Exception::class)

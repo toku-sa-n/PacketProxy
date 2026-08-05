@@ -50,6 +50,9 @@ open class Logger(private val packets: List<Packet>) {
   }
 
   /** ロギングのフォーマットを決定する部分 継承して使ってくれれば好きな出力にできる。はず。 */
+  @Throws(Exception::class) fun toLogString(): String = loggingProcess().toString()
+
+  /** ロギングのフォーマットを決定する部分 継承して使ってくれれば好きな出力にできる。はず。 */
   @Throws(Exception::class)
   protected open fun loggingProcess(): StringBuilder {
     val sb = StringBuilder()

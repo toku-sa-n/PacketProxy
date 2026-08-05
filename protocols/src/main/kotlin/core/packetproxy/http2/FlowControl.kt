@@ -60,6 +60,11 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
   @Throws(Exception::class)
   fun enqueue(frame: Frame) {
     synchronized(queue) {
+      if (queue.size() + frame.payload.size > MAX_QUEUED_BYTES) {
+        throw IllegalStateException(
+          "HTTP/2 FlowControl queue exceeded max size ($MAX_QUEUED_BYTES) for streamId=$streamId"
+        )
+      }
       queue.write(frame.payload)
       queue.flush()
       if ((frame.flags and DataFrame.FLAG_END_STREAM.toInt()) > 0) {
@@ -165,5 +170,9 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
     synchronized(queue) {
       return queue.size()
     }
+  }
+
+  companion object {
+    const val MAX_QUEUED_BYTES = 64 * 1024 * 1024
   }
 }

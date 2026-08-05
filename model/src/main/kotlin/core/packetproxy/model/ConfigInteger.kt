@@ -15,7 +15,11 @@
  */
 package packetproxy.model
 
-class ConfigInteger(private val configs: Configs, private val key: String) {
+class ConfigInteger(
+  private val configs: Configs,
+  private val key: String,
+  private val defaultValue: String = "0",
+) {
   private var config = ensureConfig()
 
   fun getInteger(): Int {
@@ -29,7 +33,7 @@ class ConfigInteger(private val configs: Configs, private val key: String) {
     configs.update(config)
   }
 
-  private fun ensureConfig(defaultValue: String = "0"): Config {
+  private fun ensureConfig(): Config {
     var current = configs.query(key)
     if (current == null) {
       configs.create(Config(key, defaultValue))

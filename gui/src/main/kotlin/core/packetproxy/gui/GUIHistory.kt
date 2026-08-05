@@ -363,7 +363,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
               } else {
                 index - limit
               }
-            val range = packets.queryRange(offset, limit)
+            // 一覧埋め込みもメタデータのみで足りる（要約・display_lengthは永続済み）
+            val range = packets.queryPageMetadata(offset, limit, true)
             SwingUtilities.invokeLater {
               try {
                 for (packet in range) {

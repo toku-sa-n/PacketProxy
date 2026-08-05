@@ -97,8 +97,9 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
         )
       }
 
-      var allPackets = packets.queryAll()
-      var filteredPackets = allPackets
+      var allPackets = ArrayList<Packet>()
+      packets.forEachPage(100L) { page -> allPackets.addAll(page) }
+      var filteredPackets: List<Packet> = allPackets
 
       // Apply filter if provided
       if (filter != null && !filter.trim().isEmpty()) {
@@ -190,7 +191,11 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
   private fun getComparatorForColumn(column: String): Comparator<Packet>? =
     when (column) {
       "id" -> compareBy { it.getId() }
-      "length" -> compareBy { it.getDecodedData().size }
+      "length" ->
+        compareBy { pkt ->
+          val persisted = pkt.getDisplayLength()
+          if (persisted > 0) persisted else pkt.getDecodedData().size
+        }
       "client_ip" -> compareBy(nullsLast()) { it.getClientIP() }
       "client_port" -> compareBy { it.getClientPort() }
       "server_ip" -> compareBy(nullsLast()) { it.getServerIP() }

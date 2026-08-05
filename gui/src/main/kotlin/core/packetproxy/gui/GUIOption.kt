@@ -119,6 +119,14 @@ class GUIOption(private val owner: GUIMain) {
       i18nString("Set order of priority between HTTP1 and HTTP2."),
       GUIOptionHttp(owner.modelServices.configs).createPanel(),
     )
+    addSection(
+      panel,
+      i18nString("History Auto Prune"),
+      i18nString(
+        "Optionally delete oldest history packets when count or database size exceeds limits. Disabled by default."
+      ),
+      GUIOptionHistory(owner.modelServices.configs).createPanel(),
+    )
     panel.add(title(i18nString("PacketProxy CA Certificates & Private Keys")))
     panel.add(createCaPanel())
     panel.add(separator())
