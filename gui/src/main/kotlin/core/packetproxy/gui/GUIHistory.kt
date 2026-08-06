@@ -363,8 +363,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
               } else {
                 index - limit
               }
-            // 一覧埋め込みもメタデータのみで足りる（要約・display_lengthは永続済み）
-            val range = packets.queryPageMetadata(offset, limit, true)
+            // BLOB付きで読み、永続要約が空の既存行は encoder から再計算して backfill する
+            val range = packets.queryRange(offset, limit)
+            for (packet in range) {
+              backfillPersistedSummariesIfNeeded(packet)
+            }
             SwingUtilities.invokeLater {
               try {
                 for (packet in range) {
@@ -381,6 +384,29 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
         }
       }
       .start()
+  }
+
+  /**
+   * 永続要約が空の既存行（summarized_request 導入前のDBなど）向けに、BLOBから要約を再計算して DBへ書き戻す。次回以降のメタデータ読みでも
+   * Request/Response 列が埋まる。
+   */
+  private fun backfillPersistedSummariesIfNeeded(packet: Packet) {
+    val needsRequest =
+      packet.getDirection() == Packet.Direction.CLIENT &&
+        packet.getSummarizedRequestColumn().isNullOrEmpty()
+    val needsResponse =
+      packet.getDirection() == Packet.Direction.SERVER &&
+        packet.getSummarizedResponseColumn().isNullOrEmpty()
+    val needsLength = packet.getDisplayLength() <= 0
+    if (!needsRequest && !needsResponse && !needsLength) {
+      return
+    }
+    try {
+      packet.refreshPersistedSummaries(packetSummarizer)
+      packets.updateSync(packet)
+    } catch (exception: Exception) {
+      errWithStackTrace(exception)
+    }
   }
 
   fun resetCustomColoring() {

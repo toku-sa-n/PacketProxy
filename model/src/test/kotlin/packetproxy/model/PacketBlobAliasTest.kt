@@ -85,4 +85,35 @@ class PacketBlobAliasTest {
     assertTrue(packet.getModifiedData().contentEquals(modified))
     assertTrue(packet.getSentData().contentEquals(modified))
   }
+
+  @Test
+  fun compactForPersist_preservesAliasFlagsOnRepersist() {
+    val packet =
+      Packet(
+        8080,
+        InetSocketAddress("127.0.0.1", 12345),
+        InetSocketAddress("127.0.0.1", 443),
+        "example.com",
+        true,
+        "HTTP",
+        "",
+        Packet.Direction.CLIENT,
+        1,
+        1L,
+      )
+    val payload = "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n".toByteArray()
+    packet.setReceivedData(payload)
+    packet.setDecodedData(payload.copyOf())
+    packet.setModifiedData(payload.copyOf())
+    packet.setSentData(payload.copyOf())
+
+    packet.compactForPersist()
+    val flagsAfterFirst = packet.getBlobFlags()
+    packet.compactForPersist()
+
+    assertEquals(flagsAfterFirst, packet.getBlobFlags())
+    assertTrue(packet.getDecodedData().contentEquals(payload))
+    assertTrue(packet.getModifiedData().contentEquals(payload))
+    assertTrue(packet.getSentData().contentEquals(payload))
+  }
 }

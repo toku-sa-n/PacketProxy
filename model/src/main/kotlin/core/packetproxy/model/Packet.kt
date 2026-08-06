@@ -218,13 +218,18 @@ class Packet : PacketInfo {
   /**
    * Collapses identical stage BLOBs before DB write. Empty stored arrays + [blob_flags] mean the
    * stage aliases the previous one; getters resolve the chain.
+   *
+   * Re-persisting an already-compacted packet (empty stage BLOB + alias flag, e.g. after DB reload)
+   * must preserve those flags; otherwise subsequent getters lose the alias chain.
    */
   fun compactForPersist() {
     val received = received_data ?: byteArrayOf()
     var flags = 0
 
     val decoded = decoded_data ?: byteArrayOf()
-    if (decoded.isNotEmpty() && decoded.contentEquals(received)) {
+    if (decoded.isEmpty() && (blob_flags and FLAG_DECODED_ALIASES_RECEIVED) != 0) {
+      flags = flags or FLAG_DECODED_ALIASES_RECEIVED
+    } else if (decoded.isNotEmpty() && decoded.contentEquals(received)) {
       decoded_data = byteArrayOf()
       flags = flags or FLAG_DECODED_ALIASES_RECEIVED
     }
@@ -233,7 +238,9 @@ class Packet : PacketInfo {
       else (decoded_data ?: byteArrayOf())
 
     val modified = modified_data ?: byteArrayOf()
-    if (modified.isNotEmpty() && modified.contentEquals(effectiveDecoded)) {
+    if (modified.isEmpty() && (blob_flags and FLAG_MODIFIED_ALIASES_DECODED) != 0) {
+      flags = flags or FLAG_MODIFIED_ALIASES_DECODED
+    } else if (modified.isNotEmpty() && modified.contentEquals(effectiveDecoded)) {
       modified_data = byteArrayOf()
       flags = flags or FLAG_MODIFIED_ALIASES_DECODED
     }
@@ -242,7 +249,9 @@ class Packet : PacketInfo {
       else (modified_data ?: byteArrayOf())
 
     val sent = sent_data ?: byteArrayOf()
-    if (sent.isNotEmpty() && sent.contentEquals(effectiveModified)) {
+    if (sent.isEmpty() && (blob_flags and FLAG_SENT_ALIASES_MODIFIED) != 0) {
+      flags = flags or FLAG_SENT_ALIASES_MODIFIED
+    } else if (sent.isNotEmpty() && sent.contentEquals(effectiveModified)) {
       sent_data = byteArrayOf()
       flags = flags or FLAG_SENT_ALIASES_MODIFIED
     }
