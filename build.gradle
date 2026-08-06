@@ -95,6 +95,12 @@ subprojects {
     options.encoding = "UTF-8"
   }
 
+  tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    compilerOptions {
+      allWarningsAsErrors = true
+    }
+  }
+
   tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperty "file.encoding", "UTF-8"
