@@ -102,6 +102,9 @@ class DiffBinary() : DiffBase() {
     @JvmStatic
     protected fun sumOfBytesPerByte(list: List<Byte>): Int {
       val i = list.size
+      if (i == 0) {
+        return 0
+      }
       return 2 * i + (i - 1)
     }
 

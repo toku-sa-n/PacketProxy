@@ -64,11 +64,10 @@ class EncodeXMPP(ALPN: String?) : Encoder(ALPN) {
 
   private fun xmlLint(data: ByteArray): ByteArray {
     try {
-      val dbf = DocumentBuilderFactory.newInstance()
-      dbf.isValidating = false
+      val dbf = createSecureDocumentBuilderFactory()
       val db = dbf.newDocumentBuilder()
       db.setErrorHandler(IgnoreErrorMsgHandler())
-      val `is` = InputSource(StringReader(String(data)))
+      val `is` = InputSource(StringReader(String(data, StandardCharsets.UTF_8)))
       val doc = db.parse(`is`)
       val transformer = TransformerFactory.newInstance().newTransformer()
       transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes")
@@ -80,6 +79,21 @@ class EncodeXMPP(ALPN: String?) : Encoder(ALPN) {
       return result.writer.toString().toByteArray(StandardCharsets.UTF_8)
     } catch (e: Exception) {
       return data
+    }
+  }
+
+  companion object {
+    /** Factory with XXE protections enabled — used by production decode and tests. */
+    fun createSecureDocumentBuilderFactory(): DocumentBuilderFactory {
+      val dbf = DocumentBuilderFactory.newInstance()
+      dbf.isValidating = false
+      dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+      dbf.setFeature("http://xml.org/sax/features/external-general-entities", false)
+      dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+      dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+      dbf.isXIncludeAware = false
+      dbf.isExpandEntityReferences = false
+      return dbf
     }
   }
 }

@@ -17,13 +17,16 @@ import javax.tools.JavaFileObject
 import javax.tools.StandardLocation
 import javax.tools.ToolProvider
 import org.apache.commons.io.FilenameUtils
+import packetproxy.common.UniqueID
+import packetproxy.encode.EncodeHTTPStreamingResponse
 import packetproxy.encode.Encoder
 import packetproxy.model.Packet
 import packetproxy.model.PacketSummarizer
+import packetproxy.model.Packets
 import packetproxy.util.err
 import packetproxy.util.errWithStackTrace
 
-class EncoderManager {
+class EncoderManager(private val packets: Packets, private val uniqueId: UniqueID = UniqueID()) {
   private val modulesLoaded = AtomicBoolean(false)
   private var isDuplicated = false
   private var moduleList = HashMap<String, Class<out Encoder>>()
@@ -133,8 +136,13 @@ class EncoderManager {
   }
 
   @Throws(Exception::class)
-  private fun createInstance(klass: Class<out Encoder>, alpn: String?): Encoder =
-    klass.getConstructor(String::class.java).newInstance(alpn)
+  private fun createInstance(klass: Class<out Encoder>, alpn: String?): Encoder {
+    val encoder = klass.getConstructor(String::class.java).newInstance(alpn)
+    if (encoder is EncodeHTTPStreamingResponse) {
+      encoder.attachStreamingHelpers(packets, uniqueId)
+    }
+    return encoder
+  }
 
   companion object {
     private val DEFAULT_PLUGIN_DIR = "${System.getProperty("user.home")}/.packetproxy/plugins"

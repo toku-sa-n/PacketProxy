@@ -269,14 +269,25 @@ class Packets(
   fun queryMoreThan(date: Int): List<Packet> = dao.queryBuilder().where().gt("id", date).query()
 
   fun queryFullText(search: String, start: Int): List<Packet> =
-    queryFts(search).filter { it.getId() >= start }
+    queryFullText(search).filter { it.getId() >= start }
 
   fun queryFullTextById(search: String, id: Int): List<Packet> =
-    queryFts(search).filter { it.getId() == id }
+    queryFullText(search).filter { it.getId() == id }
 
-  fun queryFullText(search: String): List<Packet> = queryFts(search)
+  /**
+   * Case-sensitive best-effort full-text search.
+   *
+   * FTS5 with `unicode61` matching is case-insensitive, so candidates from FTS are post-filtered
+   * against the packet body with a case-sensitive contains check.
+   */
+  fun queryFullText(search: String): List<Packet> =
+    queryFts(search).filter { packetBodyContains(it, search, ignoreCase = false) }
 
-  fun queryFullText_i(search: String): List<Packet> = queryFts(search)
+  /**
+   * Case-insensitive full-text search. Uses a lowercased MATCH term; FTS body is indexed in
+   * lowercase so matches are case-insensitive.
+   */
+  fun queryFullText_i(search: String): List<Packet> = queryFts(search.lowercase())
 
   fun queryPairedPacket(
     group: Long,
@@ -346,20 +357,6 @@ class Packets(
           dao = database.createTable(Packet::class.java)
           try {
             SchemaMigrator.ensureColumns(dao)
-            val result =
-              dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='packets'").firstResult[0]
-            if (!result.contains("`color` VARCHAR"))
-              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN color VARCHAR")
-            if (!result.contains("`job_id` VARCHAR"))
-              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN job_id VARCHAR")
-            if (!result.contains("`temporary_id` VARCHAR"))
-              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN temporary_id VARCHAR")
-            if (!result.contains("`summarized_request`"))
-              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_request VARCHAR")
-            if (!result.contains("`summarized_response`"))
-              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_response VARCHAR")
-            if (!result.contains("`display_length`"))
-              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN display_length INTEGER DEFAULT 0")
             ensurePairIndex()
             ensureFts()
           } finally {
@@ -369,6 +366,8 @@ class Packets(
         }
         DatabaseMessage.RECREATE -> {
           dao = database.createTable(Packet::class.java)
+          ensurePairIndex()
+          ensureFts()
         }
       }
     } catch (e: Exception) {
@@ -477,6 +476,9 @@ class Packets(
     ftsExecutor.execute {
       try {
         synchronized(dao) {
+          if (dao.queryForId(id) == null) {
+            return@execute
+          }
           deleteFts(id)
           if (!shouldSkipFts(contentType) && bodyBytes.isNotEmpty()) {
             val indexedBytes =
@@ -488,11 +490,12 @@ class Packets(
               } catch (_: Exception) {
                 String(indexedBytes, Charsets.ISO_8859_1)
               }
+            // Index lowercase so queryFullText_i MATCH terms are case-insensitive.
             dao.executeRaw(
               "INSERT INTO packets_fts(packet_id, group_id, body) VALUES (?, ?, ?)",
               id.toString(),
               group.toString(),
-              body.take(FTS_BODY_MAX_CHARS),
+              body.lowercase().take(FTS_BODY_MAX_CHARS),
             )
           }
         }
@@ -528,6 +531,7 @@ class Packets(
       return emptyList()
     }
     // FTS5 MATCH is case-insensitive with unicode61; quote the phrase for literal match.
+    // Body is stored lowercased; callers that want CI search should pass a lowercased term.
     val escaped = search.replace("\"", "\"\"")
     val match = "\"$escaped\""
     val rows =
@@ -543,6 +547,23 @@ class Packets(
       }
     }
     return results
+  }
+
+  private fun packetBodyContains(packet: Packet, search: String, ignoreCase: Boolean): Boolean {
+    val full = query(packet.getId()) ?: return false
+    val bytes =
+      when {
+        full.getDecodedData().isNotEmpty() -> full.getDecodedData()
+        full.getModifiedData().isNotEmpty() -> full.getModifiedData()
+        else -> full.getReceivedData()
+      }
+    val body =
+      try {
+        String(bytes, Charsets.UTF_8)
+      } catch (_: Exception) {
+        String(bytes, Charsets.ISO_8859_1)
+      }
+    return body.contains(search, ignoreCase = ignoreCase)
   }
 
   private fun flushPendingUpdates() {

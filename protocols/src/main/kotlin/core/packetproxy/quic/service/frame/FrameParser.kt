@@ -6,6 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.file.Paths
 import javax.tools.*
 import packetproxy.quic.value.frame.Frame
+import packetproxy.quic.value.frame.UnknownFrame
 
 class FrameParser {
   private val framePackage = "packetproxy.quic.value.frame"
@@ -39,8 +40,10 @@ class FrameParser {
     val type = buffer.get()
     buffer.position(saved)
     if (frameMap == null) createFrameMap()
-    val klass =
-      frameMap!![type] ?: throw Exception(String.format("Error: unknown frame type: %x", type))
+    val klass = frameMap!![type]
+    if (klass == null) {
+      return UnknownFrame.parse(buffer)
+    }
     return klass.getMethod("parse", ByteBuffer::class.java).invoke(null, buffer) as Frame
   }
 }

@@ -55,8 +55,8 @@ class Diff() : DiffBase() {
       target_event: DiffEventListener,
     ) {
       try {
-        val listOrig = Arrays.asList(*java.lang.String(set.getOriginal()).split(""))
-        val listTarg = Arrays.asList(*java.lang.String(set.getTarget()).split(""))
+        val listOrig = Arrays.asList(*java.lang.String(set.getOriginal(), Charsets.UTF_8).split(""))
+        val listTarg = Arrays.asList(*java.lang.String(set.getTarget(), Charsets.UTF_8).split(""))
 
         val diff = DiffUtils.diff(listOrig, listTarg)
 
@@ -98,8 +98,9 @@ class Diff() : DiffBase() {
       target_event: DiffEventListener,
     ) {
       try {
-        val listOrig = Arrays.asList(*java.lang.String(set.getOriginal()).split("\n"))
-        val listTarg = Arrays.asList(*java.lang.String(set.getTarget()).split("\n"))
+        val listOrig =
+          Arrays.asList(*java.lang.String(set.getOriginal(), Charsets.UTF_8).split("\n"))
+        val listTarg = Arrays.asList(*java.lang.String(set.getTarget(), Charsets.UTF_8).split("\n"))
 
         val diff = DiffUtils.diff(listOrig, listTarg)
 

@@ -37,7 +37,7 @@ class SSLPassThrough {
     setListenPort(listen_port)
   }
 
-  fun isEnabled(): Boolean = this.enabled!!
+  fun isEnabled(): Boolean = this.enabled ?: false
 
   fun setEnabled() {
     this.enabled = true
@@ -68,7 +68,11 @@ class SSLPassThrough {
 
   override fun hashCode(): Int = this.getId()
 
-  fun equals(obj: SSLPassThrough): Boolean = if (this.getId() == obj.getId()) true else false
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is SSLPassThrough) return false
+    return this.getId() == other.getId()
+  }
 
   companion object {
     const val ALL_PORTS = -1

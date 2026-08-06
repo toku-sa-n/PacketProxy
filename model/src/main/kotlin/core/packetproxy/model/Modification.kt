@@ -75,7 +75,7 @@ class Modification {
     this.path = path
   }
 
-  fun isEnabled(): Boolean = this.enabled!!
+  fun isEnabled(): Boolean = this.enabled ?: false
 
   fun setEnabled() {
     this.enabled = true
@@ -173,7 +173,7 @@ class Modification {
     replaceBinary(data, pattern!!.toByteArray(), replaced!!.toByteArray(), packet)
 
   private fun replaceRegex(data: ByteArray, packet: Packet): ByteArray {
-    val text = String(data)
+    val text = String(data, Charsets.UTF_8)
     val compiled = regexPattern()
     if (!compiled.matcher(text).find()) {
       // バイナリデータが壊れる可能性があるので、マッチしなかった場合はそのまま返す
@@ -233,7 +233,11 @@ class Modification {
 
   override fun hashCode(): Int = this.getId()
 
-  fun equals(obj: Modification): Boolean = if (this.getId() == obj.getId()) true else false
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Modification) return false
+    return this.getId() == other.getId()
+  }
 
   companion object {
     const val ALL_SERVER = -1

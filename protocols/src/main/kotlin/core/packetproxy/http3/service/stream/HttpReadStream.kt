@@ -32,6 +32,7 @@ open class HttpReadStream(streamId: StreamId) :
   Stream(streamId, StreamType.NoStreamType), ReadStream {
   private val headers = ByteArrayOutputStream()
   private val data = ByteArrayOutputStream()
+  private var messageComplete = false
 
   @Throws(Exception::class)
   fun write(frame: Frame) {
@@ -59,6 +60,8 @@ open class HttpReadStream(streamId: StreamId) :
   override fun write(msg: QuicMessage) {
     val frames = FrameParser.parse(msg.dataBytes())
     frames.forEach(rethrow { write(it) })
+    // QuicMessage for bidirectional HTTP streams is delivered only after STREAM FIN
+    messageComplete = true
   }
 
   override fun readAllBytes(): ByteArray = byteArrayOf()
@@ -70,4 +73,7 @@ open class HttpReadStream(streamId: StreamId) :
   fun readHttpRaw(): HttpRaw = HttpRaw.of(streamId, readHeaderBytes(), readDataBytes())
 
   fun isEmpty(): Boolean = headers.size() == 0
+
+  /** Ready when headers arrived and the QUIC stream message is complete (FIN observed). */
+  fun isReady(): Boolean = !isEmpty() && messageComplete
 }

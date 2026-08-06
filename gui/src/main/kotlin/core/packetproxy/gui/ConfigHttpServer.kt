@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import fi.iki.elonen.NanoHTTPD
 import javax.swing.JOptionPane
+import javax.swing.SwingUtilities
 import packetproxy.common.*
 import packetproxy.common.ConfigDaoHub
 
@@ -55,6 +56,7 @@ class ConfigHttpServer(
 
   private fun postConfig(session: IHTTPSession): Response {
     return try {
+      // Auth is already enforced above; X-Suppress-Dialog only skips the confirm UI.
       if (session.headers["x-suppress-dialog"] != "true" && !confirmOverwrite()) {
         return newFixedLengthResponse(Response.Status.UNAUTHORIZED, MIME_HTML, null)
       }
@@ -75,20 +77,27 @@ class ConfigHttpServer(
   }
 
   private fun confirmOverwrite(): Boolean {
-    val gui = main
-    gui.isAlwaysOnTop = true
-    gui.isVisible = true
-    gui.tabbedPane.selectedIndex = GUIMain.Panes.OPTIONS.ordinal
-    val option =
-      JOptionPane.showConfirmDialog(
-        gui,
-        i18nString("Do you want to overwrite config?"),
-        i18nString("Loading config"),
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.WARNING_MESSAGE,
-      )
-    gui.isAlwaysOnTop = false
-    return option != JOptionPane.NO_OPTION
+    var option = JOptionPane.NO_OPTION
+    try {
+      SwingUtilities.invokeAndWait {
+        val gui = main
+        gui.isAlwaysOnTop = true
+        gui.isVisible = true
+        gui.tabbedPane.selectedIndex = GUIMain.Panes.OPTIONS.ordinal
+        option =
+          JOptionPane.showConfirmDialog(
+            gui,
+            i18nString("Do you want to overwrite config?"),
+            i18nString("Loading config"),
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+          )
+        gui.isAlwaysOnTop = false
+      }
+    } catch (_: Exception) {
+      return false
+    }
+    return option == JOptionPane.YES_OPTION
   }
 
   private fun fixUp(daoHub: ConfigDaoHub) {
@@ -103,7 +112,7 @@ class ConfigHttpServer(
       listenPort.setId(index + 1)
     }
     daoHub.modificationList.forEachIndexed { index, modification ->
-      modification.setServerId(serverMap[modification.getServerId()]!!)
+      modification.setServerId(serverMap[modification.getServerId()] ?: -1)
       modification.setId(index + 1)
     }
   }

@@ -43,14 +43,15 @@ constructor(
         val clientConnection = clientConnections.accept()
         log("accept")
 
-        val serverName = listen_info.getServer(database)!!.getIp()!!
+        val server = listen_info.getServer(database)!!
+        val serverName = server.getIp()!!
         log("[QUIC-forward!] %s", serverName)
 
         val serverConnection =
           ServerConnection(
             ConnectionIdPair.generateRandom(),
             serverName,
-            listen_info.getPort(),
+            server.getPort(),
             resolutions,
           )
 

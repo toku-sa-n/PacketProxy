@@ -30,6 +30,10 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
     loadResenderPackets()
   }
 
+  fun dispose() {
+    main.modelServices.resenderPackets.removePropertyChangeListener(this)
+  }
+
   fun createPanel(): JComponent = mainPanel
 
   fun addResends(sendPacket: OneShotPacket) {
@@ -80,7 +84,7 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
 
         if (resendIndex == 1) {
           resend.setOneShotPacket(resenderPacket.getOneShotPacket(), null)
-        } else {
+        } else if (i + 1 < resenderPackets.size) {
           var nextResenderPacket = resenderPackets[i + 1]
           if (resenderPacket.getDirection() == Packet.Direction.CLIENT) {
             resend.setOneShotPacket(
@@ -94,6 +98,8 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
             )
           }
           i++
+        } else {
+          resend.setOneShotPacket(resenderPacket.getOneShotPacket(), null)
         }
         i++
       }

@@ -108,6 +108,10 @@ class ClientHandshake(private val conn: Connection) : Handshake {
         engine.clientApplicationTrafficSecret,
         engine.serverApplicationTrafficSecret,
       )
+      conn.keys.discardInitialKey()
+      conn.getPnSpace(PnSpaceInitial).close()
+      conn.keys.discardHandshakeKey()
+      conn.getPnSpace(PnSpaceHandshake).close()
       conn.handshakeState.transit(HasAppKeys)
     }
 

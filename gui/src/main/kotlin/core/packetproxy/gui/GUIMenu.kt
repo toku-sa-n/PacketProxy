@@ -55,17 +55,17 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
             try {
               owner.modelServices.database.Save(file.absolutePath)
               owner.modelServices.recentProjectsStore.add(file.toPath())
-              JOptionPane.showMessageDialog(null, i18nString("Data saved successfully"))
+              JOptionPane.showMessageDialog(owner, i18nString("Data saved successfully"))
             } catch (e1: Exception) {
               errWithStackTrace(e1)
-              JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+              JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
             }
           }
 
           override fun onCanceled() {}
 
           override fun onError() {
-            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+            JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
           }
         }
       )
@@ -81,17 +81,17 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
           override fun onApproved(file: File, extension: String) {
             try {
               owner.modelServices.packets.outputAllPackets(file.absolutePath)
-              JOptionPane.showMessageDialog(null, i18nString("Data saved successfully"))
+              JOptionPane.showMessageDialog(owner, i18nString("Data saved successfully"))
             } catch (e1: Exception) {
               errWithStackTrace(e1)
-              JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+              JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
             }
           }
 
           override fun onCanceled() {}
 
           override fun onError() {
-            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+            JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
           }
         }
       )
@@ -113,7 +113,7 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
         }
       } catch (e1: Exception) {
         errWithStackTrace(e1)
-        JOptionPane.showMessageDialog(null, i18nString("Data can't be loaded with error"))
+        JOptionPane.showMessageDialog(owner, i18nString("Data can't be loaded with error"))
       }
     }
 
@@ -202,11 +202,11 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
               owner.modelServices.sslPassThroughs,
             )
           io.setOptions(json)
-          JOptionPane.showMessageDialog(null, i18nString("Config loaded successfully"))
+          JOptionPane.showMessageDialog(owner, i18nString("Config loaded successfully"))
         }
       } catch (e1: Exception) {
         errWithStackTrace(e1)
-        JOptionPane.showMessageDialog(null, i18nString("Config can't be loaded with error"))
+        JOptionPane.showMessageDialog(owner, i18nString("Config can't be loaded with error"))
       }
     }
     val export_configs = JMenuItem(i18nString("Export Configs"))
@@ -229,17 +229,17 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
                   )
                 val json = io.getOptions()
                 Utils.writefile(file.absolutePath, json.toByteArray())
-                JOptionPane.showMessageDialog(null, i18nString("Config saved successfully"))
+                JOptionPane.showMessageDialog(owner, i18nString("Config saved successfully"))
               } catch (e1: Exception) {
                 errWithStackTrace(e1)
-                JOptionPane.showMessageDialog(null, i18nString("Config can't be saved with error"))
+                JOptionPane.showMessageDialog(owner, i18nString("Config can't be saved with error"))
               }
             }
 
             override fun onCanceled() {}
 
             override fun onError() {
-              JOptionPane.showMessageDialog(null, i18nString("Config can't be saved with error"))
+              JOptionPane.showMessageDialog(owner, i18nString("Config can't be saved with error"))
             }
           }
         )

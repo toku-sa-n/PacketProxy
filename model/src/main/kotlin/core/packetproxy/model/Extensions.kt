@@ -34,6 +34,8 @@ class Extensions(private val database: Database) : PropertyChangeListener {
   // Extensionではなく、継承先のインスタンスを保持する必要がある
   // enabledになっている際にのみext_instancesに保持されるようにする
   private var ext_instances: MutableMap<String, Extension> = HashMap()
+  // Retain URLClassLoaders for the lifetime of loaded jar extensions.
+  private val extensionClassLoaders = ArrayList<URLClassLoader>()
   private var dao: Dao<Extension, String> =
     database.createTable(Extension::class.java, this) as Dao<Extension, String>
   private var cache = DaoQueryCache<Extension>()
@@ -73,7 +75,8 @@ class Extensions(private val database: Database) : PropertyChangeListener {
       return extension?.also(::initializeExtension)
     }
     try {
-      val file = File(path!!)
+      val filePath = path ?: return null
+      val file = File(filePath)
       val urls = arrayOf(file.toURI().toURL())
       val urlClassLoader = URLClassLoader(urls)
       val jar = JarFile(file)
@@ -88,13 +91,14 @@ class Extensions(private val database: Database) : PropertyChangeListener {
           val clazz = urlClassLoader.loadClass(className)
           if (!Extension::class.java.isAssignableFrom(clazz)) continue
           val constructor = clazz.getConstructor(String::class.java, String::class.java)
-          extension = constructor.newInstance(name, path) as Extension
+          extension = constructor.newInstance(name, filePath) as Extension
         } catch (e1: ClassNotFoundException) {
           // errWithStackTrace(e1);
         }
       }
       jar.close()
-      urlClassLoader.close()
+      // Keep URLClassLoader open for the extension lifetime so classes remain resolvable.
+      extensionClassLoaders.add(urlClassLoader)
       return extension?.also(::initializeExtension)
     } catch (e: Exception) {
       errWithStackTrace(e)
@@ -106,10 +110,11 @@ class Extensions(private val database: Database) : PropertyChangeListener {
   fun create(ext: Extension) {
     initializeExtension(ext)
     // 存在しないならListに追加
-    if (!dao.idExists(ext.getName())) {
+    val name = ext.getName()
+    if (name != null && !dao.idExists(name)) {
       dao.create(ext)
       if (ext.isEnabled()) {
-        ext_instances[ext.getName()!!] = ext
+        ext_instances[name] = ext
       }
     }
     cache.clear()
@@ -136,16 +141,22 @@ class Extensions(private val database: Database) : PropertyChangeListener {
   fun update(ext: Extension): Extension? {
     var ext = ext
     dao.update(ext)
-    if (ext.isEnabled() && !ext_instances.containsKey(ext.getName())) {
-      val loadedExt = loadExtension(ext.getName()!!, ext.getPath())
+    val name = ext.getName()
+    if (ext.isEnabled() && name != null && !ext_instances.containsKey(name)) {
+      val loadedExt = loadExtension(name, ext.getPath())
       if (loadedExt != null) {
         loadedExt.setEnabled(true)
-        ext_instances[loadedExt.getName()!!] = loadedExt
+        val loadedName = loadedExt.getName()
+        if (loadedName != null) {
+          ext_instances[loadedName] = loadedExt
+        }
+        ext = loadedExt
       }
-      ext = loadedExt!!
     } else if (!ext.isEnabled()) {
       // remove because of disabled
-      ext_instances.remove(ext.getName())
+      if (name != null) {
+        ext_instances.remove(name)
+      }
     }
     cache.clear()
     firePropertyChange()
@@ -165,16 +176,22 @@ class Extensions(private val database: Database) : PropertyChangeListener {
       ext = ext_instances[id]
     } else {
       ext = dao.queryForId(id)
-      if (ext!!.isEnabled()) {
+      if (ext != null && ext.isEnabled()) {
         // load jar
-        ext = loadExtension(ext.getName()!!, ext.getPath())
-        if (ext != null) {
-          ext.setEnabled(true)
-          ext_instances[ext.getName()!!] = ext
+        val loaded = loadExtension(ext.getName() ?: id, ext.getPath())
+        if (loaded != null) {
+          loaded.setEnabled(true)
+          val loadedName = loaded.getName()
+          if (loadedName != null) {
+            ext_instances[loadedName] = loaded
+          }
+          ext = loaded
         }
       }
     }
-    cache.set("query", id, ext!!)
+    if (ext != null) {
+      cache.set("query", id, ext)
+    }
     return ext
   }
 
@@ -190,17 +207,21 @@ class Extensions(private val database: Database) : PropertyChangeListener {
     for (i in ret.indices) {
       val ext = ret[i]
       if (!ext.isEnabled()) continue
-      if (ext_instances.containsKey(ext.getName())) {
-        val loadedExt = ext_instances[ext.getName()]!!
+      val name = ext.getName() ?: continue
+      if (ext_instances.containsKey(name)) {
+        val loadedExt = ext_instances[name] ?: continue
         ret[i] = loadedExt
-        newHash[ext.getName()!!] = loadedExt
+        newHash[name] = loadedExt
         continue
       }
-      val loadedExt = loadExtension(ext.getName()!!, ext.getPath())
+      val loadedExt = loadExtension(name, ext.getPath())
       if (loadedExt != null) {
         loadedExt.setEnabled(ext.isEnabled())
         ret[i] = loadedExt
-        newHash[loadedExt.getName()!!] = loadedExt
+        val loadedName = loadedExt.getName()
+        if (loadedName != null) {
+          newHash[loadedName] = loadedExt
+        }
       }
     }
     ext_instances = newHash
@@ -224,12 +245,8 @@ class Extensions(private val database: Database) : PropertyChangeListener {
     val message = evt.newValue as DatabaseMessage
     try {
       when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを取る
-        }
+        DatabaseMessage.PAUSE,
+        DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>

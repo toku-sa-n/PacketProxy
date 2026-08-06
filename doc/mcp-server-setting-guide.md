@@ -21,7 +21,7 @@
 
 ```bash
 # PacketProxyを起動
-java -jar build/libs/PacketProxy.jar
+java -jar app/build/libs/PacketProxy.jar
 ```
 
 GUI起動後：
@@ -197,7 +197,7 @@ cd /Users/kakira/PacketProxy
 ./gradlew build
 
 # JARファイルの存在確認
-ls -la build/libs/PacketProxy.jar
+ls -la app/build/libs/PacketProxy.jar
 ```
 
 ## 利用可能なツール

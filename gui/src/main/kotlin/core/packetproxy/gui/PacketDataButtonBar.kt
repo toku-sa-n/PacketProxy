@@ -285,8 +285,8 @@ class PacketDataButtonBar(
   private fun resolveDataForCopyBody(): ByteArray? =
     resolve(
       owner = owner,
-      message = "Which body do you want to copy?",
-      title = "Select Copy Target",
+      message = i18nString("Which body do you want to copy?"),
+      title = i18nString("Select Copy Target"),
       isMergedRow = history.isSelectedRowMerged(),
       requestData = { getBodyData() },
       responseData = { getResponseData() },
@@ -295,8 +295,8 @@ class PacketDataButtonBar(
   private fun resolveDataForDiff(): ByteArray? =
     resolve(
       owner = owner,
-      message = "Which data do you want to use for Diff?",
-      title = "Select Diff Target",
+      message = i18nString("Which data do you want to use for Diff?"),
+      title = i18nString("Select Diff Target"),
       isMergedRow = history.isSelectedRowMerged(),
       requestData = { getActiveData() },
       responseData = { getResponseData() },

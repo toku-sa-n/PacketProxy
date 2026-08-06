@@ -19,6 +19,8 @@ import java.io.ByteArrayOutputStream
 import java.util.ArrayDeque
 import java.util.HashMap
 import java.util.Queue
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import org.eclipse.jetty.http2.hpack.HpackEncoder
 import packetproxy.common.UniqueID
 import packetproxy.http.Http
@@ -37,6 +39,13 @@ open class Http2StreamingResponse(private val packets: Packets, private val uniq
   private val stream = StreamManager()
   private val frameQueue: Queue<Frame> = ArrayDeque()
   private val groupMap: MutableMap<Long, Long> = HashMap()
+
+  companion object {
+    private val DATA_UPDATE_POOL: ExecutorService =
+      Executors.newCachedThreadPool { r ->
+        Thread(r, "pp-http2-streaming-data").apply { isDaemon = true }
+      }
+  }
 
   @Throws(Exception::class)
   override fun passThroughServerResponse(): ByteArray {
@@ -58,34 +67,33 @@ open class Http2StreamingResponse(private val packets: Packets, private val uniq
         out.write(frame.toByteArray())
         synchronized(stream) { stream.write(frame) }
         val streamId = frame.streamId
-        Thread {
-            try {
-              val data = ByteArrayOutputStream()
-              synchronized(stream) {
-                for (f in stream.read(streamId)!!) {
-                  if (f is HeadersFrame) {
-                    data.write(f.getExtra())
-                  } else {
-                    data.write(f.payload)
-                  }
+        DATA_UPDATE_POOL.execute {
+          try {
+            val data = ByteArrayOutputStream()
+            synchronized(stream) {
+              for (f in stream.read(streamId)!!) {
+                if (f is HeadersFrame) {
+                  data.write(f.getExtra())
+                } else {
+                  data.write(f.payload)
                 }
               }
-              val http = Http.create(data.toByteArray())
-              if (http.body.isNotEmpty()) {
-                val matchingPackets =
-                  packets.queryFullText(http.getFirstHeader("X-PacketProxy-HTTP2-UUID"))
-                for (packet in matchingPackets) {
-                  val p = packets.query(packet.getId())!!
-                  p.setDecodedData(http.toByteArray())
-                  p.setModifiedData(http.toByteArray())
-                  packets.update(p)
-                }
-              }
-            } catch (e: Exception) {
-              errWithStackTrace(e)
             }
+            val http = Http.create(data.toByteArray())
+            if (http.body.isNotEmpty()) {
+              val matchingPackets =
+                packets.queryFullText(http.getFirstHeader("X-PacketProxy-HTTP2-UUID"))
+              for (packet in matchingPackets) {
+                val p = packets.query(packet.getId())!!
+                p.setDecodedData(http.toByteArray())
+                p.setModifiedData(http.toByteArray())
+                packets.update(p)
+              }
+            }
+          } catch (e: Exception) {
+            errWithStackTrace(e)
           }
-          .start()
+        }
       }
     }
     return out.toByteArray()
@@ -107,6 +115,7 @@ open class Http2StreamingResponse(private val packets: Packets, private val uniq
 
   @Throws(Exception::class)
   private fun filterFrames(streamManager: StreamManager, frames: List<Frame>): ByteArray? {
+    var completedStreamId: Int? = null
     for (frame in frames) {
       if (frame is HeadersFrame) {
         streamManager.write(frame)
@@ -114,11 +123,16 @@ open class Http2StreamingResponse(private val packets: Packets, private val uniq
         streamManager.write(frame)
       }
       if ((frame.flags and 0x01) > 0) {
-        val streamFrames = streamManager.read(frame.streamId)
-        return toByteArray(streamFrames!!)
+        completedStreamId = frame.streamId
       }
     }
-    return null
+    if (completedStreamId == null) {
+      return null
+    }
+    val streamFrames = streamManager.read(completedStreamId) ?: return null
+    val result = toByteArray(streamFrames)
+    streamManager.clear(completedStreamId)
+    return result
   }
 
   @Throws(Exception::class)

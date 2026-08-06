@@ -66,12 +66,8 @@ class ClientCertificates(
     val message = evt.newValue as DatabaseMessage
     try {
       when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
+        DatabaseMessage.PAUSE,
+        DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(ClientCertificate::class.java, this)
@@ -83,16 +79,6 @@ class ClientCertificates(
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
-    }
-  }
-
-  @Throws(Exception::class)
-  fun hasCorrectSecretKey(certificate: ClientCertificate): Boolean {
-    try {
-      clientKeyManager.setKeyManagers(certificate.getServer(database), certificate.load())
-      return true
-    } catch (keyException: java.security.UnrecoverableKeyException) {
-      return false
     }
   }
 

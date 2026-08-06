@@ -15,55 +15,33 @@
  */
 package packetproxy.http3.service.frame
 
-import com.google.common.collect.Sets
-import java.lang.reflect.Modifier
 import java.nio.ByteBuffer
-import java.nio.file.Paths
-import javax.tools.DiagnosticCollector
-import javax.tools.JavaFileObject
-import javax.tools.StandardLocation
-import javax.tools.ToolProvider
 import packetproxy.http3.utils.parseVarInt
+import packetproxy.http3.value.frame.DataFrame
+import packetproxy.http3.value.frame.DummyFrame
 import packetproxy.http3.value.frame.Frame
 import packetproxy.http3.value.frame.Frames
 import packetproxy.http3.value.frame.GreaseFrame
-import packetproxy.util.errWithStackTrace
+import packetproxy.http3.value.frame.HeadersFrame
+import packetproxy.http3.value.frame.RawFrame
+import packetproxy.http3.value.frame.SettingsFrame
 
 open class FrameParser {
   companion object {
-    private val framePackage = "packetproxy.http3.value.frame"
-    private val frameClass = Frame::class.java
-    private val frameMap: MutableMap<Long, Class<Frame>> = HashMap()
+    private val frameMap: MutableMap<Long, Class<out Frame>> = HashMap()
 
     init {
-      try {
-        val compiler = ToolProvider.getSystemJavaCompiler()
-        val fm = compiler.getStandardFileManager(DiagnosticCollector<JavaFileObject>(), null, null)
-        val kind = Sets.newHashSet(JavaFileObject.Kind.CLASS)
-        for (f in fm.list(StandardLocation.CLASS_PATH, framePackage, kind, true)) {
-          val encodeFilePath = Paths.get(f.name)
-          if (encodeFilePath.toString().contains("test")) {
-            continue
-          }
-          val encodeClassPath =
-            encodeFilePath
-              .toString()
-              .replace("/", ".")
-              .replaceFirst(("^.*" + framePackage).toRegex(), framePackage)
-              .replace("\\.class.*$".toRegex(), "")
-          val klass = Class.forName(encodeClassPath)
-          if (
-            frameClass.isAssignableFrom(klass) &&
-              !Modifier.isAbstract(klass.modifiers) &&
-              !frameClass.isNestmateOf(klass)
-          ) {
-            val types = klass.getMethod("supportedTypes").invoke(null) as List<*>
-            types.forEach { type -> frameMap[type as Long] = klass as Class<Frame> }
-          }
-        }
-      } catch (e: Exception) {
-        errWithStackTrace(e)
-      }
+      register(DataFrame::class.java)
+      register(HeadersFrame::class.java)
+      register(SettingsFrame::class.java)
+      register(GreaseFrame::class.java)
+      register(RawFrame::class.java)
+      register(DummyFrame::class.java)
+    }
+
+    private fun register(klass: Class<out Frame>) {
+      val types = klass.getMethod("supportedTypes").invoke(null) as List<*>
+      types.forEach { type -> frameMap[type as Long] = klass }
     }
 
     @JvmStatic
@@ -87,7 +65,7 @@ open class FrameParser {
     }
 
     @Throws(Exception::class)
-    private fun createInstance(klass: Class<Frame>, buffer: ByteBuffer): Frame =
+    private fun createInstance(klass: Class<out Frame>, buffer: ByteBuffer): Frame =
       klass.getMethod("parse", ByteBuffer::class.java).invoke(null, buffer) as Frame
 
     private fun getTypeWithoutIncrement(buffer: ByteBuffer): Long {

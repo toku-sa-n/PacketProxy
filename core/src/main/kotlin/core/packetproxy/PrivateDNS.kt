@@ -127,6 +127,12 @@ class PrivateDNS(
     dns = null
   }
 
+  private fun isSpoofIPv4Enabled(): Boolean =
+    ConfigBoolean(configs, "PrivateDNSSpoofIPv4", "true").getState()
+
+  private fun isSpoofIPv6Enabled(): Boolean =
+    ConfigBoolean(configs, "PrivateDNSSpoofIPv6", "true").getState()
+
   @Throws(Exception::class) fun isRunning(): Boolean = state.getState()
 
   fun start(dnsSpoofingIPGetter: DNSSpoofingIPGetter): Boolean {
@@ -334,7 +340,7 @@ class PrivateDNS(
                 val params = listOf<SVCBBase.ParameterBase>(alpn)
                 val record = HTTPSRecord(label, DClass.IN, 300, 1, svcDomain, params)
                 jn = PrivateDnsResponseBuilder(record)
-                log("Force to access '%s' with HTTP3", queryHostName)
+                log("Force to access '%s' with h1,h2,h3", queryHostName)
               } else {
                 val records = dnsClient.getHTTPSRecord(queryHostName)
                 jn = PrivateDnsResponseBuilder(records)
@@ -345,35 +351,31 @@ class PrivateDNS(
               continue
             } else {
               log("[DNS Query] Unsupported Query Type: '%s' [%s]", queryHostName, queryRecTypeName)
-              throw UnsupportedOperationException()
+              res = forwardToUpstream(requestData)
+              if (res == null) {
+                res = PrivateDnsResponseBuilder().notImplementedReply(smsg)
+              }
+              sendPacket = DatagramPacket(res!!, res.size, cAddr, cPort)
+              soc!!.send(sendPacket)
+              continue
             }
 
             var ip = addr.hostAddress
 
             log("[DNS Query] '%s' [%s]", queryHostName, queryRecTypeName)
 
-            if (isTargetHost(queryHostName)) {
-              if (queryRecType == Type.A) {
-                // ToDo GUIにIPv4有効チェックを追加し、無効のときはスキップするようにする。
-                ip = spoofingIpStr
-                log("Replaced to %s", ip)
-              }
+            if (isTargetHost(queryHostName) && queryRecType == Type.A && isSpoofIPv4Enabled()) {
+              ip = spoofingIpStr
+              log("Replaced to %s", ip)
             }
-            if (isTargetHost6(queryHostName)) {
-              if (queryRecType == Type.AAAA) {
-                // ToDo GUIにIPv6有効チェックを追加し、無効のときはスキップするようにする。
-                ip = spoofingIp6Str
-                log("Replaced to %s", ip)
-              }
+            if (isTargetHost6(queryHostName) && queryRecType == Type.AAAA && isSpoofIPv6Enabled()) {
+              ip = spoofingIp6Str
+              log("Replaced to %s", ip)
             }
             val jn = PrivateDnsResponseBuilder(ip)
             res = jn.generateReply(smsg, smsgBA, smsgBA.size, null)
           } catch (e: UnknownHostException) {
             err("[DNS Query] Unknown Host: '%s' [%s]", queryHostName, queryRecTypeName)
-            val jn = PrivateDnsResponseBuilder()
-            res = jn.generateReply(smsg, smsgBA, smsgBA.size, null)
-          } catch (e: UnsupportedOperationException) {
-            // Not implemented yet
             val jn = PrivateDnsResponseBuilder()
             res = jn.generateReply(smsg, smsgBA, smsgBA.size, null)
           } catch (e: Exception) {
@@ -421,6 +423,23 @@ class PrivateDNS(
         }
       }
       return false
+    }
+
+    private fun forwardToUpstream(requestData: ByteArray): ByteArray? {
+      return try {
+        val upstream = s_soc ?: return null
+        val serverAddr = s_sAddr ?: return null
+        s_sendPacket = DatagramPacket(requestData, requestData.size, serverAddr, 53)
+        upstream.soTimeout = 3000
+        upstream.send(s_sendPacket)
+        val buf = ByteArray(BUFSIZE)
+        val recv = DatagramPacket(buf, buf.size)
+        upstream.receive(recv)
+        recv.data.copyOf(recv.length)
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+        null
+      }
     }
   }
 

@@ -102,13 +102,8 @@ constructor(owner: GUIMain, private val authorizationSupplier: Supplier<String>?
     }
   }
 
-  override fun propertyChange(evt: PropertyChangeEvent) {
-    if (SESSION_PROFILES.matches(evt)) {
-      updateImpl()
-      return
-    }
-    super.propertyChange(evt)
-  }
+  override fun shouldHandlePropertyChange(evt: PropertyChangeEvent): Boolean =
+    SESSION_PROFILES.matches(evt)
 
   override fun addTableContent(profile: SessionProfile) {
     tableList.add(profile)
@@ -138,12 +133,13 @@ constructor(owner: GUIMain, private val authorizationSupplier: Supplier<String>?
   }
 
   override fun getSelectedTableContent(): SessionProfile? {
-    val rowIndex = table.selectedRow
-    if (rowIndex < 0) {
-      return null
-    }
+    val rowIndex = selectedModelRowOrNull() ?: return null
     return getTableContent(rowIndex)
   }
 
   override fun getTableContent(rowIndex: Int): SessionProfile = tableList[rowIndex]
+
+  fun dispose() {
+    sessionProfiles.removePropertyChangeListener(this)
+  }
 }

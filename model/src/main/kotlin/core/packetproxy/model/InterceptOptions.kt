@@ -156,24 +156,17 @@ class InterceptOptions(private val database: Database) : PropertyChangeListener 
 
   @Throws(Exception::class)
   fun queryAll(): List<InterceptOption> {
-    try {
-      val retCached = cache.query("queryAll", 0)
-      if (retCached != null) {
-        return retCached
-      }
-
-      setDefaultRulesIfNotFound()
-      val list = dao.queryBuilder().query()
-      val ret = sort(list)
-
-      cache.set("queryAll", 0, ret)
-      return ret
-    } catch (e: Exception) {
-      database.dropTable(InterceptOption::class.java)
-      dao = database.createTable(InterceptOption::class.java, this)
-      setDefaultRulesIfNotFound()
-      return dao.queryBuilder().query()
+    val retCached = cache.query("queryAll", 0)
+    if (retCached != null) {
+      return retCached
     }
+
+    setDefaultRulesIfNotFound()
+    val list = dao.queryBuilder().query()
+    val ret = sort(list)
+
+    cache.set("queryAll", 0, ret)
+    return ret
   }
 
   @Throws(Exception::class)
@@ -283,12 +276,8 @@ class InterceptOptions(private val database: Database) : PropertyChangeListener 
     val message = evt.newValue as DatabaseMessage
     try {
       when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
+        DatabaseMessage.PAUSE,
+        DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(InterceptOption::class.java, this)

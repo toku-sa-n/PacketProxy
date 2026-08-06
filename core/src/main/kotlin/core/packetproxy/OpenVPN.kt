@@ -121,28 +121,44 @@ class OpenVPN(private val openVPNForwardPorts: OpenVPNForwardPorts) {
     }
 
     try {
-      client.inspectContainerCmd(containerName).exec()
+      val existing = client.inspectContainerCmd(containerName).exec()
+      val env = existing.config.env?.toList().orEmpty()
+      val labels = existing.config.labels.orEmpty()
+      val currentIp =
+        labels["pp.host_addr"]
+          ?: env.firstOrNull { it.startsWith("HOST_ADDR=") }?.removePrefix("HOST_ADDR=")
+      val currentProto = labels["pp.proto"]
+      if (currentIp == localIp && (currentProto == null || currentProto == proto)) {
+        return
+      }
+      log(
+        "OpenVPN container config changed (ip=$currentIp->$localIp, proto=$currentProto->$proto); recreating"
+      )
+      removeContainer(client)
     } catch (_: NotFoundException) {
-      val hostConfig =
-        HostConfig()
-          .withBinds(Bind(volumeName, Volume("/opt")))
-          .withPortBindings(
-            Ports(
-              PortBinding.parse("0.0.0.0:1194:1194/udp"),
-              PortBinding.parse("0.0.0.0:1194:1194/tcp"),
-              PortBinding.parse("0.0.0.0:18080:8080/tcp"),
-            )
-          )
-          .withCapAdd(Capability.NET_ADMIN)
-
-      client
-        .createContainerCmd(imageName)
-        .withName(containerName)
-        .withHostConfig(hostConfig)
-        .withExposedPorts(ExposedPort(1194))
-        .withEnv("HOST_ADDR=$localIp")
-        .exec()
+      // create below
     }
+
+    val hostConfig =
+      HostConfig()
+        .withBinds(Bind(volumeName, Volume("/opt")))
+        .withPortBindings(
+          Ports(
+            PortBinding.parse("0.0.0.0:1194:1194/udp"),
+            PortBinding.parse("0.0.0.0:1194:1194/tcp"),
+            PortBinding.parse("0.0.0.0:18080:8080/tcp"),
+          )
+        )
+        .withCapAdd(Capability.NET_ADMIN)
+
+    client
+      .createContainerCmd(imageName)
+      .withName(containerName)
+      .withHostConfig(hostConfig)
+      .withExposedPorts(ExposedPort(1194))
+      .withEnv("HOST_ADDR=$localIp")
+      .withLabels(mapOf("pp.host_addr" to localIp, "pp.proto" to proto))
+      .exec()
   }
 
   fun startContainer(client: DockerClient, proto: String) {
@@ -195,8 +211,8 @@ class OpenVPN(private val openVPNForwardPorts: OpenVPNForwardPorts) {
     try {
       val forwardPorts = openVPNForwardPorts.queryAll()
       for (forwardPort in forwardPorts) {
-        val command =
-          "/sbin/iptables -t nat -A PREROUTING -p " +
+        val rule =
+          "-t nat -p " +
             forwardPort.getType().toString() +
             " --dport " +
             forwardPort.getFromPort() +
@@ -204,7 +220,10 @@ class OpenVPN(private val openVPNForwardPorts: OpenVPNForwardPorts) {
             localIp +
             ":" +
             forwardPort.getToPort()
-
+        // Idempotent: add only when the rule is not already present.
+        val command =
+          "/sbin/iptables -t nat -C PREROUTING $rule 2>/dev/null || " +
+            "/sbin/iptables -t nat -A PREROUTING $rule"
         execCommand(client, arrayOf("/bin/sh", "-c", command))
       }
 
@@ -214,35 +233,43 @@ class OpenVPN(private val openVPNForwardPorts: OpenVPNForwardPorts) {
         arrayOf(
           "/bin/sh",
           "-c",
-          "sed -i 's/\\/etc\\/openvpn\\/server\\.conf/\\/opt\\/Dockovpn\\/config\\/server\\.conf/' /opt/Dockovpn/start.sh",
+          "sed -i 's#/etc/openvpn/server\\.conf#/opt/Dockovpn/config/server.conf#' /opt/Dockovpn/start.sh",
         ),
       )
       when (proto) {
         "TCP" -> {
           execCommand(
             client,
-            arrayOf("/bin/sh", "-c", "sed -i s/udp/tcp-server/ /opt/Dockovpn/config/server.conf"),
+            arrayOf(
+              "/bin/sh",
+              "-c",
+              "sed -i -E 's/^(proto[[:space:]]+)udp/\\1tcp-server/' /opt/Dockovpn/config/server.conf",
+            ),
           )
           execCommand(
             client,
             arrayOf(
               "/bin/sh",
               "-c",
-              "find /opt -name \"client.ovpn\" | xargs sed -i s/udp/tcp-client/",
+              "find /opt -name 'client.ovpn' -print0 | xargs -0 -r sed -i -E 's/^(proto[[:space:]]+)udp/\\1tcp-client/'",
             ),
           )
         }
         "UDP" -> {
           execCommand(
             client,
-            arrayOf("/bin/sh", "-c", "sed -i s/tcp-server/udp/ /opt/Dockovpn/config/server.conf"),
+            arrayOf(
+              "/bin/sh",
+              "-c",
+              "sed -i -E 's/^(proto[[:space:]]+)tcp-server/\\1udp/' /opt/Dockovpn/config/server.conf",
+            ),
           )
           execCommand(
             client,
             arrayOf(
               "/bin/sh",
               "-c",
-              "find /opt -name \"client.ovpn\" | xargs sed -i s/tcp-client/udp/",
+              "find /opt -name 'client.ovpn' -print0 | xargs -0 -r sed -i -E 's/^(proto[[:space:]]+)tcp-client/\\1udp/'",
             ),
           )
         }

@@ -15,6 +15,7 @@
  */
 package packetproxy
 
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import packetproxy.common.*
 import packetproxy.http.Https
@@ -66,7 +67,11 @@ class ProxyFactory(
         )
 
       else -> {
-        val listenSocket = ServerSocket(port)
+        val listenSocket =
+          ServerSocket().apply {
+            reuseAddress = true
+            bind(InetSocketAddress(port))
+          }
 
         when (type) {
           ListenPort.TYPE.HTTP_PROXY ->
@@ -95,6 +100,7 @@ class ProxyFactory(
               listenSocket,
               listenInfo,
               duplexFactory,
+              duplexManager,
               endpointFactory,
               modelServices.servers,
               modelServices.resolutions,
@@ -113,32 +119,25 @@ class ProxyFactory(
               modelServices.resolutions,
               modelServices.database,
             )
-
-          else -> {
-            listenSocket.setReuseAddress(true)
-
-            when (type) {
-              ListenPort.TYPE.XMPP_SSL_FORWARDER ->
-                ProxyXmppSSLForward(
-                  listenSocket,
-                  listenInfo,
-                  duplexFactory,
-                  duplexManager,
-                  https,
-                  modelServices.database,
-                  modelServices.resolutions,
-                )
-              else ->
-                ProxyForward(
-                  listenSocket,
-                  listenInfo,
-                  duplexFactory,
-                  duplexManager,
-                  endpointFactory,
-                  modelServices.database,
-                )
-            }
-          }
+          ListenPort.TYPE.XMPP_SSL_FORWARDER ->
+            ProxyXmppSSLForward(
+              listenSocket,
+              listenInfo,
+              duplexFactory,
+              duplexManager,
+              https,
+              modelServices.database,
+              modelServices.resolutions,
+            )
+          else ->
+            ProxyForward(
+              listenSocket,
+              listenInfo,
+              duplexFactory,
+              duplexManager,
+              endpointFactory,
+              modelServices.database,
+            )
         }
       }
     }

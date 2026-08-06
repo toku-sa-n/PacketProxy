@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
+import javax.net.ssl.SNIHostName
 import javax.net.ssl.SNIServerName
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.*
@@ -58,20 +59,11 @@ constructor(
   }
 
   override fun run() {
-    val clients = ArrayList<Socket>()
     while (!listen_socket.isClosed) {
       try {
         val client = listen_socket.accept()
-        clients.add(client)
         log("[ProxySSLTransparent]: accept")
         checkTransparentSSLProxy(client, listen_socket.localPort)
-      } catch (e: Exception) {
-        errWithStackTrace(e)
-      }
-    }
-    for (sc in clients) {
-      try {
-        sc.close()
       } catch (e: Exception) {
         errWithStackTrace(e)
       }
@@ -152,8 +144,12 @@ constructor(
       val server_e = endpointFactory.createSslEndpoint(serverAddr, serverName, null)
       createConnection(wep_e, server_e, server)
     } else {
-      for (serverE in serverNames) {
-        val serverName = String(serverE.encoded) // 接続先サーバを取得
+      val hostNames = serverNames.filterIsInstance<SNIHostName>()
+      if (hostNames.isEmpty()) {
+        throw Exception(i18nString("[Error] SNI host_name entry was not found in SSL packets."))
+      }
+      for (serverE in hostNames) {
+        val serverName = serverE.asciiName
         if (listen_info.getServer(database) != null) { // upstream proxy
           log("[SSL-forward through upstream proxy! using SNI] %s", serverName)
         } else {

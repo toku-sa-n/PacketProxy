@@ -95,9 +95,11 @@ class ListenPortManager(
       log("## start: %s", listenPort.getProtoPort())
       listenMap[listenPort.getProtoPort()] = Listen(listenPort, proxyFactory, duplexManager)
     } catch (exception: BindException) {
-      err("cannot listen port. (permission issue or already listened)")
-      listenPort.setDisabled()
-      listenPorts.update(listenPort)
+      err(
+        "cannot listen port. (permission issue or already listened): %s",
+        listenPort.getProtoPort(),
+      )
+      // Do not permanently disable; allow retry on next refresh / property change.
     }
   }
 

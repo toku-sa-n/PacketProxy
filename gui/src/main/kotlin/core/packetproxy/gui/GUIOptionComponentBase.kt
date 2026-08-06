@@ -19,11 +19,13 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.RowFilter
+import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.table.TableRowSorter
 import packetproxy.common.*
 import packetproxy.model.OptionTableModel
+import packetproxy.model.PropertyChangeEventType
 
 abstract class GUIOptionComponentBase<T>(protected val owner: GUIMain) : PropertyChangeListener {
   protected lateinit var option_model: OptionTableModel
@@ -175,7 +177,21 @@ abstract class GUIOptionComponentBase<T>(protected val owner: GUIMain) : Propert
     return panel
   }
 
-  override fun propertyChange(evt: PropertyChangeEvent) = updateImpl()
+  override fun propertyChange(evt: PropertyChangeEvent) {
+    if (!shouldHandlePropertyChange(evt)) return
+    SwingUtilities.invokeLater { updateImpl() }
+  }
+
+  /** Subclasses may override to filter which property-change events refresh the table. */
+  protected open fun shouldHandlePropertyChange(evt: PropertyChangeEvent): Boolean =
+    enumValues<PropertyChangeEventType>().any { it.matches(evt) }
+
+  protected fun selectedModelRowOrNull(): Int? {
+    val selectedRow = table.selectedRow
+    if (selectedRow < 0) return null
+    val sorter = table.rowSorter
+    return if (sorter != null) sorter.convertRowIndexToModel(selectedRow) else selectedRow
+  }
 
   protected abstract fun clearTableContents()
 

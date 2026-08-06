@@ -49,6 +49,8 @@ class GUIOptionPrivateDNS(
   }
 
   private val checkBox = createCheckBox()
+  private val spoofIpv4CheckBox = createSpoofIpv4CheckBox()
+  private val spoofIpv6CheckBox = createSpoofIpv6CheckBox()
   private val ipv4 = createAddressField()
   private val ipv6 = createAddress6Field()
   private lateinit var auto: JRadioButton
@@ -66,6 +68,10 @@ class GUIOptionPrivateDNS(
     updateState()
   }
 
+  fun dispose() {
+    configs.removePropertyChangeListener(this)
+  }
+
   fun getPanel() = panel
 
   override fun isAutoSpoofing() = auto.isSelected
@@ -79,6 +85,10 @@ class GUIOptionPrivateDNS(
   fun updateState() {
     try {
       checkBox.isSelected = ConfigBoolean(configs, "PrivateDNS").getState()
+      spoofIpv4CheckBox.isSelected =
+        ConfigBoolean(configs, "PrivateDNSSpoofIPv4", "true").getState()
+      spoofIpv6CheckBox.isSelected =
+        ConfigBoolean(configs, "PrivateDNSSpoofIPv6", "true").getState()
       updatePortFieldText(privateDns.getConfiguredPort().toString())
       if (!checkBox.isSelected) return
       if (!privateDns.start(DNSSpoofingIPGetter(this))) {
@@ -128,6 +138,8 @@ class GUIOptionPrivateDNS(
     rewriteRule.layout = BoxLayout(rewriteRule, BoxLayout.Y_AXIS)
     rewriteRule.background = Color.WHITE
     rewriteRule.border = rewriteRuleBorder
+    rewriteRule.add(spoofIpv4CheckBox)
+    rewriteRule.add(spoofIpv6CheckBox)
     rewriteRule.add(auto)
     rewriteRule.add(manualPanel)
     rewriteRule.maximumSize =
@@ -142,6 +154,26 @@ class GUIOptionPrivateDNS(
       add(rewriteRule)
       alignmentX = Component.LEFT_ALIGNMENT
     }
+  }
+
+  private fun createSpoofIpv4CheckBox(): JCheckBox {
+    val box = JCheckBox(i18nString("Spoofing A Record"))
+    box.isSelected = true
+    box.addActionListener {
+      ConfigBoolean(configs, "PrivateDNSSpoofIPv4", "true").setState(box.isSelected)
+    }
+    box.minimumSize = Dimension(Short.MAX_VALUE.toInt(), box.maximumSize.height)
+    return box
+  }
+
+  private fun createSpoofIpv6CheckBox(): JCheckBox {
+    val box = JCheckBox(i18nString("Spoofing AAAA Record"))
+    box.isSelected = true
+    box.addActionListener {
+      ConfigBoolean(configs, "PrivateDNSSpoofIPv6", "true").setState(box.isSelected)
+    }
+    box.minimumSize = Dimension(Short.MAX_VALUE.toInt(), box.maximumSize.height)
+    return box
   }
 
   private fun createCheckBox(): JCheckBox {

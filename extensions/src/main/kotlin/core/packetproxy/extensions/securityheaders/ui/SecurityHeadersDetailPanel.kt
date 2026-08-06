@@ -27,6 +27,7 @@ import packetproxy.extensions.securityheaders.SecurityCheckResult
 import packetproxy.extensions.securityheaders.checks.CookieCheck
 import packetproxy.gui.WrapEditorKit
 import packetproxy.http.HttpHeader
+import packetproxy.util.errWithStackTrace
 
 /**
  * Detail panel for displaying HTTP headers and security check results. Provides styled text display
@@ -82,7 +83,7 @@ class SecurityHeadersDetailPanel(
         }
       }
     } catch (e: Exception) {
-      e.printStackTrace()
+      errWithStackTrace(e)
     }
   }
 
@@ -101,7 +102,7 @@ class SecurityHeadersDetailPanel(
         }
       }
     } catch (e: Exception) {
-      e.printStackTrace()
+      errWithStackTrace(e)
     }
   }
 

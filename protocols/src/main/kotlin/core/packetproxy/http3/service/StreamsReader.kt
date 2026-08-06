@@ -115,7 +115,7 @@ open class StreamsReader(role: Constants.Role) {
     httpStreams.entries
       .stream()
       .filter { ent -> ent.key.isBidirectional() }
-      .filter { ent -> !ent.value.isEmpty() }
+      .filter { ent -> ent.value.isReady() }
       .map { it.key }
       .findFirst()
       .ifPresent(

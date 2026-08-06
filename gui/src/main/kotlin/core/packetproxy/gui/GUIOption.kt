@@ -20,27 +20,36 @@ import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
 class GUIOption(private val owner: GUIMain) {
+  private val disposableListeners = mutableListOf<() -> Unit>()
+
   fun createPanel(): JComponent {
+    disposableListeners.clear()
     val panel = JPanel()
     panel.background = Color.WHITE
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+    val listenPorts = GUIOptionListenPorts(owner)
+    track(listenPorts::dispose)
     addSection(
       panel,
       i18nString("Listen Ports"),
       i18nString("Set listen port and server that packets are forwarded to."),
-      GUIOptionListenPorts(owner).createPanel(),
+      listenPorts.createPanel(),
     )
+    val servers = GUIOptionServers(owner)
+    track(servers::dispose)
     addSection(
       panel,
       i18nString("Servers"),
       i18nString("Set server and encode module to be used to encode packets."),
-      GUIOptionServers(owner).createPanel(),
+      servers.createPanel(),
     )
+    val resolutions = GUIOptionResolutions(owner)
+    track(resolutions::dispose)
     addSection(
       panel,
       i18nString("Hostname Resolutions"),
       i18nString("Set ip addr and server for DNS resolution."),
-      GUIOptionResolutions(owner).createPanel(),
+      resolutions.createPanel(),
     )
     panel.add(
       element(
@@ -48,7 +57,9 @@ class GUIOption(private val owner: GUIMain) {
         i18nString("Set pattern for auto packet modification."),
       )
     )
-    panel.add(GUIOptionModifications(owner).createPanel())
+    val modifications = GUIOptionModifications(owner)
+    track(modifications::dispose)
+    panel.add(modifications.createPanel())
     panel.add(
       JLabel(i18nString("Hex calculator for binary pattern")).also {
         it.alignmentX = Component.LEFT_ALIGNMENT
@@ -70,48 +81,60 @@ class GUIOption(private val owner: GUIMain) {
         }
       }
     panel.add(interceptRule)
-    panel.add(GUIOptionIntercepts(owner).createPanel())
+    val intercepts = GUIOptionIntercepts(owner)
+    track(intercepts::dispose)
+    panel.add(intercepts.createPanel())
     panel.add(separator())
+    val clientCerts = GUIOptionClientCertificate(owner)
+    track(clientCerts::dispose)
     addSection(
       panel,
       i18nString("Client Certificates"),
       i18nString("Set client certificate to be used on SSL/TLS."),
-      GUIOptionClientCertificate(owner).createPanel(),
+      clientCerts.createPanel(),
     )
+    val sessionProfiles = GUIOptionSessionProfile(owner)
+    track(sessionProfiles::dispose)
     addSection(
       panel,
       i18nString("Session Profiles"),
       i18nString(
         "Set Authorization header profiles for resending requests with different sessions."
       ),
-      GUIOptionSessionProfile(owner).createPanel(),
+      sessionProfiles.createPanel(),
     )
+    val sslPassThrough = GUIOptionSSLPassThrough(owner)
+    track(sslPassThrough::dispose)
     addSection(
       panel,
       i18nString("SSL PassThrough"),
       i18nString(
         "Set HTTPS server that packets are forwarded to without analyzing. These settings are enabled only if 'HTTP_PROXY' type is used."
       ),
-      GUIOptionSSLPassThrough(owner).createPanel(),
+      sslPassThrough.createPanel(),
     )
+    val privateDns =
+      GUIOptionPrivateDNS(
+        owner.coreServices.privateDns,
+        owner.modelServices.configs,
+        owner.modelServices.fontManager,
+      )
+    track(privateDns::dispose)
     addSection(
       panel,
       i18nString("Private DNS server"),
       i18nString("Use private DNS server that resolves server name to the IP address of this pc."),
-      GUIOptionPrivateDNS(
-          owner.coreServices.privateDns,
-          owner.modelServices.configs,
-          owner.modelServices.fontManager,
-        )
-        .getPanel(),
+      privateDns.getPanel(),
     )
+    val openVpn = GUIOptionOpenVPN(owner)
+    track(openVpn::dispose)
     addSection(
       panel,
       i18nString("OpenVPN Server with Docker"),
       i18nString(
         "Use OpenVPN Server as Docker Container to proxy HTTP/HTTPS without DNS Spoofing."
       ),
-      GUIOptionOpenVPN(owner).getPanel(),
+      openVpn.getPanel(),
     )
     addSection(
       panel,
@@ -130,28 +153,49 @@ class GUIOption(private val owner: GUIMain) {
     panel.add(title(i18nString("PacketProxy CA Certificates & Private Keys")))
     panel.add(createCaPanel())
     panel.add(separator())
+    val charSets = GUIOptionCharSets(owner)
+    track(charSets::dispose)
     addSection(
       panel,
       i18nString("Character encodings"),
       i18nString("Add/Remove character encodings to be used to display contents of packet."),
-      GUIOptionCharSets(owner).createPanel(),
+      charSets.createPanel(),
     )
+    val extensions = GUIOptionExtensions(owner)
+    track(extensions::dispose)
     addSection(
       panel,
       i18nString("Extensions"),
       i18nString("Enable/Disable loaded extensions"),
-      GUIOptionExtensions(owner).createPanel(),
+      extensions.createPanel(),
     )
     addSection(panel, i18nString("Fonts"), "", GUIOptionFonts(owner).createPanel())
+    val hubServer = GUIOptionHubServer(owner)
+    track(hubServer::dispose)
     addSection(
       panel,
       i18nString("Import/Export configs (Experimental)"),
       i18nString(
         "Import/Export configs by GET/POST http://localhost:32349/config with 'Authorization: [AccessToken]' header"
       ),
-      GUIOptionHubServer(owner).createPanel(),
+      hubServer.createPanel(),
     )
     return JScrollPane(panel).also { it.verticalScrollBar.unitIncrement = 16 }
+  }
+
+  fun dispose() {
+    disposableListeners.toList().forEach { disposer ->
+      try {
+        disposer()
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      }
+    }
+    disposableListeners.clear()
+  }
+
+  private fun track(disposer: () -> Unit) {
+    disposableListeners.add(disposer)
   }
 
   private fun createCaPanel(): JPanel {

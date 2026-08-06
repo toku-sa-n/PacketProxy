@@ -49,6 +49,38 @@ class SchemaMigratorTest {
   }
 
   @Test
+  fun ensureColumns_softAddsModificationPathColumn() {
+    val dao = database.createTable(Modification::class.java)
+    dao.executeRaw("DROP TABLE `modifications`")
+    dao.executeRaw(
+      """
+      CREATE TABLE `modifications` (
+        `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+        `enabled` BOOLEAN,
+        `server_id` INTEGER,
+        `direction` VARCHAR,
+        `pattern` VARCHAR,
+        `method` VARCHAR,
+        `replaced` VARCHAR,
+        UNIQUE (`server_id`,`direction`,`pattern`,`method`)
+      )
+      """
+        .trimIndent()
+    )
+    dao.executeRaw(
+      "INSERT INTO `modifications` (`enabled`,`server_id`,`direction`,`pattern`,`method`,`replaced`) VALUES (1, -1, 'CLIENT_REQUEST', 'a', 'SIMPLE', 'b')"
+    )
+
+    val added = SchemaMigrator.ensureColumns(dao)
+
+    assertTrue(added.contains("path"))
+    assertTrue(SchemaMigrator.hasAllExpectedColumns(dao))
+    val path =
+      dao.queryRaw("SELECT path FROM modifications").results.map { it[0] }.singleOrNull() ?: ""
+    assertEquals("", path)
+  }
+
+  @Test
   fun backupCurrent_copiesDatabaseAndKeepsOnlyFiveNewest() {
     val dir = Files.createTempDirectory("schema_migrator_backup")
     val tempDb = dir.resolve("resources.sqlite3")
@@ -58,9 +90,21 @@ class SchemaMigratorTest {
     dao.create(Filter("a", "b"))
 
     repeat(6) { index ->
-      // Distinct mtimes so rotation order is stable across filesystems.
-      Thread.sleep(15)
       isolated.backupCurrent()
+      val backupsDir = tempDb.parent.resolve("backups")
+      val newest =
+        Files.list(backupsDir).use { stream ->
+          stream
+            .filter { it.fileName.toString().startsWith("resources-") }
+            .filter { it.fileName.toString().endsWith(".sqlite3") }
+            .max { a, b -> Files.getLastModifiedTime(a).compareTo(Files.getLastModifiedTime(b)) }
+            .orElseThrow()
+        }
+      // Distinct mtimes so rotation order is stable across filesystems.
+      Files.setLastModifiedTime(
+        newest,
+        java.nio.file.attribute.FileTime.fromMillis(1_700_000_000_000L + index * 1_000L),
+      )
       dao.create(Filter("n$index", "f$index"))
     }
 

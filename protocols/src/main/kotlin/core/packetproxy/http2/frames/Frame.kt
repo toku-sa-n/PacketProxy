@@ -77,7 +77,8 @@ open class Frame {
         ((buffer[1].toInt() and 0xff) shl 8) or
         (buffer[2].toInt() and 0xff))
     bais.read(buffer, 0, 1)
-    type = Type.entries[buffer[0].toInt()]
+    val typeOrd = buffer[0].toInt() and 0xff
+    type = if (typeOrd < Type.entries.size) Type.entries[typeOrd] else Type.Unassigned
     bais.read(buffer, 0, 1)
     flags = buffer[0].toInt()
     bais.read(buffer, 0, 4)

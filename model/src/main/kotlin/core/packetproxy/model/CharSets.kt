@@ -16,15 +16,10 @@
 package packetproxy.model
 
 import com.j256.ormlite.dao.Dao
-import java.beans.PropertyChangeEvent
-import java.beans.PropertyChangeListener
-import java.beans.PropertyChangeSupport
-import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.CHARSET_UPDATED
-import packetproxy.util.errWithStackTrace
 
-class CharSets(private val database: Database) : PropertyChangeListener {
-  private val pcs = PropertyChangeSupport(this)
+class CharSets(database: Database) : AbstractDaoManager(database) {
+  override val updateEventType = CHARSET_UPDATED
 
   private val defaultCharSetList =
     listOf("UTF-8", "Shift_JIS", "x-euc-jp-linux", "ISO-2022-JP", "ISO-8859-1")
@@ -40,14 +35,6 @@ class CharSets(private val database: Database) : PropertyChangeListener {
         }
       }
     }
-  }
-
-  fun addPropertyChangeListener(listener: PropertyChangeListener) {
-    pcs.addPropertyChangeListener(listener)
-  }
-
-  fun removePropertyChangeListener(listener: PropertyChangeListener) {
-    pcs.removePropertyChangeListener(listener)
   }
 
   @Throws(Exception::class)
@@ -99,35 +86,11 @@ class CharSets(private val database: Database) : PropertyChangeListener {
     firePropertyChange()
   }
 
-  private fun firePropertyChange() {
-    pcs.firePropertyChange(CHARSET_UPDATED.toString(), null, null)
+  override fun onReconnect() {
+    dao = database.createTable(CharSet::class.java, this)
   }
 
-  override fun propertyChange(evt: PropertyChangeEvent) {
-    if (evt.source !is Database) {
-      return
-    }
-
-    val message = evt.newValue as DatabaseMessage
-    try {
-      when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
-        DatabaseMessage.DISCONNECT_NOW -> {}
-        DatabaseMessage.RECONNECT -> {
-          dao = database.createTable(CharSet::class.java, this)
-          firePropertyChange()
-        }
-        DatabaseMessage.RECREATE -> {
-          dao = database.createTable(CharSet::class.java, this)
-        }
-      }
-    } catch (e: Exception) {
-      errWithStackTrace(e)
-    }
+  override fun onRecreate() {
+    dao = database.createTable(CharSet::class.java, this)
   }
 }

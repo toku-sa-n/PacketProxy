@@ -19,7 +19,7 @@ class GUIOptionServers(owner: GUIMain) : GUIOptionComponentBase<Server>(owner) {
             val row = table.rowAtPoint(e.point)
             if (row < 0) return
             table.setRowSelectionInterval(row, row)
-            val server = getSelectedTableContent()
+            val server = getSelectedTableContent() ?: return
             when (table.columnAtPoint(e.point)) {
               4 ->
                 if (table.getValueAt(row, 4) as Boolean) server.disableResolved()
@@ -58,22 +58,25 @@ class GUIOptionServers(owner: GUIMain) : GUIOptionComponentBase<Server>(owner) {
         },
         {
           try {
-            GUIOptionServerDialog(owner).showDialog(getSelectedTableContent())?.let {
-              servers.update(it)
-            }
+            val selected = getSelectedTableContent() ?: return@createComponentForServers
+            GUIOptionServerDialog(owner).showDialog(selected)?.let { servers.update(it) }
           } catch (e: Exception) {
             errWithStackTrace(e)
           }
         },
         {
           try {
-            servers.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { servers.delete(it) }
           } catch (e: Exception) {
             errWithStackTrace(e)
           }
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    servers.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(value: Server) {
@@ -110,8 +113,10 @@ class GUIOptionServers(owner: GUIMain) : GUIOptionComponentBase<Server>(owner) {
     option_model.rowCount = 0
   }
 
-  override fun getSelectedTableContent() =
-    getTableContent(table.rowSorter.convertRowIndexToModel(table.selectedRow))
+  override fun getSelectedTableContent(): Server? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int) = values[rowIndex]
 }

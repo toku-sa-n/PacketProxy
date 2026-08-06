@@ -4,7 +4,9 @@ import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import java.nio.charset.StandardCharsets
-import java.text.SimpleDateFormat
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import packetproxy.model.Configs
 import packetproxy.model.Packet
 import packetproxy.model.Packets
@@ -13,7 +15,7 @@ import packetproxy.util.log
 class PacketDetailTool(private val packets: Packets, configs: Configs) :
   AuthenticatedMCPTool(configs) {
 
-  private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  private val dateFormat = DateTimeFormatter.ISO_OFFSET_DATE_TIME
   private val gson = Gson()
 
   override fun getName(): String = "get_packet_detail"
@@ -67,18 +69,8 @@ class PacketDetailTool(private val packets: Packets, configs: Configs) :
 
       var data = buildPacketDetail(packet, includeBody, includePair)
 
-      var content = JsonObject()
-      content.addProperty("type", "text")
-      content.addProperty("text", gson.toJson(data))
-
-      var contentArray = JsonArray()
-      contentArray.add(content)
-
-      var result = JsonObject()
-      result.add("content", contentArray)
-
       log("PacketDetailTool returning packet $packetId")
-      return result
+      return data
     } catch (e: Exception) {
       log("PacketDetailTool error: " + e.message)
       throw Exception("Failed to get packet detail: " + e.message)
@@ -185,7 +177,12 @@ class PacketDetailTool(private val packets: Packets, configs: Configs) :
     // Basic packet info
     result.addProperty("id", packet.getId())
     result.addProperty("length", packet.getDecodedData().size)
-    result.addProperty("time", dateFormat.format(packet.getDate()))
+    result.addProperty(
+      "time",
+      packet.getDate()?.let {
+        OffsetDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()).format(dateFormat)
+      } ?: "",
+    )
     result.addProperty("resend", packet.getResend())
     result.addProperty("modified", packet.getModified())
     result.addProperty("type", packet.getContentType())

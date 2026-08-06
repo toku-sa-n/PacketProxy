@@ -139,10 +139,6 @@ open class ListenPorts(private val database: Database) : PropertyChangeListener 
       .eq("enabled", true)
       .query()
 
-  @Throws(Exception::class)
-  fun queryAllOfHttpProxis(): List<ListenPort> =
-    dao.queryBuilder().where().eq("type", ListenPort.TYPE.HTTP_PROXY).query()
-
   fun addPropertyChangeListener(listener: PropertyChangeListener) {
     changes.addPropertyChangeListener(listener)
   }
@@ -167,12 +163,8 @@ open class ListenPorts(private val database: Database) : PropertyChangeListener 
     val message = evt.newValue as DatabaseMessage
     try {
       when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
+        DatabaseMessage.PAUSE,
+        DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(ListenPort::class.java, this)

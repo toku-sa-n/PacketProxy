@@ -22,7 +22,7 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
             table.setRowSelectionInterval(row, row)
             if (column != 0) return
             val enabled = table.getValueAt(row, 0) as Boolean
-            val extension = getSelectedTableContent()
+            val extension = getSelectedTableContent() ?: return
             extension.setEnabled(!enabled)
             val updated = extensions.update(extension)
             if (!enabled && updated != null) owner.getGuiExtensions().addExtension(updated)
@@ -46,7 +46,7 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
         },
         {
           try {
-            val old = getSelectedTableContent()
+            val old = getSelectedTableContent() ?: return@createComponent
             val updated = GUIOptionExtensionsDialog(owner).showDialog(old)
             if (
               updated != null &&
@@ -62,7 +62,7 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
         },
         {
           try {
-            val extension = getSelectedTableContent()
+            val extension = getSelectedTableContent() ?: return@createComponent
             owner.getGuiExtensions().removeExtension(extension)
             extensions.delete(extension)
           } catch (e: Exception) {
@@ -71,6 +71,10 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    extensions.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(value: Extension) {
@@ -96,7 +100,10 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
     extensionList.clear()
   }
 
-  override fun getSelectedTableContent() = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): Extension? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int) = extensionList[rowIndex]
 }

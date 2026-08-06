@@ -1,10 +1,12 @@
 package packetproxy.extensions.mcp.tools
 
-import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import java.text.SimpleDateFormat
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Comparator
+import java.util.Date
 import javax.swing.RowFilter
 import javax.swing.table.DefaultTableModel
 import packetproxy.gui.FilterTextParser
@@ -15,8 +17,7 @@ import packetproxy.util.log
 
 class HistoryTool(private val packets: Packets, configs: Configs) : AuthenticatedMCPTool(configs) {
 
-  private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-  private val gson = Gson()
+  private val dateFormat = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
   override fun getName(): String = "get_history"
 
@@ -73,7 +74,6 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
     var filter = if (arguments.has("filter")) arguments.get("filter").getAsString() else null
     var order = if (arguments.has("order")) arguments.get("order").getAsString() else "id desc"
 
-    // Validate parameters
     if (limit < 1 || limit > 1000) {
       throw Exception("Limit must be between 1 and 1000")
     }
@@ -97,31 +97,31 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
         )
       }
 
-      var allPackets = ArrayList<Packet>()
-      packets.forEachPage(100L) { page -> allPackets.addAll(page) }
-      var filteredPackets: List<Packet> = allPackets
+      val rowFilter =
+        if (!normalizedFilter.isNullOrEmpty()) {
+          FilterTextParser.parse(normalizedFilter, DefaultTableModel(), this.packets)
+        } else {
+          null
+        }
 
-      // Apply filter if provided
-      if (filter != null && !filter.trim().isEmpty()) {
-        filteredPackets = applyFilter(allPackets, filter)
+      // Stream pages instead of loading all packets into memory at once.
+      val matched = ArrayList<Packet>()
+      packets.forEachPage(100L) { page ->
+        for (packet in page) {
+          if (rowFilter == null || matchesFilter(rowFilter, packet)) {
+            matched.add(packet)
+          }
+        }
       }
 
-      // Apply ordering
-      filteredPackets = applyOrdering(filteredPackets, order)
-
+      var filteredPackets: List<Packet> = applyOrdering(matched, order)
       var totalCount = filteredPackets.size
       var startIndex = minOf(offset, totalCount)
       var endIndex = minOf(startIndex + limit, totalCount)
       val pagedPackets = filteredPackets.subList(startIndex, endIndex)
       val result = buildPagedResult(pagedPackets, totalCount, offset, limit, order, filter)
 
-      log(
-        "HistoryTool returning " +
-          pagedPackets.size +
-          " packets (filtered from " +
-          allPackets.size +
-          " total)"
-      )
+      log("HistoryTool returning " + pagedPackets.size + " packets (matched $totalCount)")
       return result
     } catch (e: Exception) {
       log("HistoryTool error: " + e.message)
@@ -129,29 +129,10 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
     }
   }
 
-  @Throws(Exception::class)
-  private fun applyFilter(packets: List<Packet>, filterText: String): List<Packet> {
-    var filtered = ArrayList<Packet>()
-
-    try {
-      // Parse the filter using FilterTextParser
-      var rowFilter = FilterTextParser.parse(filterText, DefaultTableModel(), this.packets)
-
-      for (packet in packets) {
-        // Create a mock table entry to test the filter
-        var rowData = createRowDataFromPacket(packet)
-        var entry = MockTableEntry(rowData)
-
-        if (rowFilter.include(entry)) {
-          filtered.add(packet)
-        }
-      }
-    } catch (e: Exception) {
-      log("Filter parsing error: " + e.message)
-      throw Exception("Invalid filter syntax: " + e.message)
-    }
-
-    return filtered
+  private fun matchesFilter(rowFilter: RowFilter<*, *>, packet: Packet): Boolean {
+    var rowData = createRowDataFromPacket(packet)
+    var entry = MockTableEntry(rowData)
+    return rowFilter.include(entry as RowFilter.Entry<Nothing, Nothing>)
   }
 
   @Throws(Exception::class)
@@ -222,9 +203,7 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
           return requestLine[0]
         }
       }
-    } catch (e: Exception) {
-      // Ignore
-    }
+    } catch (_: Exception) {}
     return null
   }
 
@@ -238,9 +217,7 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
           return requestLine[1]
         }
       }
-    } catch (e: Exception) {
-      // Ignore
-    }
+    } catch (_: Exception) {}
     return null
   }
 
@@ -254,46 +231,42 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
           return requestLine[1].toInt()
         }
       }
-    } catch (e: Exception) {
-      // Ignore
-    }
+    } catch (_: Exception) {}
     return null
   }
 
   private fun createRowDataFromPacket(packet: Packet): Array<Any?> {
-    var rowData = arrayOfNulls<Any>(17) // Based on columnMapper size
+    var rowData = arrayOfNulls<Any>(17)
 
-    rowData[0] = packet.getId() // id
+    rowData[0] = packet.getId()
 
-    // Extract request and response data
     try {
       var request = String(packet.getDecodedData(), Charsets.UTF_8)
-      rowData[1] = request // request
-      rowData[2] = "" // response (not available in current packet data)
-    } catch (e: Exception) {
+      rowData[1] = request
+      rowData[2] = ""
+    } catch (_: Exception) {
       rowData[1] = ""
       rowData[2] = ""
     }
 
-    rowData[3] = packet.getDecodedData().size // length
-    rowData[4] = packet.getClientIP() // client_ip
-    rowData[5] = packet.getClientPort() // client_port
-    rowData[6] = packet.getServerIP() // server_ip
-    rowData[7] = packet.getServerPort() // server_port
-    rowData[8] = packet.getDate() // time
-    rowData[9] = packet.getResend() // resend
-    rowData[10] = packet.getModified() // modified
-    rowData[11] = packet.getContentType() // type
-    rowData[12] = packet.getEncoder() // encode
-    rowData[13] = "" // alpn (not available)
-    rowData[14] = packet.getGroup() // group
-    rowData[15] = rowData[1] as String // full_text (same as request)
-    rowData[16] = (rowData[1] as String).lowercase() // full_text_i (lowercase)
+    rowData[3] = packet.getDecodedData().size
+    rowData[4] = packet.getClientIP()
+    rowData[5] = packet.getClientPort()
+    rowData[6] = packet.getServerIP()
+    rowData[7] = packet.getServerPort()
+    rowData[8] = packet.getDate()
+    rowData[9] = packet.getResend()
+    rowData[10] = packet.getModified()
+    rowData[11] = packet.getContentType()
+    rowData[12] = packet.getEncoder()
+    rowData[13] = ""
+    rowData[14] = packet.getGroup()
+    rowData[15] = rowData[1] as String
+    rowData[16] = (rowData[1] as String).lowercase()
 
     return rowData
   }
 
-  // Mock table entry class for filter testing
   private class MockTableEntry(private val data: Array<Any?>) : RowFilter.Entry<Any, Any>() {
     override fun getModel(): Any? = null
 
@@ -309,6 +282,11 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
     override fun getIdentifier(): Any? = null
   }
 
+  private fun formatDate(date: Date?): String {
+    if (date == null) return ""
+    return OffsetDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).format(dateFormat)
+  }
+
   private fun convertPacketToJson(packet: Packet): JsonObject {
     var packetJson = JsonObject()
 
@@ -318,14 +296,13 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
     packetJson.addProperty("client_port", packet.getClientPort())
     packetJson.addProperty("server_ip", packet.getServerIP())
     packetJson.addProperty("server_port", packet.getServerPort())
-    packetJson.addProperty("time", dateFormat.format(packet.getDate()))
+    packetJson.addProperty("time", formatDate(packet.getDate()))
     packetJson.addProperty("resend", packet.getResend())
     packetJson.addProperty("modified", packet.getModified())
     packetJson.addProperty("type", packet.getContentType())
     packetJson.addProperty("encode", packet.getEncoder())
     packetJson.addProperty("group", packet.getGroup())
 
-    // HTTPの場合、methodとurlとstatusを抽出
     try {
       var request = String(packet.getDecodedData(), Charsets.UTF_8)
       var lines = request.split("\n")
@@ -336,19 +313,13 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
           packetJson.addProperty("url", requestLine[1])
         }
 
-        // レスポンスの場合、ステータスコードを抽出
         if (requestLine.size >= 3 && requestLine[0].startsWith("HTTP/")) {
           try {
-            var status = requestLine[1].toInt()
-            packetJson.addProperty("status", status)
-          } catch (e: NumberFormatException) {
-            // ステータスコードが数値でない場合は無視
-          }
+            packetJson.addProperty("status", requestLine[1].toInt())
+          } catch (_: NumberFormatException) {}
         }
       }
-    } catch (e: Exception) {
-      // HTTP以外のパケットの場合は無視
-    }
+    } catch (_: Exception) {}
 
     return packetJson
   }
@@ -382,16 +353,6 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
       data.addProperty("filter_applied", filter)
     }
     data.addProperty("order_applied", order)
-
-    var content = JsonObject()
-    content.addProperty("type", "text")
-    content.addProperty("text", gson.toJson(data))
-
-    var contentArray = JsonArray()
-    contentArray.add(content)
-
-    var result = JsonObject()
-    result.add("content", contentArray)
-    return result
+    return data
   }
 }

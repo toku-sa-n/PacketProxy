@@ -32,7 +32,7 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
         },
         {
           try {
-            val old = getSelectedTableContent()
+            val old = getSelectedTableContent() ?: return@createComponent
             GUIOptionInterceptDialog(owner).showDialog(old)?.let {
               it.setId(old.getId())
               interceptOptions.update(it)
@@ -43,13 +43,17 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
         },
         {
           try {
-            interceptOptions.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { interceptOptions.delete(it) }
           } catch (e: Exception) {
             errWithStackTrace(e)
           }
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    interceptOptions.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(value: InterceptOption) {
@@ -84,7 +88,10 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
     tableList.clear()
   }
 
-  override fun getSelectedTableContent() = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): InterceptOption? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int) = tableList[rowIndex]
 }

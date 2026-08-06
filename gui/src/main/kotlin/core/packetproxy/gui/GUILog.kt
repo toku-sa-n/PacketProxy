@@ -32,6 +32,8 @@ class GUILog {
   private val scrollPane: JScrollPane
   private val mainPanel: JPanel
   private val thread_lock = Any()
+  private val structuredEntries = ArrayDeque<packetproxy.util.StructuredLogEntry>()
+  private val maxStructuredEntries = 5000
 
   private val timestampAttrs =
     SimpleAttributeSet().apply { StyleConstants.setForeground(this, Color.GRAY) }
@@ -71,10 +73,21 @@ class GUILog {
     }
   }
 
+  fun getStructuredEntries(): List<packetproxy.util.StructuredLogEntry> {
+    synchronized(thread_lock) {
+      return structuredEntries.toList()
+    }
+  }
+
   private fun appendStyled(s: String?, isError: Boolean) {
     if (s == null) return
     try {
       synchronized(thread_lock) {
+        val level = if (isError) "error" else "info"
+        structuredEntries.addLast(packetproxy.util.StructuredLogEntry(s, level))
+        while (structuredEntries.size > maxStructuredEntries) {
+          structuredEntries.removeFirst()
+        }
         val doc: StyledDocument = text.styledDocument
         val (timestamp, message) = LogLineStyle.splitLogLine(s)
         if (timestamp.isNotEmpty()) {

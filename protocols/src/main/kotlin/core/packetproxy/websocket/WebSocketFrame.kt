@@ -17,7 +17,7 @@ package packetproxy.websocket
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import org.apache.commons.codec.binary.Hex
+import java.security.SecureRandom
 
 class WebSocketFrame
 private constructor(val opcode: OpCode?, val payload: ByteArray, val maskEnabled: Boolean) {
@@ -28,17 +28,17 @@ private constructor(val opcode: OpCode?, val payload: ByteArray, val maskEnabled
     val maskFlg = if (maskEnabled) 0x80.toByte() else 0x00.toByte()
     when {
       payload.size < 126 -> buffer.put((payload.size or maskFlg.toInt()).toByte())
-      payload.size < 32768 -> {
+      payload.size < 65536 -> {
         buffer.put((126 or maskFlg.toInt()).toByte())
         buffer.putShort(payload.size.toShort())
       }
       else -> {
         buffer.put((127 or maskFlg.toInt()).toByte())
-        buffer.putInt(payload.size)
+        buffer.putLong(payload.size.toLong())
       }
     }
     if (maskEnabled) {
-      val mask = Hex.decodeHex("0A0A0A0A")
+      val mask = ByteArray(4).also { SECURE_RANDOM.nextBytes(it) }
       buffer.put(mask)
       buffer.put(encodeMask(payload, mask))
     } else {
@@ -72,24 +72,26 @@ private constructor(val opcode: OpCode?, val payload: ByteArray, val maskEnabled
               return -1
             }
             length += 2
-            length +=
+            val payloadLen =
               ((data[index + 2].toInt() and 0xff) shl 8) + (data[index + 3].toInt() and 0xff)
+            length += payloadLen
           }
           else -> {
-            if (
-              empty(data, index + 2) ||
-                empty(data, index + 3) ||
-                empty(data, index + 4) ||
-                empty(data, index + 5)
-            ) {
+            // RFC6455: length type 127 uses 8-byte extended payload length
+            for (i in 2..9) {
+              if (empty(data, index + i)) {
+                return -1
+              }
+            }
+            length += 8
+            var payloadLen = 0L
+            for (i in 0 until 8) {
+              payloadLen = (payloadLen shl 8) or (data[index + 2 + i].toLong() and 0xffL)
+            }
+            if (payloadLen > Int.MAX_VALUE.toLong()) {
               return -1
             }
-            length += 4
-            length +=
-              ((data[index + 2].toInt() and 0xff) shl 24) +
-                ((data[index + 3].toInt() and 0xff) shl 16) +
-                ((data[index + 4].toInt() and 0xff) shl 8) +
-                (data[index + 5].toInt() and 0xff)
+            length += payloadLen.toInt()
           }
         }
         if (empty(data, index + length - 1)) {
@@ -122,13 +124,17 @@ private constructor(val opcode: OpCode?, val payload: ByteArray, val maskEnabled
         maskFlg = maskAndLength.toInt() and 0x80 != 0
         val length =
           when (val lengthType = maskAndLength.toInt() and 0x7f) {
-            in 0 until 126 -> lengthType
-            126 -> buffer.short.toInt()
-            else -> buffer.int
+            in 0 until 126 -> lengthType.toLong()
+            126 -> (buffer.short.toInt() and 0xffff).toLong()
+            else -> buffer.long
           }
+        if (length < 0 || length > Int.MAX_VALUE.toLong() || length > buffer.remaining()) {
+          throw Exception("Invalid WebSocket payload length: $length")
+        }
+        val payloadLen = length.toInt()
         val mask = if (maskFlg) ByteArray(4).also(buffer::get) else null
-        if (length > 0) {
-          val payload = decodeMask(ByteArray(length).also(buffer::get), mask)
+        if (payloadLen > 0) {
+          val payload = decodeMask(ByteArray(payloadLen).also(buffer::get), mask)
           payloads.write(payload)
         }
       } while (!finFlg)
@@ -143,6 +149,8 @@ private constructor(val opcode: OpCode?, val payload: ByteArray, val maskEnabled
     @JvmStatic
     fun of(opcode: OpCode?, payload: ByteArray, maskEnabled: Boolean): WebSocketFrame =
       WebSocketFrame(opcode, payload, maskEnabled)
+
+    private val SECURE_RANDOM = SecureRandom()
 
     private fun empty(data: ByteArray, index: Int): Boolean = index >= data.size
 

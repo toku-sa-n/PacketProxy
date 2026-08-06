@@ -10,8 +10,8 @@ import packetproxy.common.Range
 import packetproxy.common.i18nString
 import packetproxy.model.PropertyChangeEventType.SELECTED_INDEX
 import packetproxy.util.SearchBox
-import packetproxy.util.err
 import packetproxy.util.errWithStackTrace
+import packetproxy.util.log
 
 class TabSet(private val owner: GUIMain, search: Boolean, copy: Boolean) {
   private val changes = PropertyChangeSupport(this)
@@ -74,7 +74,7 @@ class TabSet(private val owner: GUIMain, search: Boolean, copy: Boolean) {
       1 -> binaryPanel.getData()
       2 -> jsonPanel.getData()
       else -> {
-        err("Not effective index, though this returns raw_panel data in such case.")
+        log("Not effective index, though this returns raw_panel data in such case.")
         rawPanel.getData()
       }
     }
@@ -121,7 +121,7 @@ class TabSet(private val owner: GUIMain, search: Boolean, copy: Boolean) {
           jsonPanel.setData(
             owner.coreServices.packetProxyUtility.prettyFormatJSONInRawData(currentData)
           )
-        else -> err("Not effective index, though this returns raw_panel data in such case.")
+        else -> log("Not effective index, though this returns raw_panel data in such case.")
       }
       val currentSearchBox = searchBox ?: return
       when (selectedIndex) {
@@ -134,7 +134,7 @@ class TabSet(private val owner: GUIMain, search: Boolean, copy: Boolean) {
           currentSearchBox.isVisible = true
           currentSearchBox.setBaseText(jsonPanel.getTextPane(), emphasis ?: Range.of(0, 0))
         }
-        else -> err("Not effective index, though this returns raw_panel data in such case.")
+        else -> log("Not effective index, though this returns raw_panel data in such case.")
       }
       currentSearchBox.textChanged()
     } catch (exception: Exception) {

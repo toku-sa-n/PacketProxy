@@ -21,7 +21,6 @@ import org.apache.commons.codec.binary.Hex
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import packetproxy.util.Logging
 
 /* https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-16 */
 class VariableLengthIntegerTest {
@@ -84,22 +83,28 @@ class VariableLengthIntegerTest {
 
   @Test
   fun parseExampleBytes() {
-    Logging.log(VariableLengthInteger.parse(Hex.decodeHex("80200000".toCharArray())))
+    assertEquals(
+      0x200000,
+      VariableLengthInteger.parse(Hex.decodeHex("80200000".toCharArray())).value,
+    )
     /* 2MB */
-    Logging.log(VariableLengthInteger.parse(Hex.decodeHex("80100000".toCharArray())))
+    assertEquals(
+      0x100000,
+      VariableLengthInteger.parse(Hex.decodeHex("80100000".toCharArray())).value,
+    )
     /* 1MB */
-    Logging.log(VariableLengthInteger.parse(Hex.decodeHex("4201".toCharArray())))
+    assertEquals(513, VariableLengthInteger.parse(Hex.decodeHex("4201".toCharArray())).value)
     /* 513 */
-    Logging.log(VariableLengthInteger.parse(Hex.decodeHex("4077".toCharArray())))
+    assertEquals(119, VariableLengthInteger.parse(Hex.decodeHex("4077".toCharArray())).value)
     /* 119 */
-    Logging.log(VariableLengthInteger.parse(Hex.decodeHex("58cb".toCharArray())))
+    assertEquals(6347, VariableLengthInteger.parse(Hex.decodeHex("58cb".toCharArray())).value)
     /* 6347 */
-    Logging.log(
-      "%x\n",
+    assertEquals(
+      0x3684f228323451e8L,
       VariableLengthInteger.parse(Hex.decodeHex("f684f228323451e8".toCharArray())).value,
     )
-    /* 3684f228323451e8 */
-    Logging.log("%x\n", VariableLengthInteger.parse(Hex.decodeHex("00".toCharArray())).value)
+    /* 3684f228323451e8 — top bits encode length */
+    assertEquals(0, VariableLengthInteger.parse(Hex.decodeHex("00".toCharArray())).value)
     /* 0 */
   }
 }

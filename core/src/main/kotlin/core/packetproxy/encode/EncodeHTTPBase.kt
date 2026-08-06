@@ -16,6 +16,7 @@
 package packetproxy.encode
 
 import java.io.InputStream
+import java.util.concurrent.ConcurrentHashMap
 import packetproxy.common.UniqueID
 import packetproxy.http.Http
 import packetproxy.http2.FramesBase
@@ -34,7 +35,10 @@ abstract class EncodeHTTPBase : Encoder {
   private var httpVersion: HTTPVersion
   private var http2: FramesBase? = null
   private var http3: Http3? = null
+  /** Fallback for HTTP/1 (single outstanding request). */
   private var requestMethod: String = ""
+  /** Per-stream method for HTTP/2 and HTTP/3 multiplexed requests. */
+  private val requestMethodsByStream = ConcurrentHashMap<String, String>()
 
   constructor() : super("http/1.1") {
     httpVersion = HTTPVersion.HTTP1
@@ -80,7 +84,7 @@ abstract class EncodeHTTPBase : Encoder {
 
   @Throws(Exception::class)
   override fun checkResponseDelimiter(data: ByteArray): Int {
-    if (requestMethod == "HEAD") return data.size
+    if (requestMethodFor(data) == "HEAD") return data.size
     return checkDelimiter(data)
   }
 
@@ -155,7 +159,7 @@ abstract class EncodeHTTPBase : Encoder {
   @Throws(Exception::class)
   override fun encodeClientRequest(input_data: ByteArray): ByteArray {
     val http = Http.create(input_data)
-    requestMethod = http.method
+    rememberRequestMethod(http)
     val encodedHttp = encodeClientRequestHttp(http)
     var encodedData = encodedHttp.toByteArray()
     if (httpVersion == HTTPVersion.HTTP2) {
@@ -175,7 +179,7 @@ abstract class EncodeHTTPBase : Encoder {
       data = http3!!.decodeServerResponse(data)
     }
     val http =
-      if (requestMethod == "HEAD") {
+      if (requestMethodFor(data) == "HEAD") {
         Http.createWithoutTouchingContentLength(data)
       } else {
         Http.create(data)
@@ -187,7 +191,7 @@ abstract class EncodeHTTPBase : Encoder {
   @Throws(Exception::class)
   override fun encodeServerResponse(input_data: ByteArray): ByteArray {
     val http =
-      if (requestMethod == "HEAD") {
+      if (requestMethodFor(input_data) == "HEAD") {
         Http.createWithoutTouchingContentLength(input_data)
       } else {
         Http.create(input_data)
@@ -302,6 +306,36 @@ abstract class EncodeHTTPBase : Encoder {
       HTTPVersion.HTTP3 -> http3!!.setGroupId(packet)
       else -> super.setGroupId(packet)
     }
+  }
+
+  private fun rememberRequestMethod(http: Http) {
+    requestMethod = http.method
+    val key = streamKey(http)
+    if (key.isNotEmpty()) {
+      requestMethodsByStream[key] = http.method
+    }
+  }
+
+  private fun requestMethodFor(data: ByteArray): String {
+    return try {
+      val http = Http.createWithoutTouchingContentLength(data)
+      val key = streamKey(http)
+      if (key.isNotEmpty()) {
+        requestMethodsByStream[key] ?: requestMethod
+      } else {
+        requestMethod
+      }
+    } catch (_: Exception) {
+      requestMethod
+    }
+  }
+
+  private fun streamKey(http: Http): String {
+    val h2 = http.getFirstHeader("X-PacketProxy-HTTP2-Stream-Id")
+    if (h2.isNotEmpty()) return "h2:$h2"
+    val h3 = http.getFirstHeader("x-packetproxy-http3-stream-id")
+    if (h3.isNotEmpty()) return "h3:$h3"
+    return ""
   }
 
   @Throws(Exception::class) protected abstract fun decodeServerResponseHttp(inputHttp: Http): Http

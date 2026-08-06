@@ -333,14 +333,14 @@ class GUIHistoryContextMenuFactory {
               JOptionPane.showMessageDialog(owner, i18nString("Saved to %s!", file.path))
             } catch (ex: Exception) {
               errWithStackTrace(ex)
-              JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+              JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
             }
           }
 
           override fun onCanceled() {}
 
           override fun onError() {
-            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+            JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
           }
         }
       )

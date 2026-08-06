@@ -76,6 +76,10 @@ class GUIIntercept(private val owner: GUIMain) : PropertyChangeListener {
       }
 
   override fun propertyChange(event: PropertyChangeEvent) {
+    SwingUtilities.invokeLater { updateUiFromModel() }
+  }
+
+  private fun updateUiFromModel() {
     try {
       enabled.text =
         i18nString(if (model.isInterceptEnabled()) "intercept is on" else "intercept is off")
@@ -91,5 +95,9 @@ class GUIIntercept(private val owner: GUIMain) : PropertyChangeListener {
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
+  }
+
+  fun dispose() {
+    model.removePropertyChangeListener(this)
   }
 }

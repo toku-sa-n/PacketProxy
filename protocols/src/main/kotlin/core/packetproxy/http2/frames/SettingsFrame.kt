@@ -42,16 +42,19 @@ open class SettingsFrame : Frame {
 
   @Throws(Exception::class)
   private fun parsePayload() {
-    val bb = ByteBuffer.allocate(4096)
+    if (payload.isEmpty()) {
+      return
+    }
+    val bb = ByteBuffer.allocate(payload.size)
     bb.put(payload)
     bb.flip()
     val settingsFrameTypes = SettingsFrameType.entries.toTypedArray()
     var length = 0
-    while (length < bb.limit()) {
+    while (length + 6 <= bb.limit()) {
       val l = bb.getShort()
+      val data = bb.getInt()
       if (l in 0x00 until settingsFrameTypes.size) {
         val type = settingsFrameTypes[l.toInt()]
-        val data = bb.getInt()
         values[type] = data
       }
       length += 6
@@ -69,6 +72,6 @@ open class SettingsFrame : Frame {
 
   companion object {
     @JvmField val TYPE: Type = Type.SETTINGS
-    private val defaultValues = intArrayOf(0, 4096, 1, 10, 65535, 16884, 65536)
+    private val defaultValues = intArrayOf(0, 4096, 1, 10, 65535, 16384, 65536)
   }
 }

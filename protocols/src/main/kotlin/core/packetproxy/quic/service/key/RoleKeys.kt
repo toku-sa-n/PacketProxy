@@ -53,7 +53,10 @@ class RoleKeys(val role: Constants.Role) {
     discardedInitialKeyFlag = true
   }
 
-  fun discardHandshakeKey() {}
+  fun discardHandshakeKey() {
+    optionalHandshakeKey = Optional.empty()
+    discardedHandshakeKeyFlag = true
+  }
 
   fun discardedInitialKey() = discardedInitialKeyFlag
 

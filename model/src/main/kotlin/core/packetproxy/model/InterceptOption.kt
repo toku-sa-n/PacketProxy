@@ -26,7 +26,7 @@ import packetproxy.common.Utils
 class InterceptOption {
   enum class Type {
     REQUEST
-    /* TODO HOST, URL,*/
+    /* HOST / URL intercept types are unsupported */
   }
 
   enum class Direction {
@@ -90,7 +90,7 @@ class InterceptOption {
     this.id = id
   }
 
-  fun isEnabled(): Boolean = this.enabled!!
+  fun isEnabled(): Boolean = this.enabled ?: false
 
   fun setEnabled() {
     this.enabled = true
@@ -184,7 +184,7 @@ class InterceptOption {
     if (data == null) {
       return false
     }
-    // TODO typeがREQUEST以外の場合に該当の箇所を取る
+    // Type values other than REQUEST are unsupported; match against full packet bytes.
     val result =
       if (method == Method.SIMPLE) {
         matchText(data)
@@ -217,7 +217,11 @@ class InterceptOption {
 
   override fun hashCode(): Int = this.getId()
 
-  fun equals(obj: InterceptOption): Boolean = if (this.getId() == obj.getId()) true else false
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is InterceptOption) return false
+    return this.getId() == other.getId()
+  }
 
   companion object {
     const val ALL_SERVER = -1

@@ -19,7 +19,6 @@ import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.Ansi.Color.GREEN
 import org.jline.builtins.Completers.TreeCompleter
 import org.jline.builtins.Completers.TreeCompleter.node
-import org.jline.reader.impl.completer.StringsCompleter
 import packetproxy.gulp.CommandContext
 import packetproxy.gulp.ParsedCommand
 
@@ -30,10 +29,7 @@ class EncodeModeHandler : CLIModeHandler() {
   }
 
   override fun extensionNodes(): List<TreeCompleter.Node> {
-    return listOf(
-      node("status"),
-      node(StringsCompleter("list", "set"), node("server"), node("proxy"), node("encoder")),
-    )
+    return listOf(node("status"))
   }
 
   override fun getOppositeMode(): CLIModeHandler {

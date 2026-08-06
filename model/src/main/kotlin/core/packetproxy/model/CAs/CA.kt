@@ -49,13 +49,12 @@ abstract class CA {
 
   private var caRootHolder: X509CertificateHolder? = null
   private var templateIssuer: X500Name? = null
-  private var templateFrom: Date? = null
-  private var templateTo: Date? = null
   private var templatePubKey: SubjectPublicKeyInfo? = null
 
   private val aliasRoot = "root"
   private val aliasServer = "newalias"
   private val password = "testtest".toCharArray()
+  private val secureRandom = java.security.SecureRandom()
 
   protected constructor()
 
@@ -93,26 +92,29 @@ abstract class CA {
     val caRootCert = keyStoreCA!!.getCertificate(aliasRoot)
     caRootHolder = X509CertificateHolder(caRootCert.encoded)
 
-    /* 有効期限の設定 */
-    val from = Date()
-    val cal = Calendar.getInstance()
-    cal.time = from
-    cal.add(Calendar.YEAR, 1)
-    val to = cal.time
-
-    /* Templateの設定 */
+    /* Templateの設定 (validity is computed at issue time) */
     templateIssuer = caRootHolder!!.subject
-    templateFrom = from
-    templateTo = to
     templatePubKey = SubjectPublicKeyInfo.getInstance(keyPair!!.public.encoded)
   }
 
   @Throws(Exception::class)
   open fun createKeyStore(commonName: String, domainNames: Array<String>): KeyStore {
-    /* シリアルナンバーの設定 */
-    val digest = MessageDigest.getInstance("MD5")
-    val hash = digest.digest(commonName.toByteArray())
-    val templateSerial = BigInteger(hash)
+    /* シリアルナンバーの設定 — positive BigInteger from hash or 128-bit SecureRandom */
+    val digest = MessageDigest.getInstance("SHA-256")
+    val hash = digest.digest(commonName.toByteArray(Charsets.UTF_8))
+    var templateSerial = BigInteger(1, hash.copyOf(16))
+    if (templateSerial.signum() == 0) {
+      val randomBytes = ByteArray(16)
+      secureRandom.nextBytes(randomBytes)
+      templateSerial = BigInteger(1, randomBytes)
+    }
+
+    /* 有効期限は発行時に計算 */
+    val from = Date()
+    val cal = Calendar.getInstance()
+    cal.time = from
+    cal.add(Calendar.YEAR, 1)
+    val to = cal.time
 
     /* Subjectの設定 */
     val templateSubject = X500Name(createSubject(commonName))
@@ -122,8 +124,8 @@ abstract class CA {
       X509v3CertificateBuilder(
         templateIssuer,
         templateSerial,
-        templateFrom,
-        templateTo,
+        from,
+        to,
         templateSubject,
         templatePubKey,
       )
@@ -164,10 +166,37 @@ abstract class CA {
   protected open fun createSubject(commonName: String): String =
     String.format(
       "C=PacketProxy, ST=PacketProxy, L=PacketProxy, O=PacketProxy, OU=PacketProxy, CN=%s",
-      commonName,
+      escapeX500Value(commonName),
     )
 
   protected open fun createCNforSAN(commonName: String): String = commonName
+
+  /** Escape special characters for RFC 4514 / X500Name attribute values. */
+  protected fun escapeX500Value(value: String): String {
+    if (value.isEmpty()) return value
+    val sb = StringBuilder(value.length + 8)
+    value.forEachIndexed { index, c ->
+      when {
+        c == '\\' ||
+          c == ',' ||
+          c == '+' ||
+          c == '"' ||
+          c == '<' ||
+          c == '>' ||
+          c == ';' ||
+          c == '=' ||
+          c == '#' && index == 0 ||
+          c == ' ' && (index == 0 || index == value.lastIndex) -> {
+          sb.append('\\').append(c)
+        }
+        c.code < 0x20 -> {
+          sb.append('\\').append("%02X".format(c.code))
+        }
+        else -> sb.append(c)
+      }
+    }
+    return sb.toString()
+  }
 
   @Throws(Exception::class)
   protected open fun createSigner(): ContentSigner {

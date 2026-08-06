@@ -12,6 +12,7 @@ import java.io.PrintWriter
 import packetproxy.CoreServices
 import packetproxy.extensions.mcp.tools.ToolRegistry
 import packetproxy.gui.GUIResender
+import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
 class MCPServer(
@@ -48,7 +49,7 @@ class MCPServer(
       } catch (e: Exception) {
         logError("Error processing request: " + e.message)
         log("MCP Server error: " + e.message)
-        e.printStackTrace()
+        errWithStackTrace(e)
       }
     }
   }

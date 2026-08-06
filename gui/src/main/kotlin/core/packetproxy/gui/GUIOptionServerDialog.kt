@@ -137,7 +137,10 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
 
   private fun save() {
     if (ip.text.any { it.code !in 0x21..0x7e }) {
-      JOptionPane.showMessageDialog(null, i18nString("The ServerName contains invalid characters."))
+      JOptionPane.showMessageDialog(
+        owner,
+        i18nString("The ServerName contains invalid characters."),
+      )
       return
     }
     result =

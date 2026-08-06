@@ -4,7 +4,6 @@ import org.apache.commons.codec.binary.Hex
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import packetproxy.util.Logging
 
 class QuicMessagesTest {
 
@@ -43,7 +42,12 @@ class QuicMessagesTest {
 
   @Test
   fun forEachが動作すること() {
-    this.msgs.forEach { msg -> Logging.log(msg) }
+    val collected = ArrayList<QuicMessage>()
+    this.msgs.forEach { msg -> collected.add(msg) }
+    assertThat(collected).hasSize(3)
+    assertThat(collected[0]).isEqualTo(QuicMessage.of(StreamId.of(1), byteArrayOf(0x1)))
+    assertThat(collected[1]).isEqualTo(QuicMessage.of(StreamId.of(2), byteArrayOf(0x2)))
+    assertThat(collected[2]).isEqualTo(QuicMessage.of(StreamId.of(3), byteArrayOf(0x3)))
   }
 
   @Test

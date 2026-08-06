@@ -5,12 +5,11 @@ import packetproxy.model.ConfigString
 import packetproxy.util.log
 
 /** 認証機能付きMCPツールの基底クラス */
-abstract class AuthenticatedMCPTool(private val configs: packetproxy.model.Configs) : MCPTool {
+abstract class AuthenticatedMCPTool(protected val configs: packetproxy.model.Configs) : MCPTool {
 
   /** AccessTokenの検証を行う */
   @Throws(Exception::class)
   protected fun validateAccessToken(arguments: JsonObject) {
-    // MCP clientから渡されたAccessTokenを取得
     if (!arguments.has("access_token")) {
       throw Exception(
         "access_token parameter is required. Please provide your PacketProxy access token from Settings."
@@ -18,19 +17,12 @@ abstract class AuthenticatedMCPTool(private val configs: packetproxy.model.Confi
     }
 
     var providedToken: String? = arguments.get("access_token").getAsString()
-    if (providedToken == null) {
+    if (providedToken == null || providedToken.trim().isEmpty()) {
       throw Exception(
-        "access_token parameter is required. Please provide your PacketProxy access token from Settings or leave empty (\"\") to use environment variable."
+        "access_token parameter is required and must match the configured PacketProxy access token. Empty tokens are not accepted."
       )
     }
 
-    // 空文字列の場合は環境変数から取得する想定なのでvalidationをスキップ
-    if (providedToken.trim().isEmpty()) {
-      log("Empty access_token provided, assuming environment variable usage")
-      return
-    }
-
-    // PacketProxy設定からAccessTokenを取得
     var configuredToken = ConfigString(configs, "SharingConfigsAccessToken").getString()
     if (configuredToken.isEmpty()) {
       throw Exception(
@@ -38,7 +30,6 @@ abstract class AuthenticatedMCPTool(private val configs: packetproxy.model.Confi
       )
     }
 
-    // トークンの照合
     if (configuredToken != providedToken) {
       log("Access token validation failed")
       throw Exception(
@@ -65,7 +56,7 @@ abstract class AuthenticatedMCPTool(private val configs: packetproxy.model.Confi
     accessTokenProp.addProperty("type", "string")
     accessTokenProp.addProperty(
       "description",
-      "Access token for authentication. Leave empty (\"\") to use environment variable (handled by scripts/mcp-http-bridge.js), or provide explicit token string",
+      "PacketProxy access token from Settings > Import/Export configs. Must match the configured token; empty values are rejected.",
     )
     schema.add("access_token", accessTokenProp)
     return schema

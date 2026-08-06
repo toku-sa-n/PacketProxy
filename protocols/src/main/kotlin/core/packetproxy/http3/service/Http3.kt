@@ -82,7 +82,7 @@ open class Http3(private val uniqueId: UniqueID) {
       encoder.putInstructions(decode)
     }
 
-    val msgs = serverStreamsWriter.readQuickMessages()
+    val msgs = serverStreamsWriter.readQuicMessages()
     return msgs.getBytes()
   }
 
@@ -224,7 +224,7 @@ open class Http3(private val uniqueId: UniqueID) {
   fun encodeClientRequest(input: ByteArray): ByteArray {
     val httpRaw = generateHttpRaw(input)
     serverStreamsWriter.write(httpRaw)
-    return serverStreamsWriter.readQuickMessages().getBytes()
+    return serverStreamsWriter.readQuicMessages().getBytes()
   }
 
   @Throws(Exception::class)
@@ -244,7 +244,7 @@ open class Http3(private val uniqueId: UniqueID) {
     val decode = serverStreamsReader.readQpackDecodeData()
     serverEncoder.putInstructions(decode)
 
-    val msgs = clientStreamsWriter.readQuickMessages()
+    val msgs = clientStreamsWriter.readQuicMessages()
     return msgs.getBytes()
   }
 
@@ -263,7 +263,7 @@ open class Http3(private val uniqueId: UniqueID) {
   fun encodeServerResponse(input: ByteArray): ByteArray {
     val httpRaw = generateHttpRaw(input)
     clientStreamsWriter.write(httpRaw)
-    return clientStreamsWriter.readQuickMessages().getBytes()
+    return clientStreamsWriter.readQuicMessages().getBytes()
   }
 
   @Throws(Exception::class)

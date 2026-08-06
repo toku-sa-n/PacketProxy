@@ -47,6 +47,7 @@ import packetproxy.http.HttpHeader
 import packetproxy.model.Extension
 import packetproxy.model.Packet
 import packetproxy.model.Packets
+import packetproxy.util.errWithStackTrace
 
 /**
  * Security Headers Extension for PacketProxy. Analyzes HTTP responses for security header
@@ -291,7 +292,7 @@ class SecurityHeadersExtension : Extension(), CoreServiceExtension {
         detailPanel!!.populateHeaders(header, results)
         detailPanel!!.populateIssues(results)
       } catch (e: Exception) {
-        e.printStackTrace()
+        errWithStackTrace(e)
       }
     }
   }
@@ -328,7 +329,7 @@ class SecurityHeadersExtension : Extension(), CoreServiceExtension {
             analyzePacket(res, req)
           }
         } catch (e: Exception) {
-          e.printStackTrace()
+          errWithStackTrace(e)
         }
       }
       .start()
@@ -421,7 +422,7 @@ class SecurityHeadersExtension : Extension(), CoreServiceExtension {
       // Update UI
       updateTable(method, url, statusCode, results, resPacket)
     } catch (e: Exception) {
-      e.printStackTrace()
+      errWithStackTrace(e)
     }
   }
 }

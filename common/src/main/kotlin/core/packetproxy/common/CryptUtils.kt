@@ -58,11 +58,11 @@ class CryptUtils {
 
     @JvmStatic
     fun decryptECBPKCS5(key: ByteArray, cipherText: ByteArray): String =
-      decryptECB("PKCS5", key, cipherText).toString()
+      String(decryptECB("PKCS5", key, cipherText), Charsets.UTF_8)
 
     @JvmStatic
     fun decryptECBISO10126(key: ByteArray, cipherText: ByteArray): String =
-      decryptECB("ISO10126", key, cipherText).toString()
+      String(decryptECB("ISO10126", key, cipherText), Charsets.UTF_8)
 
     @JvmStatic
     fun decryptCBCPKCS5(key: ByteArray, cipherText: ByteArray): String =

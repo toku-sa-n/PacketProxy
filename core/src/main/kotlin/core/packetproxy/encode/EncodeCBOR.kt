@@ -73,6 +73,6 @@ class EncodeCBOR @Throws(Exception::class) constructor(ALPN: String?) : EncodeHT
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
-    return ByteArray(0)
+    return src
   }
 }

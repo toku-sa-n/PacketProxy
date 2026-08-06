@@ -46,7 +46,10 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
   private var empty_data_end_flag = false
 
   fun appendWindowSize(appendWindowSize: Int) {
-    synchronized(queue) { windowSize += appendWindowSize }
+    synchronized(queue) {
+      windowSize =
+        (windowSize.toLong() + appendWindowSize.toLong()).coerceAtMost(MAX_WINDOW_SIZE).toInt()
+    }
   }
 
   fun pushHeadersFrame(headersFrame: Frame) {
@@ -109,7 +112,7 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
       return null
     }
 
-    var capacity = minOf(windowSize, connectionWindowSize)
+    val capacity = minOf(windowSize, connectionWindowSize)
     if (capacity == 0) {
       err(
         "[HTTP/2 FlowControl] try to send %d data, but running out of window (streamId: %d)",
@@ -117,11 +120,6 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
         this.streamId,
       )
       return null
-    }
-    if (capacity <= 3000) {
-      return null
-    } else {
-      capacity -= 3000
     }
     val dataLen = minOf(queue.size(), capacity)
     if (dataLen == 0) {
@@ -174,5 +172,6 @@ open class FlowControl(val streamId: Int, initialWindowSize: Int) {
 
   companion object {
     const val MAX_QUEUED_BYTES = 64 * 1024 * 1024
+    const val MAX_WINDOW_SIZE = 0x7FFFFFFFL
   }
 }

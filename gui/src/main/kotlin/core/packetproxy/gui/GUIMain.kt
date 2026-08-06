@@ -155,6 +155,7 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
       addWindowListener(
         object : WindowAdapter() {
           override fun windowClosing(event: WindowEvent) {
+            disposeListeners()
             System.exit(0)
           }
         }
@@ -163,6 +164,18 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
       initializeTab(Panes.INTERCEPT.ordinal)
     } catch (e: Exception) {
       errWithStackTrace(e)
+    }
+  }
+
+  private fun disposeListeners() {
+    try {
+      modelServices.database.removePropertyChangeListener(this)
+      interceptModel.removePropertyChangeListener(this)
+      guiHistory.dispose()
+      guiResender.dispose()
+      guiIntercept.dispose()
+      guiOption.dispose()
+    } catch (e: Exception) {
       errWithStackTrace(e)
     }
   }
@@ -353,10 +366,12 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
 
   override fun propertyChange(evt: PropertyChangeEvent) {
     if (PropertyChangeEventType.INTERCEPT_DATA.matches(evt)) {
-      if (evt.newValue == null) {
-        setInterceptDownLight()
-      } else {
-        setInterceptHighLight()
+      SwingUtilities.invokeLater {
+        if (evt.newValue == null) {
+          setInterceptDownLight()
+        } else {
+          setInterceptHighLight()
+        }
       }
     } else if (PropertyChangeEventType.DATABASE_MESSAGE.matches(evt)) {
       if (evt.newValue is DatabaseMessage) {

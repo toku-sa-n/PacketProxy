@@ -15,8 +15,11 @@
  */
 package packetproxy
 
+import java.util.concurrent.atomic.AtomicInteger
+
 class DuplexManager {
   private val duplex_list: MutableMap<Int, Duplex> = HashMap()
+  private val nextId = AtomicInteger(1)
 
   @Throws(Exception::class)
   fun closeAndClearDuplex(listenPort: Int) {
@@ -32,8 +35,9 @@ class DuplexManager {
   }
 
   fun registerDuplex(duplex: Duplex): Int {
-    duplex_list[duplex.hashCode()] = duplex
-    return duplex.hashCode()
+    val id = nextId.getAndIncrement()
+    duplex_list[id] = duplex
+    return id
   }
 
   fun getDuplex(hash: Int): Duplex? = duplex_list[hash]

@@ -24,7 +24,6 @@ import packetproxy.http2.frames.Frame
 import packetproxy.http2.frames.SettingsFrame
 import packetproxy.http2.frames.SettingsFrame.SettingsFrameType
 import packetproxy.http2.frames.WindowUpdateFrame
-import packetproxy.util.err
 
 open class FlowControlManager {
   private val flows: MutableMap<Int, FlowControl> = HashMap()
@@ -68,10 +67,12 @@ open class FlowControlManager {
     if ((flags and 0x1) > 0) {
       return
     }
-    if (initialStreamWindowSize != 65535) {
-      err("[Error] Initial window size is reset. We cannot handle it (not implemented yet)")
+    val newSize = frame[SettingsFrameType.SETTINGS_INITIAL_WINDOW_SIZE]
+    val delta = newSize - initialStreamWindowSize
+    initialStreamWindowSize = newSize
+    for (flow in flows.values) {
+      flow.appendWindowSize(delta)
     }
-    initialStreamWindowSize = frame[SettingsFrameType.SETTINGS_INITIAL_WINDOW_SIZE]
   }
 
   @Synchronized
@@ -90,7 +91,10 @@ open class FlowControlManager {
     val windowSize = frame.getWindowSize()
 
     if (streamId == 0) {
-      connectionWindowSize += windowSize
+      connectionWindowSize =
+        (connectionWindowSize.toLong() + windowSize.toLong())
+          .coerceAtMost(FlowControl.MAX_WINDOW_SIZE)
+          .toInt()
       for (flow in flows.values) {
         writeData(flow)
       }

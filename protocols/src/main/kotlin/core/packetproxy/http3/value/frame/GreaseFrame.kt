@@ -16,9 +16,11 @@
 package packetproxy.http3.value.frame
 
 import com.google.common.collect.ImmutableList
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import packetproxy.http3.utils.parseVarInt
 import packetproxy.http3.utils.readSimpleBytes
+import packetproxy.quic.value.VariableLengthInteger
 
 class GreaseFrame(frameType: Long, frameData: ByteArray) : Frame {
   private val type: Long = frameType
@@ -28,7 +30,14 @@ class GreaseFrame(frameType: Long, frameData: ByteArray) : Frame {
 
   fun getData(): ByteArray = data
 
-  @Throws(Exception::class) override fun getBytes(): ByteArray = data
+  @Throws(Exception::class)
+  override fun getBytes(): ByteArray {
+    val frameStream = ByteArrayOutputStream()
+    frameStream.write(VariableLengthInteger.of(type).bytes)
+    frameStream.write(VariableLengthInteger.of(data.size.toLong()).bytes)
+    frameStream.write(data)
+    return frameStream.toByteArray()
+  }
 
   override fun toString(): String =
     String.format("GreaseFrame(type=0x%x,data=[%s])", type, String(data))

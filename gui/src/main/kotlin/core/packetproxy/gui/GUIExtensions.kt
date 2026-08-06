@@ -34,7 +34,6 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
   private var jarsLoaded = false
 
   init {
-    tabs.addChangeListener {}
     mainPanel.layout = BoxLayout(mainPanel, BoxLayout.Y_AXIS)
     mainPanel.add(tabs)
   }
@@ -88,24 +87,24 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
     val directory = File("${System.getProperty("user.home")}/.packetproxy/extensions")
     if (!directory.exists()) directory.mkdirs()
     val jarFiles = directory.listFiles { _, name -> name.endsWith(".jar") } ?: emptyArray()
-    URLClassLoader(jarFiles.map { it.toURI().toURL() }.toTypedArray()).use { classLoader ->
-      for (jarFile in jarFiles) {
-        JarFile(jarFile).use { jar ->
-          val entries = jar.entries()
-          while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (!entry.name.endsWith(".class")) continue
-            val className = entry.name.replace("/", ".").removeSuffix(".class")
-            try {
-              val extensionClass = classLoader.loadClass(className)
-              if (!Extension::class.java.isAssignableFrom(extensionClass)) continue
-              val extension = extensionClass.getConstructor().newInstance() as Extension
-              if (extension.getName() == null) extension.setName(className)
-              if (extension.getPath() == null) extension.setPath(jarFile.toPath().toString())
-              main.modelServices.extensions.create(extension)
-            } catch (exception: Exception) {
-              errWithStackTrace(exception)
-            }
+    // Keep the class loader for the JVM lifetime of loaded extensions.
+    val classLoader = URLClassLoader(jarFiles.map { it.toURI().toURL() }.toTypedArray())
+    for (jarFile in jarFiles) {
+      JarFile(jarFile).use { jar ->
+        val entries = jar.entries()
+        while (entries.hasMoreElements()) {
+          val entry = entries.nextElement()
+          if (!entry.name.endsWith(".class")) continue
+          val className = entry.name.replace("/", ".").removeSuffix(".class")
+          try {
+            val extensionClass = classLoader.loadClass(className)
+            if (!Extension::class.java.isAssignableFrom(extensionClass)) continue
+            val extension = extensionClass.getConstructor().newInstance() as Extension
+            if (extension.getName() == null) extension.setName(className)
+            if (extension.getPath() == null) extension.setPath(jarFile.toPath().toString())
+            main.modelServices.extensions.create(extension)
+          } catch (exception: Exception) {
+            errWithStackTrace(exception)
           }
         }
       }

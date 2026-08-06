@@ -24,7 +24,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.ArrayList
 import java.util.HashMap
-import java.util.concurrent.ConcurrentHashMap
+import java.util.LinkedHashMap
 import packetproxy.model.Database
 import packetproxy.model.ListenPort
 import packetproxy.model.ListenPorts
@@ -35,8 +35,14 @@ class GrpcServiceRegistryStore(
   private val database: Database? = null,
   private val servers: Servers? = null,
   private val listenPorts: ListenPorts? = null,
+  private val maxCacheSize: Int = 32,
 ) {
-  private val cache = ConcurrentHashMap<String, GrpcServiceRegistry>()
+  private val cache =
+    object : LinkedHashMap<String, GrpcServiceRegistry>(16, 0.75f, true) {
+      override fun removeEldestEntry(
+        eldest: MutableMap.MutableEntry<String, GrpcServiceRegistry>?
+      ): Boolean = size > maxCacheSize
+    }
 
   /** Transparent proxy では authority がリスナーアドレスになるため、Servers → ListenPort の順でフォールバックする */
   fun getByAuthority(authority: String?): GrpcServiceRegistry? {
@@ -121,9 +127,6 @@ class GrpcServiceRegistryStore(
       throw IllegalArgumentException("descFile is null")
     }
     val key = descFile.canonicalPath
-    cache[key]?.let {
-      return it
-    }
     synchronized(this) {
       cache[key]?.let {
         return it
@@ -159,14 +162,16 @@ class GrpcServiceRegistryStore(
 
   fun invalidate(descFile: File?) {
     if (descFile == null) return
-    try {
-      cache.remove(descFile.canonicalPath)
-    } catch (_: Exception) {
-      cache.remove(descFile.absolutePath)
+    synchronized(this) {
+      try {
+        cache.remove(descFile.canonicalPath)
+      } catch (_: Exception) {
+        cache.remove(descFile.absolutePath)
+      }
     }
   }
 
   fun invalidateAll() {
-    cache.clear()
+    synchronized(this) { cache.clear() }
   }
 }

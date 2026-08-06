@@ -46,7 +46,7 @@ class GUIOptionClientCertificate(owner: GUIMain) :
         },
         {
           try {
-            val oldCertificate = getSelectedTableContent()
+            val oldCertificate = getSelectedTableContent() ?: return@createComponent
             val certificate = GUIOptionClientCertificateDialog(owner).showDialog(oldCertificate)
             if (certificate != null) {
               clientCertificates.delete(oldCertificate)
@@ -58,13 +58,17 @@ class GUIOptionClientCertificate(owner: GUIMain) :
         },
         {
           try {
-            clientCertificates.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { clientCertificates.delete(it) }
           } catch (exception: Exception) {
             errWithStackTrace(exception)
           }
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    clientCertificates.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(certificate: ClientCertificate) {
@@ -98,7 +102,10 @@ class GUIOptionClientCertificate(owner: GUIMain) :
     tableList.clear()
   }
 
-  override fun getSelectedTableContent(): ClientCertificate = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): ClientCertificate? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int): ClientCertificate = tableList[rowIndex]
 }

@@ -79,7 +79,7 @@ class Modifications(private val database: Database) : PropertyChangeListener {
 
   @Throws(Exception::class)
   fun query(id: Int): Modification? {
-    val ret = cache.query("query", 0)
+    val ret = cache.query("query", id)
     if (ret != null) {
       return ret[0]
     }
@@ -184,12 +184,8 @@ class Modifications(private val database: Database) : PropertyChangeListener {
     val message = evt.newValue as DatabaseMessage
     try {
       when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
+        DatabaseMessage.PAUSE,
+        DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(Modification::class.java, this)

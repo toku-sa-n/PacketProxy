@@ -7,7 +7,7 @@
         <appname>PacketProxy</appname>
         <appversion>1.0</appversion>
         <appsubpath>packetproxy</appsubpath>
-        <javaversion>1.6</javaversion>
+        <javaversion>17</javaversion>
     <uninstaller path="$INSTALL_PATH/share/packetproxy" name="PacketProxyUninstaller.jar" write="yes" os="linux"/>
         <uninstaller path="$INSTALL_PATH/PacketProxyUninstaller/" name="uninstaller.jar" write="yes" os="mac"/>
     </info>

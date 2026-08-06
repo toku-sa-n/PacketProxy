@@ -39,13 +39,17 @@ class GUIOptionCharSets(owner: GUIMain) : GUIOptionComponentBase<CharSet>(owner)
         null,
         {
           try {
-            charsets.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { charsets.delete(it) }
           } catch (e: Exception) {
             errWithStackTrace(e)
           }
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    charsets.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(value: CharSet) {
@@ -71,7 +75,10 @@ class GUIOptionCharSets(owner: GUIMain) : GUIOptionComponentBase<CharSet>(owner)
     option_model.rowCount = 0
   }
 
-  override fun getSelectedTableContent() = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): CharSet? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int) = charsetList[rowIndex]
 }

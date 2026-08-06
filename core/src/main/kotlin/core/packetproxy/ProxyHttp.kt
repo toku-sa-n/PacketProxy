@@ -16,7 +16,6 @@
 package packetproxy
 
 import java.net.ServerSocket
-import java.net.Socket
 import packetproxy.Simplex.SimplexEventAdapter
 import packetproxy.common.Endpoint
 import packetproxy.common.EndpointFactory
@@ -40,11 +39,9 @@ constructor(
   private val https: Https,
 ) : Proxy() {
   override fun run() {
-    val clients = ArrayList<Socket>()
     while (!listen_socket.isClosed) {
       try {
         val client = listen_socket.accept()
-        clients.add(client)
         log("accept")
 
         val client_loopback = Simplex(client.inputStream, client.outputStream)
@@ -92,7 +89,7 @@ constructor(
                           listen_info
                             .getServer(modelServices.database)!!
                             .getAddress(modelServices.resolutions),
-                          http.serverName,
+                          serverName,
                           listen_info.getCA().get(),
                         )
                       clientE = es[0]
@@ -104,7 +101,7 @@ constructor(
                           null,
                           http.serverAddr,
                           null,
-                          http.serverName,
+                          serverName,
                           listen_info.getCA().get(),
                         )
                       clientE = es[0]
@@ -169,13 +166,6 @@ constructor(
           }
         )
         client_loopback.start()
-      } catch (e: Exception) {
-        errWithStackTrace(e)
-      }
-    }
-    for (sc in clients) {
-      try {
-        sc.close()
       } catch (e: Exception) {
         errWithStackTrace(e)
       }

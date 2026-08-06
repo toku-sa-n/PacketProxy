@@ -182,14 +182,14 @@ private constructor(
           if (already_analyzed_row_num < table.rowCount) {
             for (i in already_analyzed_row_num until table.rowCount) {
               val data = table.getValueAt(i, index) as String?
-              if (data != null && data.matches(Regex(".*$searchWord.*"))) {
+              if (data != null && data.matches(Regex(".*${Pattern.quote(searchWord)}.*"))) {
                 groupIds.add(table.getValueAt(i, columnMapper["group"]!!) as Long)
               }
             }
             already_analyzed_row_num = table.rowCount
           } else {
             val data = value.getValue(index) as String?
-            if (data != null && data.matches(Regex(".*$searchWord.*"))) {
+            if (data != null && data.matches(Regex(".*${Pattern.quote(searchWord)}.*"))) {
               groupIds.add(value.getValue(columnMapper["group"]!!) as Long)
             }
           }
@@ -304,7 +304,7 @@ private constructor(
 
     private fun validPattern(searchWord: String): Boolean {
       try {
-        Pattern.compile(searchWord)
+        Pattern.compile(Pattern.quote(searchWord))
       } catch (_: PatternSyntaxException) {
         return false
       }

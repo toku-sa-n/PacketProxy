@@ -26,7 +26,12 @@ interface LogSink {
   fun createPanel(): JComponent
 
   fun getLogText(): String
+
+  /** Structured log entries with level, when available. Default is empty. */
+  fun getStructuredEntries(): List<StructuredLogEntry> = emptyList()
 }
+
+data class StructuredLogEntry(val rawLine: String, val level: String)
 
 class NoOpLogSink : LogSink {
   override fun append(message: String) {}

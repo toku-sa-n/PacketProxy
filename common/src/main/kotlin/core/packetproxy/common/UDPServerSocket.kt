@@ -17,40 +17,57 @@ package packetproxy.common
 
 import java.net.DatagramPacket
 import java.net.DatagramSocket
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class UDPServerSocket(port: Int) {
   private val socket = DatagramSocket(port)
   private val connManager = UDPConnManager()
+  private val executor: ExecutorService = Executors.newFixedThreadPool(2)
 
   init {
     createRecvLoop()
   }
 
   fun close() {
+    executor.shutdownNow()
+    try {
+      executor.awaitTermination(2, TimeUnit.SECONDS)
+    } catch (_: InterruptedException) {
+      Thread.currentThread().interrupt()
+    }
     socket.close()
   }
 
   fun accept(): Endpoint = connManager.accept()
 
   private fun createRecvLoop() {
-    val executor = Executors.newFixedThreadPool(2)
     executor.submit {
-      while (true) {
-        val buffer = ByteArray(BUFFER_SIZE)
-        val recvPacket = DatagramPacket(buffer, BUFFER_SIZE)
-        socket.receive(recvPacket)
-        connManager.put(recvPacket)
+      while (!socket.isClosed && !Thread.currentThread().isInterrupted) {
+        try {
+          val buffer = ByteArray(BUFFER_SIZE)
+          val recvPacket = DatagramPacket(buffer, BUFFER_SIZE)
+          socket.receive(recvPacket)
+          connManager.put(recvPacket)
+        } catch (_: Exception) {
+          if (socket.isClosed) break
+        }
       }
     }
     executor.submit {
-      while (true) {
-        socket.send(connManager.get())
+      while (!socket.isClosed && !Thread.currentThread().isInterrupted) {
+        try {
+          socket.send(connManager.get())
+        } catch (_: Exception) {
+          if (socket.isClosed) break
+        }
       }
     }
   }
 
   private companion object {
-    const val BUFFER_SIZE = 4096
+    // UDP theoretical max payload is 65507; use full DatagramPacket capacity.
+    const val BUFFER_SIZE = 65535
   }
 }

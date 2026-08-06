@@ -1,24 +1,23 @@
 package packetproxy.extensions.mcp.tools
 
-import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.regex.Pattern
 import packetproxy.model.Configs
-import packetproxy.util.getLogText
+import packetproxy.util.LogLineStyle
+import packetproxy.util.getStructuredLogEntries
 import packetproxy.util.log
 
 class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
 
-  private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  private val dateFormat = DateTimeFormatter.ISO_OFFSET_DATE_TIME
   private val dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
-  private val gson = Gson()
 
   override fun getName(): String = "get_logs"
 
@@ -64,7 +63,6 @@ class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
     var since = if (arguments.has("since")) arguments.get("since").getAsString() else null
     var filter = if (arguments.has("filter")) arguments.get("filter").getAsString() else null
 
-    // Validate parameters
     if (limit < 1 || limit > 1000) {
       throw Exception("Limit must be between 1 and 1000")
     }
@@ -73,16 +71,22 @@ class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
       throw Exception("Invalid log level. Use: debug, info, warn, error")
     }
 
-    var sinceDateTime: LocalDateTime? = null
+    var sinceDateTime: OffsetDateTime? = null
     if (since != null) {
       try {
-        sinceDateTime =
-          LocalDateTime.parse(
-            since.replace("Z", ""),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-          )
-      } catch (e: DateTimeParseException) {
-        throw Exception("Invalid date format. Use ISO 8601 format (e.g., 2025-01-15T00:00:00Z)")
+        sinceDateTime = OffsetDateTime.parse(since, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      } catch (_: DateTimeParseException) {
+        try {
+          sinceDateTime =
+            LocalDateTime.parse(
+                since.removeSuffix("Z"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+              )
+              .atZone(ZoneId.systemDefault())
+              .toOffsetDateTime()
+        } catch (e: DateTimeParseException) {
+          throw Exception("Invalid date format. Use ISO 8601 format (e.g., 2025-01-15T00:00:00Z)")
+        }
       }
     }
 
@@ -96,15 +100,16 @@ class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
     }
 
     try {
-      // 実際のログ取得処理
-      // PacketProxyのログはutil.Loggingを通してGUILogに保存されているため、
-      // そこからログエントリを取得する
       var logEntries = getLogEntriesFromGUILog(level, sinceDateTime, filterPattern, limit)
 
       var logsArray = JsonArray()
       for (entry in logEntries) {
         var logJson = JsonObject()
-        logJson.addProperty("timestamp", dateFormat.format(entry.getTimestamp()))
+        logJson.addProperty(
+          "timestamp",
+          OffsetDateTime.ofInstant(entry.getTimestamp().toInstant(), ZoneId.systemDefault())
+            .format(dateFormat),
+        )
         logJson.addProperty("level", entry.getLevel())
         logJson.addProperty("message", entry.getMessage())
         logJson.addProperty("thread", entry.getThread())
@@ -117,18 +122,8 @@ class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
       data.addProperty("total_count", logEntries.size)
       data.addProperty("has_more", logEntries.size >= limit)
 
-      var content = JsonObject()
-      content.addProperty("type", "text")
-      content.addProperty("text", gson.toJson(data))
-
-      var contentArray = JsonArray()
-      contentArray.add(content)
-
-      var result = JsonObject()
-      result.add("content", contentArray)
-
       log("LogTool returning " + logsArray.size() + " log entries")
-      return result
+      return data
     } catch (e: Exception) {
       log("LogTool error: " + e.message)
       throw Exception("Failed to get logs: " + e.message)
@@ -140,62 +135,44 @@ class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
 
   private fun getLogEntriesFromGUILog(
     level: String,
-    since: LocalDateTime?,
+    since: OffsetDateTime?,
     filter: Pattern?,
     limit: Int,
   ): List<LogEntry> {
     var entries = ArrayList<LogEntry>()
 
     try {
-      var logText = getLogText()
-
-      if (logText != null && !logText.trim().isEmpty()) {
-        // ログテキストを行ごとに分析
-        var lines = logText.split("\n")
-
-        for (line in lines) {
-          if (line.trim().isEmpty()) {
-            continue
-          }
-
-          var entry = parseLogLine(line.trim())
-          if (entry != null) {
-            entries.add(entry)
-          }
+      var structured = getStructuredLogEntries()
+      if (structured.isNotEmpty()) {
+        for (item in structured) {
+          var entry = parseStructuredEntry(item.rawLine, item.level) ?: continue
+          entries.add(entry)
         }
       }
-
-      // 最新のログが上に来るようにリバース
       entries.reverse()
     } catch (e: Exception) {
       log("Error getting log entries: " + e.message)
     }
 
-    // フィルタリング適用
     var filteredEntries = ArrayList<LogEntry>()
     for (entry in entries) {
-      // レベルフィルタ
       if (!matchesLogLevel(entry.getLevel(), level)) {
         continue
       }
 
-      // 時間フィルタ
       if (since != null) {
         var entryTime =
-          LocalDateTime.ofInstant(entry.getTimestamp().toInstant(), ZoneId.systemDefault())
+          OffsetDateTime.ofInstant(entry.getTimestamp().toInstant(), ZoneId.systemDefault())
         if (entryTime.isBefore(since)) {
           continue
         }
       }
 
-      // 正規表現フィルタ
       if (filter != null && !filter.matcher(entry.getMessage()).find()) {
         continue
       }
 
       filteredEntries.add(entry)
-
-      // 制限チェック
       if (filteredEntries.size >= limit) {
         break
       }
@@ -205,7 +182,6 @@ class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
   }
 
   private fun matchesLogLevel(entryLevel: String, filterLevel: String): Boolean {
-    // レベルの優先度: debug < info < warn < error
     var entryPriority = getLogLevelPriority(entryLevel)
     var filterPriority = getLogLevelPriority(filterLevel)
     return entryPriority >= filterPriority
@@ -217,67 +193,32 @@ class LogTool(configs: Configs) : AuthenticatedMCPTool(configs) {
       "info" -> 1
       "warn" -> 2
       "error" -> 3
-      else -> 1 // デフォルトはinfo
+      else -> 1
     }
 
-  private fun parseLogLine(line: String): LogEntry? {
+  private fun parseStructuredEntry(line: String, structuredLevel: String): LogEntry? {
     try {
-      // PacketProxyのログ形式: "yyyy/MM/dd HH:mm:ss message"
-      // util.Loggingの形式に基づく
       if (line.length < 19) {
-        return null // 最小の日時フォーマット長より短い
+        return null
       }
 
-      var dateTimePart = line.substring(0, 19)
-      var messagePart = if (line.length > 26) line.substring(26) else ""
-
-      // 日時をパース
+      var (timestampPart, messagePart) = LogLineStyle.splitLogLine(line.trim())
       var timestamp: Date
       try {
+        var dateTimePart = timestampPart.trim().take(19)
         var localDateTime = LocalDateTime.parse(dateTimePart, dtf)
         timestamp = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
-      } catch (e: DateTimeParseException) {
-        // 日時パースに失敗した場合は現在時刻を使用
+      } catch (_: DateTimeParseException) {
         timestamp = Date()
       }
 
-      // ログレベルを推定（メッセージ内容から）
-      var level = "info" // デフォルト
-      var lowerMessage = messagePart.lowercase()
-      if (
-        lowerMessage.contains("error") ||
-          lowerMessage.contains("exception") ||
-          lowerMessage.contains("failed") ||
-          lowerMessage.contains("fail")
-      ) {
-        level = "error"
-      } else if (lowerMessage.contains("warn") || lowerMessage.contains("warning")) {
-        level = "warn"
-      } else if (lowerMessage.contains("debug")) {
-        level = "debug"
-      }
-
-      // スレッド名とクラス名を推定
-      var thread = "main" // デフォルト
-      var className = "packetproxy" // デフォルト
-
-      // メッセージからクラス名を抽出を試行
-      if (messagePart.contains("MCP")) {
-        className = "packetproxy.extensions.mcp"
-      } else if (messagePart.contains("Server")) {
-        className = "packetproxy.extensions.mcp.MCPServer"
-      } else if (messagePart.contains("Tool")) {
-        className = "packetproxy.extensions.mcp.tools"
-      }
-
-      return LogEntry(timestamp, level, messagePart, thread, className)
-    } catch (e: Exception) {
-      // パースに失敗した場合はnullを返す
+      // Prefer structured level from LogSink; do not infer from message substrings.
+      return LogEntry(timestamp, structuredLevel, messagePart, "main", "packetproxy")
+    } catch (_: Exception) {
       return null
     }
   }
 
-  // ログエントリを表すクラス
   private class LogEntry(
     private val timestamp: Date,
     private val level: String,

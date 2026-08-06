@@ -15,7 +15,11 @@
  */
 package packetproxy.model
 
-class ConfigBoolean(private val configs: Configs, private val key: String) {
+class ConfigBoolean(
+  private val configs: Configs,
+  private val key: String,
+  private val defaultValue: String = "false",
+) {
   private var config = ensureConfig()
 
   fun getState(): Boolean {
@@ -29,7 +33,7 @@ class ConfigBoolean(private val configs: Configs, private val key: String) {
     configs.update(config)
   }
 
-  private fun ensureConfig(defaultValue: String = "false"): Config {
+  private fun ensureConfig(): Config {
     var current = configs.query(key)
     if (current == null) {
       configs.create(Config(key, defaultValue))

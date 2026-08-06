@@ -58,7 +58,7 @@ class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modificati
         },
         {
           try {
-            val oldModification = getSelectedTableContent()
+            val oldModification = getSelectedTableContent() ?: return@createComponent
             val modification = GUIOptionModificationDialog(owner).showDialog(oldModification)
             if (modification != null) {
               modifications.delete(oldModification)
@@ -71,13 +71,17 @@ class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modificati
         },
         {
           try {
-            modifications.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { modifications.delete(it) }
           } catch (exception: Exception) {
             errWithStackTrace(exception)
           }
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    modifications.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(modification: Modification) {
@@ -113,7 +117,10 @@ class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modificati
     tableList.clear()
   }
 
-  override fun getSelectedTableContent(): Modification = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): Modification? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int): Modification = tableList[rowIndex]
 }

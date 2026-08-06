@@ -15,14 +15,23 @@
  */
 package packetproxy.model
 
+/**
+ * Thread-safe query result cache keyed by `"$type:$query"` (not hashCode alone) to avoid collisions
+ * across distinct query values.
+ */
 class DaoQueryCache<T> {
-  private var queryCache = HashMap<String, LinkedHashMap<Int, List<T>>>()
+  private val lock = Any()
+  private val queryCache = LinkedHashMap<String, List<T>>(16, 0.75f, true)
 
   fun clear() {
-    queryCache = HashMap()
+    synchronized(lock) { queryCache.clear() }
   }
 
-  fun query(type: String, query: Any): List<T>? = queryCache[type]?.get(query.hashCode())
+  fun query(type: String, query: Any): List<T>? {
+    synchronized(lock) {
+      return queryCache[cacheKey(type, query)]
+    }
+  }
 
   fun set(type: String, query: Any, result: T?) {
     if (result == null) {
@@ -32,21 +41,20 @@ class DaoQueryCache<T> {
   }
 
   fun set(type: String, query: Any, results: List<T>) {
-    val cacheByType = queryCache.getOrPut(type) { LinkedHashMap() }
-    val key = query.hashCode()
-    if (cacheByType.containsKey(key)) {
-      cacheByType.remove(key)
-    }
-    cacheByType[key] = results
-    if (cacheByType.size > MAX_CACHE_ENTRIES_PER_TYPE) {
-      val oldestKey = cacheByType.keys.firstOrNull()
-      if (oldestKey != null) {
-        cacheByType.remove(oldestKey)
+    synchronized(lock) {
+      val key = cacheKey(type, query)
+      queryCache.remove(key)
+      queryCache[key] = results
+      while (queryCache.size > MAX_CACHE_ENTRIES) {
+        val oldestKey = queryCache.keys.firstOrNull() ?: break
+        queryCache.remove(oldestKey)
       }
     }
   }
 
   companion object {
-    private const val MAX_CACHE_ENTRIES_PER_TYPE = 256
+    private const val MAX_CACHE_ENTRIES = 1024
+
+    internal fun cacheKey(type: String, query: Any): String = "$type:$query"
   }
 }

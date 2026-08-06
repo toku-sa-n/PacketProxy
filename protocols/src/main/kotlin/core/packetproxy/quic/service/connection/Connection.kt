@@ -178,6 +178,7 @@ abstract class Connection(
       pipe.getRawEndpoint().getInputStream().close()
       pipe.getRawEndpoint().getOutputStream().close()
       executor.shutdownNow()
+      executor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)
     } catch (e: Exception) {
       errWithStackTrace(e)
     }

@@ -34,7 +34,7 @@ class CoreServices(val modelServices: ModelServices, val logging: Logging) {
     )
   val endpointFactory = EndpointFactory(https, modelServices.resolutions)
   val duplexManager = DuplexManager()
-  val encoderManager = EncoderManager()
+  val encoderManager = EncoderManager(modelServices.packets, uniqueId)
   val vulCheckerManager = VulCheckerManager()
   val duplexPacketHistory = DuplexPacketHistory(uniqueId, encoderManager.packetSummarizer)
   val duplexFactory =

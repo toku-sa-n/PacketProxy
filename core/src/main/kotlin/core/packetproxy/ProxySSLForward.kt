@@ -41,20 +41,11 @@ class ProxySSLForward(
   private val resolutions: Resolutions,
 ) : Proxy() {
   override fun run() {
-    val clients = ArrayList<Socket>()
     while (!listen_socket.isClosed) {
       try {
         val client = listen_socket.accept()
-        clients.add(client)
         log("[SSLForward] accept")
         checkSSLForward(client)
-      } catch (e: Exception) {
-        errWithStackTrace(e)
-      }
-    }
-    for (sc in clients) {
-      try {
-        sc.close()
       } catch (e: Exception) {
         errWithStackTrace(e)
       }

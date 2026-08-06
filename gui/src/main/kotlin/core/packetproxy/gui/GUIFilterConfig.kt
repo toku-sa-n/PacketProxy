@@ -17,7 +17,11 @@ class GUIFilterConfig(private var owner: JFrame) {
 
   inner class ProjectTableModel(columns: Array<String>, rows: Int) :
     DefaultTableModel(columns, rows) {
-    override fun getColumnClass(column: Int): Class<*> = getValueAt(0, column).javaClass
+    override fun getColumnClass(column: Int): Class<*> =
+      when (column) {
+        0 -> Integer::class.java
+        else -> String::class.java
+      }
   }
 
   fun createPanel(): JComponent {
@@ -43,21 +47,23 @@ class GUIFilterConfig(private var owner: JFrame) {
     try {
       when (action) {
         "Add" -> GUIFilterConfigAddDialog(owner).showDialog()
-        "Edit" -> GUIFilterConfigEditDialog(owner, selected()).showDialog()
-        "Remove" ->
+        "Edit" -> {
+          val filter = selected() ?: return
+          GUIFilterConfigEditDialog(owner, filter).showDialog()
+        }
+        "Remove" -> {
+          val filter = selected() ?: return
           if (
             JOptionPane.showConfirmDialog(
               owner,
-              String.format(
-                i18nString("Are you sure you want to delete %s ?"),
-                selected().getName(),
-              ),
+              String.format(i18nString("Are you sure you want to delete %s ?"), filter.getName()),
               i18nString("Delete filter"),
               JOptionPane.OK_CANCEL_OPTION,
               JOptionPane.WARNING_MESSAGE,
             ) == JOptionPane.YES_OPTION
           )
-            owner.modelServices.filters.delete(selected())
+            owner.modelServices.filters.delete(filter)
+        }
       }
       updateImpl()
     } catch (e: Exception) {
@@ -72,6 +78,10 @@ class GUIFilterConfig(private var owner: JFrame) {
     }
   }
 
-  private fun selected(): Filter =
-    requireNotNull(owner.modelServices.filters.query(table.getValueAt(table.selectedRow, 0) as Int))
+  private fun selected(): Filter? {
+    val selectedRow = table.selectedRow
+    if (selectedRow < 0) return null
+    val id = table.getValueAt(selectedRow, 0) as? Int ?: return null
+    return owner.modelServices.filters.query(id)
+  }
 }

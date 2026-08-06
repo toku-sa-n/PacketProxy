@@ -131,6 +131,8 @@ class PrivateDnsResponseBuilder {
     response.addRecord(OPTRecord(4096, Rcode.NOERROR, 0, optFlags), Section.ADDITIONAL)
   }
 
+  fun notImplementedReply(query: Message): ByteArray = errorMessage(query, Rcode.NOTIMP)
+
   private fun errorMessage(query: Message, rcode: Int): ByteArray =
     buildErrorMessage(query.getHeader(), rcode, query.getQuestion())
 

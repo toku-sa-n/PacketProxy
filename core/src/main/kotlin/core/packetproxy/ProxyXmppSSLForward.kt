@@ -19,6 +19,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLSocket
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Endpoint
@@ -40,7 +41,6 @@ class ProxyXmppSSLForward(
   private val database: Database,
   private val resolutions: Resolutions,
 ) : Proxy() {
-  private var finishFlag = false
 
   override fun run() {
     while (!listen_socket.isClosed) {
@@ -66,6 +66,8 @@ class ProxyXmppSSLForward(
             as SSLSocket
         clientSSLSocket.useClientMode = false
         serverSSLSocket.useClientMode = true
+        clientSSLSocket.startHandshake()
+        serverSSLSocket.startHandshake()
         createConnection(SocketEndpoint(clientSSLSocket), SocketEndpoint(serverSSLSocket))
       } catch (e: Exception) {
         errWithStackTrace(e)
@@ -75,6 +77,7 @@ class ProxyXmppSSLForward(
 
   @Throws(Exception::class)
   private fun skipDataUntilSSLConnectionStarted(client: Socket, server: Socket) {
+    val finishFlag = AtomicBoolean(false)
     val cI: InputStream = client.inputStream
     val cO: OutputStream = client.outputStream
     val sI: InputStream = server.inputStream
@@ -84,7 +87,7 @@ class ProxyXmppSSLForward(
       try {
         val buff = ByteArray(4096)
         do {
-          if (finishFlag) return@Thread
+          if (finishFlag.get()) return@Thread
           if (cI.available() > 0) {
             val len = cI.read(buff, 0, buff.size)
             if (len < 0) {
@@ -104,16 +107,16 @@ class ProxyXmppSSLForward(
       try {
         val buff = ByteArray(4096)
         do {
-          if (finishFlag) return@Thread
+          if (finishFlag.get()) return@Thread
           if (sI.available() > 0) {
             val len2 = sI.read(buff, 0, buff.size)
             if (len2 < 0) {
               err("ERROR: xmpp server socket closed")
               return@Thread
             }
-            val body = String(ArrayUtils.subarray(buff, 0, len2))
+            val body = String(ArrayUtils.subarray(buff, 0, len2), Charsets.UTF_8)
             if (body.contains("proceed")) {
-              finishFlag = true
+              finishFlag.set(true)
               while (clientT.isAlive) {
                 sleep(1000)
               }
@@ -130,7 +133,6 @@ class ProxyXmppSSLForward(
     serverT.start()
     clientT.join()
     serverT.join()
-    finishFlag = false
   }
 
   @Throws(Exception::class)

@@ -241,6 +241,17 @@ class GUIProjectChooserDialog(private val owner: GUIMain) {
     if (!Objects.equals(optionPane.value, JOptionPane.OK_OPTION)) return false
     val name = textField.text.trim()
     if (name.isEmpty()) return false
+    try {
+      Projects.sanitizeProjectName(name)
+    } catch (e: IllegalArgumentException) {
+      JOptionPane.showMessageDialog(
+        parent,
+        e.message,
+        i18nString("Error"),
+        JOptionPane.ERROR_MESSAGE,
+      )
+      return false
+    }
     projects.createNewProject(name)
     return true
   }

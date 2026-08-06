@@ -2,6 +2,7 @@ package packetproxy.quic.service.key
 
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.text.Charsets
 import org.apache.commons.codec.binary.Hex
 import packetproxy.quic.utils.Constants
 import packetproxy.quic.value.ConnectionId
@@ -59,21 +60,27 @@ class Keys {
       return
     try {
       if (!Files.exists(logDir)) Files.createDirectories(logDir)
-      keylogFile.toFile().bufferedWriter().use { f ->
-        val r = Hex.encodeHexString(clientRandom)
-        f.write(
-          "CLIENT_HANDSHAKE_TRAFFIC_SECRET $r ${Hex.encodeHexString(clientKeys.handshakeKey.secret)}\n"
+      Files.newBufferedWriter(
+          keylogFile,
+          Charsets.UTF_8,
+          java.nio.file.StandardOpenOption.CREATE,
+          java.nio.file.StandardOpenOption.APPEND,
         )
-        f.write(
-          "SERVER_HANDSHAKE_TRAFFIC_SECRET $r ${Hex.encodeHexString(serverKeys.handshakeKey.secret)}\n"
-        )
-        f.write(
-          "CLIENT_TRAFFIC_SECRET_0 $r ${Hex.encodeHexString(clientKeys.applicationKey.secret)}\n"
-        )
-        f.write(
-          "SERVER_TRAFFIC_SECRET_0 $r ${Hex.encodeHexString(serverKeys.applicationKey.secret)}\n"
-        )
-      }
+        .use { f ->
+          val r = Hex.encodeHexString(clientRandom)
+          f.write(
+            "CLIENT_HANDSHAKE_TRAFFIC_SECRET $r ${Hex.encodeHexString(clientKeys.handshakeKey.secret)}\n"
+          )
+          f.write(
+            "SERVER_HANDSHAKE_TRAFFIC_SECRET $r ${Hex.encodeHexString(serverKeys.handshakeKey.secret)}\n"
+          )
+          f.write(
+            "CLIENT_TRAFFIC_SECRET_0 $r ${Hex.encodeHexString(clientKeys.applicationKey.secret)}\n"
+          )
+          f.write(
+            "SERVER_TRAFFIC_SECRET_0 $r ${Hex.encodeHexString(serverKeys.applicationKey.secret)}\n"
+          )
+        }
     } catch (e: Exception) {
       errWithStackTrace(e)
     }

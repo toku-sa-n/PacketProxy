@@ -41,7 +41,11 @@ class EncodeMQTT @Throws(Exception::class) constructor(ALPN: String?) : Encoder(
     var multiplier = 1
     var i = 0
     do {
-      digit = input_data[++i]
+      i++
+      if (i >= input_data.size) {
+        return -1
+      }
+      digit = input_data[i]
       length += (digit.toInt() and 0x7F) * multiplier
       multiplier *= 0x80
     } while ((digit.toInt() and 0x80) != 0 && i < 4)

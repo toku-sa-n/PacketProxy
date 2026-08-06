@@ -28,15 +28,16 @@ class QuicPacketBuilder private constructor() {
 
   @Throws(Exception::class)
   fun build(): QuicPacket {
-    val payload = framesBuilder!!.getBytes()
-    return when (pnSpaceType) {
-      Constants.PnSpaceType.PnSpaceInitial ->
-        InitialPacket.of(1, connIdPair!!, packetNumber!!, payload, token)
-      Constants.PnSpaceType.PnSpaceHandshake ->
-        HandshakePacket.of(1, connIdPair!!, packetNumber!!, payload)
+    val builder = requireNotNull(framesBuilder) { "framesBuilder is required" }
+    val pair = requireNotNull(connIdPair) { "connIdPair is required" }
+    val pn = requireNotNull(packetNumber) { "packetNumber is required" }
+    val space = requireNotNull(pnSpaceType) { "pnSpaceType is required" }
+    val payload = builder.getBytes()
+    return when (space) {
+      Constants.PnSpaceType.PnSpaceInitial -> InitialPacket.of(1, pair, pn, payload, token)
+      Constants.PnSpaceType.PnSpaceHandshake -> HandshakePacket.of(1, pair, pn, payload)
       Constants.PnSpaceType.PnSpaceApplicationData ->
-        ShortHeaderPacket.of(connIdPair!!.destConnId, packetNumber!!, payload)
-      else -> throw Exception("error: unknown packet type")
+        ShortHeaderPacket.of(pair.destConnId, pn, payload)
     }
   }
 

@@ -47,9 +47,10 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
         object : MouseAdapter() {
           override fun mouseClicked(e: MouseEvent) {
             try {
-              val columnIndex = table.columnAtPoint(e.point)
               val rowIndex = table.rowAtPoint(e.point)
-              table.setRowSelectionInterval(rowIndex, columnIndex)
+              if (rowIndex >= 0) {
+                table.setRowSelectionInterval(rowIndex, rowIndex)
+              }
             } catch (ex: Exception) {
               errWithStackTrace(ex)
             }
@@ -64,7 +65,7 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
         },
         {
           try {
-            val old = getSelectedTableContent()
+            val old = getSelectedTableContent() ?: return@createComponent
             GUIOptionOpenVPNDialog(owner).showDialog(old)?.let {
               forwardPorts.delete(old)
               forwardPorts.create(it)
@@ -75,7 +76,7 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
         },
         {
           try {
-            forwardPorts.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { forwardPorts.delete(it) }
           } catch (e: Exception) {
             errWithStackTrace(e)
           }
@@ -84,6 +85,10 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
     updateImpl()
     base = buildPanel()
     updateState()
+  }
+
+  fun dispose() {
+    forwardPorts.removePropertyChangeListener(this)
   }
 
   fun getPanel() = base
@@ -107,11 +112,7 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
     try {
       checkBox.isSelected = ConfigBoolean(owner.modelServices.configs, "OpenVPN").getState()
       if (checkBox.isSelected) {
-        val proto = vpnProtocol.selectedItem.toString()
-        if (!openVPN.startServer(getSpoofingIP(), proto)) {
-          checkBox.isSelected = false
-          ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
-        }
+        startOpenVpnOffEdt()
       }
     } catch (e: Exception) {
       checkBox.isSelected = false
@@ -142,7 +143,10 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
     tableList.clear()
   }
 
-  override fun getSelectedTableContent() = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): OpenVPNForwardPort? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int) = tableList[rowIndex]
 
@@ -192,13 +196,7 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
     box.addActionListener {
       try {
         if (box.isSelected) {
-          val proto = vpnProtocol.selectedItem.toString()
-          if (openVPN.startServer(getSpoofingIP(), proto)) {
-            ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(true)
-          } else {
-            box.isSelected = false
-            ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
-          }
+          startOpenVpnOffEdt()
         } else {
           openVPN.stopServer()
           ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
@@ -215,6 +213,31 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
     }
     box.minimumSize = Dimension(Short.MAX_VALUE.toInt(), box.maximumSize.height)
     return box
+  }
+
+  private fun startOpenVpnOffEdt() {
+    val proto = vpnProtocol.selectedItem.toString()
+    val spoofIp = getSpoofingIP()
+    object : javax.swing.SwingWorker<Boolean, Void>() {
+        override fun doInBackground(): Boolean = openVPN.startServer(spoofIp, proto)
+
+        override fun done() {
+          try {
+            val started = get()
+            checkBox.isSelected = started
+            ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(started)
+          } catch (e: Exception) {
+            checkBox.isSelected = false
+            try {
+              ConfigBoolean(owner.modelServices.configs, "OpenVPN").setState(false)
+            } catch (ex: Exception) {
+              errWithStackTrace(ex)
+            }
+            errWithStackTrace(e)
+          }
+        }
+      }
+      .execute()
   }
 
   private fun createProtoSetting(): JComponent {

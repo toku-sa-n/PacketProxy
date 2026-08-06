@@ -15,8 +15,11 @@
  */
 package packetproxy.http2.frames
 
+import java.nio.ByteBuffer
 import org.apache.commons.codec.binary.Hex
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import packetproxy.http2.frames.SettingsFrame.SettingsFrameType
 import packetproxy.util.Logging
 
 class SettingsFrameTest {
@@ -26,5 +29,34 @@ class SettingsFrameTest {
     val data = Hex.decodeHex("000012040000000000000300000064000400100000000600004000".toCharArray())
     val sf = SettingsFrame(data)
     Logging.log(sf)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun defaultMaxFrameSizeIs16384() {
+    val empty = Frame(SettingsFrame.TYPE, 0, 0, ByteArray(0))
+    val sf = SettingsFrame(empty)
+    assertThat(sf[SettingsFrameType.SETTINGS_MAX_FRAME_SIZE]).isEqualTo(16384)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun unknownSettingIdStillConsumesValue() {
+    // length=12: unknown id 0x0099 + value, then known ENABLE_PUSH=0
+    val payload = ByteBuffer.allocate(12)
+    payload.putShort(0x0099.toShort())
+    payload.putInt(0x12345678)
+    payload.putShort(SettingsFrameType.SETTINGS_ENABLE_PUSH.ordinal.toShort())
+    payload.putInt(0)
+    val frameBytes = ByteBuffer.allocate(9 + 12)
+    frameBytes.put(((12 ushr 16) and 0xff).toByte())
+    frameBytes.put(((12 ushr 8) and 0xff).toByte())
+    frameBytes.put((12 and 0xff).toByte())
+    frameBytes.put(SettingsFrame.TYPE.ordinal.toByte())
+    frameBytes.put(0)
+    frameBytes.putInt(0)
+    frameBytes.put(payload.array())
+    val sf = SettingsFrame(frameBytes.array())
+    assertThat(sf[SettingsFrameType.SETTINGS_ENABLE_PUSH]).isEqualTo(0)
   }
 }

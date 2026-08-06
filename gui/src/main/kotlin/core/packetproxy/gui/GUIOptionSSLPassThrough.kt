@@ -50,7 +50,7 @@ class GUIOptionSSLPassThrough(owner: GUIMain) : GUIOptionComponentBase<SSLPassTh
         },
         {
           try {
-            val oldSslPassThrough = getSelectedTableContent()
+            val oldSslPassThrough = getSelectedTableContent() ?: return@createComponent
             val sslPassThrough = GUIOptionSSLPassThroughDialog(owner).showDialog(oldSslPassThrough)
             if (sslPassThrough != null) {
               sslPassThroughs.delete(oldSslPassThrough)
@@ -63,7 +63,7 @@ class GUIOptionSSLPassThrough(owner: GUIMain) : GUIOptionComponentBase<SSLPassTh
         },
         {
           try {
-            sslPassThroughs.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { sslPassThroughs.delete(it) }
           } catch (exception: Exception) {
             errWithStackTrace(exception)
           }
@@ -72,9 +72,12 @@ class GUIOptionSSLPassThrough(owner: GUIMain) : GUIOptionComponentBase<SSLPassTh
     updateImpl()
   }
 
-  override fun propertyChange(event: PropertyChangeEvent) {
-    if (SSL_PASS_THROUGHS.matches(event)) updateImpl()
+  fun dispose() {
+    sslPassThroughs.removePropertyChangeListener(this)
   }
+
+  override fun shouldHandlePropertyChange(evt: PropertyChangeEvent): Boolean =
+    SSL_PASS_THROUGHS.matches(evt)
 
   override fun addTableContent(sslPassThrough: SSLPassThrough) {
     tableList.add(sslPassThrough)
@@ -106,7 +109,10 @@ class GUIOptionSSLPassThrough(owner: GUIMain) : GUIOptionComponentBase<SSLPassTh
     tableList.clear()
   }
 
-  override fun getSelectedTableContent(): SSLPassThrough = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): SSLPassThrough? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int): SSLPassThrough = tableList[rowIndex]
 }

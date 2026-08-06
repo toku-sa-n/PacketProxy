@@ -19,7 +19,6 @@ import java.security.cert.X509Certificate
 import javax.net.ssl.KeyManager
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SNIHostName
-import javax.net.ssl.SNIServerName
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLServerSocket
 import javax.net.ssl.SSLSocket
@@ -43,7 +42,7 @@ class Https(
 ) {
   private val KS_PASS = "testtest".toCharArray()
 
-  private var clientKeyManagers: Array<KeyManager>? =
+  private val emptyKeyManagers: Array<KeyManager> =
     arrayOf(
       object : X509KeyManager {
         override fun getClientAliases(s: String, principals: Array<Principal>?): Array<String> =
@@ -105,6 +104,56 @@ class Https(
   }
 
   @Throws(Exception::class)
+  private fun doHttpConnect(proxyAddr: InetSocketAddress, serverAddr: InetSocketAddress): Socket {
+    var serverSocket = Socket(proxyAddr.address, proxyAddr.getPort())
+    var proxyOut = serverSocket.getOutputStream()
+    var proxyIn = serverSocket.getInputStream()
+    proxyOut.write(
+      String.format(
+          "CONNECT %s:%d HTTP/1.1\r\nHost: %s\r\n\r\n",
+          serverAddr.hostString,
+          serverAddr.getPort(),
+          serverAddr.hostString,
+        )
+        .toByteArray()
+    )
+    proxyOut.flush()
+    var length: Int
+    var input_data = ByteArray(1024)
+    var total = 0
+    while (proxyIn.read(input_data, total, input_data.size - total).also { length = it } != -1) {
+      total += length
+      if (Utils.indexOf(input_data, 0, total, "\r\n\r\n".toByteArray()) >= 0) {
+        break
+      }
+      if (total >= input_data.size) {
+        break
+      }
+    }
+    var response = String(input_data, 0, total, Charsets.ISO_8859_1)
+    var statusLine = response.lineSequence().firstOrNull().orEmpty()
+    var statusMatch = Regex("""HTTP/\S+\s+(\d+)""").find(statusLine)
+    var statusCode = statusMatch?.groupValues?.get(1)?.toIntOrNull() ?: 0
+    if (statusCode !in 200..299) {
+      serverSocket.close()
+      throw Exception("Upstream CONNECT failed: $statusLine")
+    }
+    return serverSocket
+  }
+
+  @Throws(Exception::class)
+  private fun applySni(sock: SSLSocket, serverName: String?) {
+    if (serverName.isNullOrBlank()) return
+    try {
+      var params = sock.sslParameters
+      params.serverNames = listOf(SNIHostName(serverName))
+      sock.sslParameters = params
+    } catch (_: IllegalArgumentException) {
+      // Invalid SNI host name — skip
+    }
+  }
+
+  @Throws(Exception::class)
   fun createBothSideSSLSockets(
     clientSocket: Socket,
     lookahead: InputStream?,
@@ -118,38 +167,19 @@ class Https(
         as SSLSocket
     clientSSLSocket.useClientMode = false
 
-    var server = servers.queryByAddress(serverAddr)
-    clientKeyManagers = clientKeyManager.getKeyManagers(server)
+    var keyManagers =
+      clientKeyManager.getKeyManagers(servers.queryByAddress(serverAddr)) ?: emptyKeyManagers
     var serverSSLSocket = arrayOfNulls<SSLSocket>(1)
     clientSSLSocket.setHandshakeApplicationProtocolSelector { _, clientProtocols ->
       try {
-        var serverSocket: Socket
-        if (proxyAddr != null) {
-          serverSocket = Socket(proxyAddr.address, proxyAddr.getPort())
-          var proxyOut = serverSocket.getOutputStream()
-          var proxyIn = serverSocket.getInputStream()
-          proxyOut.write(
-            String.format(
-                "CONNECT %s:%d HTTP/1.1\r\nHost: %s\r\n\r\n",
-                serverAddr.hostString,
-                serverAddr.getPort(),
-                serverAddr.hostString,
-              )
-              .toByteArray()
-          )
-          proxyOut.flush()
-          var length: Int
-          var input_data = ByteArray(1024)
-          while (proxyIn.read(input_data, 0, input_data.size).also { length = it } != -1) {
-            if (Utils.indexOf(input_data, 0, length, "\r\n\r\n".toByteArray()) >= 0) {
-              break
-            }
+        var serverSocket: Socket =
+          if (proxyAddr != null) {
+            doHttpConnect(proxyAddr, serverAddr)
+          } else {
+            Socket(serverAddr.address, serverAddr.getPort())
           }
-        } else {
-          serverSocket = Socket(serverAddr.address, serverAddr.getPort())
-        }
         serverSSLSocket[0] =
-          createSSLSocketFactory().createSocket(serverSocket, null as InputStream?, true)
+          createSSLSocketFactory(keyManagers).createSocket(serverSocket, null as InputStream?, true)
             as SSLSocket
         serverSSLSocket[0]!!.useClientMode = true
         var sp = serverSSLSocket[0]!!.sslParameters
@@ -163,48 +193,30 @@ class Https(
           }
         }
         sp.applicationProtocols = alpns.toTypedArray()
-
         serverSSLSocket[0]!!.sslParameters = sp
+        applySni(serverSSLSocket[0]!!, serverName)
         serverSSLSocket[0]!!.startHandshake()
       } catch (e: Exception) {
         errWithStackTrace(e)
       }
-      serverSSLSocket[0]!!.applicationProtocol
+      serverSSLSocket[0]?.applicationProtocol
     }
 
     clientSSLSocket.startHandshake()
 
     /* case: ALPN is not supported */
     if (serverSSLSocket[0] == null) {
-      // Logging.log("ALPN is not supported: " + serverName);
-      var serverSocket: Socket
-      if (proxyAddr != null) {
-        serverSocket = Socket(proxyAddr.address, proxyAddr.getPort())
-        var proxyOut = serverSocket.getOutputStream()
-        var proxyIn = serverSocket.getInputStream()
-        proxyOut.write(
-          String.format(
-              "CONNECT %s:%d HTTP/1.1\r\nHost: %s\r\n\r\n",
-              serverAddr.hostString,
-              serverAddr.getPort(),
-              serverAddr.hostString,
-            )
-            .toByteArray()
-        )
-        proxyOut.flush()
-        var length: Int
-        var input_data = ByteArray(1024)
-        while (proxyIn.read(input_data, 0, input_data.size).also { length = it } != -1) {
-          if (Utils.indexOf(input_data, 0, length, "\r\n\r\n".toByteArray()) >= 0) {
-            break
-          }
+      var serverSocket: Socket =
+        if (proxyAddr != null) {
+          doHttpConnect(proxyAddr, serverAddr)
+        } else {
+          Socket(serverAddr.address, serverAddr.getPort())
         }
-      } else {
-        serverSocket = Socket(serverAddr.address, serverAddr.getPort())
-      }
       serverSSLSocket[0] =
-        createSSLSocketFactory().createSocket(serverSocket, null as InputStream?, true) as SSLSocket
+        createSSLSocketFactory(keyManagers).createSocket(serverSocket, null as InputStream?, true)
+          as SSLSocket
       serverSSLSocket[0]!!.useClientMode = true
+      applySni(serverSSLSocket[0]!!, serverName)
       serverSSLSocket[0]!!.startHandshake()
     }
 
@@ -233,7 +245,7 @@ class Https(
   }
 
   @Throws(Exception::class)
-  fun createSSLSocketFactory(): SSLSocketFactory {
+  fun createSSLSocketFactory(keyManagers: Array<KeyManager> = emptyKeyManagers): SSLSocketFactory {
     var sslContext = SSLContext.getInstance("TLS")
     var trustManagers =
       arrayOf(
@@ -245,7 +257,7 @@ class Https(
           override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
         }
       )
-    sslContext.init(clientKeyManagers, trustManagers, SecureRandom())
+    sslContext.init(keyManagers, trustManagers, SecureRandom())
     return sslContext.socketFactory as SSLSocketFactory
   }
 
@@ -289,13 +301,9 @@ class Https(
     SNIServerName: String?,
     alpn: String?,
   ): SSLSocket {
-    /* SNI */
-    var serverName = SNIHostName(SNIServerName!!)
-    /* Fetch Client Certificate from ClientKeyManager */
-    var server = servers.queryByAddress(addr)
-    clientKeyManagers = clientKeyManager.getKeyManagers(server)
-
-    var ssf = createSSLSocketFactory()
+    var keyManagers =
+      clientKeyManager.getKeyManagers(servers.queryByAddress(addr)) ?: emptyKeyManagers
+    var ssf = createSSLSocketFactory(keyManagers)
     var sock = ssf.createSocket(addr.address, addr.getPort()) as SSLSocket
     var sslp = sock.sslParameters
     var clientAPs =
@@ -305,13 +313,8 @@ class Https(
         arrayOf("h2", "http/1.1", "http/1.0")
       }
     sslp.applicationProtocols = clientAPs
-
     sock.sslParameters = sslp
-    var serverNames = ArrayList<SNIServerName>()
-    serverNames.add(serverName)
-    var params = sock.sslParameters
-    params.serverNames = serverNames
-    sock.sslParameters = params
+    applySni(sock, SNIServerName)
     sock.startHandshake()
     return sock
   }
@@ -320,6 +323,7 @@ class Https(
   fun getCommonName(addr: InetSocketAddress): String {
     var ssf = createSSLSocketFactory()
     var socket = ssf.createSocket(addr.address, addr.getPort()) as SSLSocket
+    applySni(socket, addr.hostString)
     socket.startHandshake()
     var session = socket.session
     var servercerts = session.peerCertificates as Array<X509Certificate>

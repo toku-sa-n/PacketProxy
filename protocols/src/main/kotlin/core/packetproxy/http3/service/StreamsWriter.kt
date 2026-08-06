@@ -71,7 +71,7 @@ open class StreamsWriter(role: Constants.Role) {
 
   @Synchronized
   @Throws(Exception::class)
-  fun readQuickMessages(): QuicMessages {
+  fun readQuicMessages(): QuicMessages {
     val msgs = QuicMessages.emptyList()
     msgs.addAll(controlWriteStream.readAllQuicMessages())
     msgs.addAll(qpackEncodeStreamWriter.readAllQuicMessages())

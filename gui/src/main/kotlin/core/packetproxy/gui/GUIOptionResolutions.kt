@@ -44,7 +44,7 @@ class GUIOptionResolutions(owner: GUIMain) : GUIOptionComponentBase<Resolution>(
         },
         {
           try {
-            val oldResolution = getSelectedTableContent()
+            val oldResolution = getSelectedTableContent() ?: return@createComponent
             val resolution = GUIOptionResolutionDialog(owner).showDialog(oldResolution)
             if (resolution != null) {
               resolutions.delete(oldResolution)
@@ -56,13 +56,17 @@ class GUIOptionResolutions(owner: GUIMain) : GUIOptionComponentBase<Resolution>(
         },
         {
           try {
-            resolutions.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { resolutions.delete(it) }
           } catch (exception: Exception) {
             errWithStackTrace(exception)
           }
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    resolutions.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(resolution: Resolution) {
@@ -95,7 +99,10 @@ class GUIOptionResolutions(owner: GUIMain) : GUIOptionComponentBase<Resolution>(
     tableList.clear()
   }
 
-  override fun getSelectedTableContent(): Resolution = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): Resolution? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int): Resolution = tableList[rowIndex]
 }

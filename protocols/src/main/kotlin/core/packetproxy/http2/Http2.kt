@@ -43,6 +43,7 @@ open class Http2(private val uniqueId: UniqueID) : FramesBase() {
 
   @Throws(Exception::class)
   private fun filterFrames(streamManager: StreamManager, frames: List<Frame>): ByteArray? {
+    var completedStreamId: Int? = null
     for (frame in frames) {
       if (frame is HeadersFrame) {
         streamManager.write(frame)
@@ -50,11 +51,16 @@ open class Http2(private val uniqueId: UniqueID) : FramesBase() {
         streamManager.write(frame)
       }
       if ((frame.flags and 0x01) > 0) {
-        val stream = streamManager.read(frame.streamId)
-        return toByteArray(stream!!)
+        completedStreamId = frame.streamId
       }
     }
-    return null
+    if (completedStreamId == null) {
+      return null
+    }
+    val stream = streamManager.read(completedStreamId) ?: return null
+    val result = toByteArray(stream)
+    streamManager.clear(completedStreamId)
+    return result
   }
 
   @Throws(Exception::class)

@@ -146,7 +146,7 @@ class SearchBox(private val fontManager: FontManager) : JPanel() {
     document.setCharacterAttributes(0, text.length, attributes, false)
   }
 
-  /** TODO HTTPの構造を解釈して、明らかにパラメータではない所を除外する */
+  /** HTTP structure-aware exclusion of non-parameter regions is unsupported. */
   fun coloringHTTPText() {
     val document = baseText!!.styledDocument
     val text = baseText!!.text

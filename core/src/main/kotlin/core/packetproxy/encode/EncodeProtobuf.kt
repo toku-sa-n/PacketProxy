@@ -24,7 +24,7 @@ class EncodeProtobuf @Throws(Exception::class) constructor(ALPN: String?) : Enco
   @Throws(Exception::class)
   override fun decodeClientRequestHttp(inputHttp: Http): Http {
     val contentType = inputHttp.getFirstHeader("Content-Type")
-    if (contentType.contains("protobuf") || contentType.startsWith("application/octet-stream")) {
+    if (contentType.contains("protobuf")) {
       return decodeProtobuf3(inputHttp)
     }
     return inputHttp
@@ -33,7 +33,7 @@ class EncodeProtobuf @Throws(Exception::class) constructor(ALPN: String?) : Enco
   @Throws(Exception::class)
   override fun encodeClientRequestHttp(inputHttp: Http): Http {
     val contentType = inputHttp.getFirstHeader("Content-Type")
-    if (contentType.contains("protobuf") || contentType.startsWith("application/octet-stream")) {
+    if (contentType.contains("protobuf")) {
       return encodeProtobuf3(inputHttp)
     }
     return inputHttp
@@ -42,7 +42,7 @@ class EncodeProtobuf @Throws(Exception::class) constructor(ALPN: String?) : Enco
   @Throws(Exception::class)
   override fun decodeServerResponseHttp(inputHttp: Http): Http {
     val contentType = inputHttp.getFirstHeader("Content-Type")
-    if (contentType.contains("protobuf") || contentType.startsWith("application/octet-stream")) {
+    if (contentType.contains("protobuf")) {
       return decodeProtobuf3(inputHttp)
     }
     return inputHttp
@@ -51,7 +51,7 @@ class EncodeProtobuf @Throws(Exception::class) constructor(ALPN: String?) : Enco
   @Throws(Exception::class)
   override fun encodeServerResponseHttp(inputHttp: Http): Http {
     val contentType = inputHttp.getFirstHeader("Content-Type")
-    if (contentType.contains("protobuf") || contentType.startsWith("application/octet-stream")) {
+    if (contentType.contains("protobuf")) {
       return encodeProtobuf3(inputHttp)
     }
     return inputHttp

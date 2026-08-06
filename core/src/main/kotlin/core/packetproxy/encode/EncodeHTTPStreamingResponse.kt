@@ -16,10 +16,12 @@
 package packetproxy.encode
 
 import java.io.InputStream
+import packetproxy.common.UniqueID
 import packetproxy.http.Http
 import packetproxy.http1.Http1StreamingResponse
 import packetproxy.http2.Http2StreamingResponse
 import packetproxy.model.Packet
+import packetproxy.model.Packets
 import packetproxy.util.errWithStackTrace
 
 open class EncodeHTTPStreamingResponse : Encoder {
@@ -47,6 +49,23 @@ open class EncodeHTTPStreamingResponse : Encoder {
       }
   }
 
+  /** Wire Packets/UniqueID after reflective construction (Encoder only takes ALPN). */
+  fun attachStreamingHelpers(packets: Packets, uniqueId: UniqueID) {
+    if (http1StreamingResponse != null && http2StreamingResponse != null) {
+      return
+    }
+    http1StreamingResponse = Http1StreamingResponse(packets)
+    http2StreamingResponse = Http2StreamingResponse(packets, uniqueId)
+  }
+
+  private fun requireHttp1(): Http1StreamingResponse =
+    http1StreamingResponse
+      ?: throw IllegalStateException("HTTP/1 streaming helpers are not initialized")
+
+  private fun requireHttp2(): Http2StreamingResponse =
+    http2StreamingResponse
+      ?: throw IllegalStateException("HTTP/2 streaming helpers are not initialized")
+
   fun getHttpVersion(): HTTPVersion = httpVersion
 
   // HTTP/2側はhttp2StreamingResponse独自のストリーム多重化・ウィンドウ管理を使うため専用スレッドが必要。
@@ -57,99 +76,99 @@ open class EncodeHTTPStreamingResponse : Encoder {
   @Throws(Exception::class)
   override fun checkRequestDelimiter(data: ByteArray): Int =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.checkRequestDelimiter(data)
+      requireHttp1().checkRequestDelimiter(data)
     } else {
-      http2StreamingResponse!!.checkDelimiter(data)
+      requireHttp2().checkDelimiter(data)
     }
 
   @Throws(Exception::class)
   override fun checkResponseDelimiter(data: ByteArray): Int =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.checkResponseDelimiter(data)
+      requireHttp1().checkResponseDelimiter(data)
     } else {
-      http2StreamingResponse!!.checkDelimiter(data)
+      requireHttp2().checkDelimiter(data)
     }
 
   @Throws(Exception::class)
   override fun clientRequestArrived(data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.clientRequestArrived(data)
+      requireHttp1().clientRequestArrived(data)
     } else {
-      http2StreamingResponse!!.clientRequestArrived(data)
+      requireHttp2().clientRequestArrived(data)
     }
   }
 
   @Throws(Exception::class)
   override fun serverResponseArrived(data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.serverResponseArrived(data)
+      requireHttp1().serverResponseArrived(data)
     } else {
-      http2StreamingResponse!!.serverResponseArrived(data)
+      requireHttp2().serverResponseArrived(data)
     }
   }
 
   @Throws(Exception::class)
   override fun passThroughClientRequest(): ByteArray? =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.passThroughClientRequest()
+      requireHttp1().passThroughClientRequest()
     } else {
-      http2StreamingResponse!!.passThroughClientRequest()
+      requireHttp2().passThroughClientRequest()
     }
 
   @Throws(Exception::class)
   override fun passThroughServerResponse(): ByteArray? =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.passThroughServerResponse()
+      requireHttp1().passThroughServerResponse()
     } else {
-      http2StreamingResponse!!.passThroughServerResponse()
+      requireHttp2().passThroughServerResponse()
     }
 
   @Throws(Exception::class)
   override fun clientRequestAvailable(): ByteArray? =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.clientRequestAvailable()
+      requireHttp1().clientRequestAvailable()
     } else {
-      http2StreamingResponse!!.clientRequestAvailable()
+      requireHttp2().clientRequestAvailable()
     }
 
   @Throws(Exception::class)
   override fun serverResponseAvailable(): ByteArray? =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.serverResponseAvailable()
+      requireHttp1().serverResponseAvailable()
     } else {
-      http2StreamingResponse!!.serverResponseAvailable()
+      requireHttp2().serverResponseAvailable()
     }
 
   @Throws(Exception::class)
   override fun decodeServerResponse(input_data: ByteArray): ByteArray =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.decodeServerResponse(input_data)
+      requireHttp1().decodeServerResponse(input_data)
     } else {
-      http2StreamingResponse!!.decodeServerResponse(input_data)
+      requireHttp2().decodeServerResponse(input_data)
     }
 
   @Throws(Exception::class)
   override fun encodeServerResponse(input_data: ByteArray): ByteArray =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.encodeServerResponse(input_data) ?: input_data
+      requireHttp1().encodeServerResponse(input_data) ?: input_data
     } else {
-      http2StreamingResponse!!.encodeServerResponse(input_data) ?: input_data
+      requireHttp2().encodeServerResponse(input_data) ?: input_data
     }
 
   @Throws(Exception::class)
   override fun decodeClientRequest(input_data: ByteArray): ByteArray =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.decodeClientRequest(input_data)
+      requireHttp1().decodeClientRequest(input_data)
     } else {
-      http2StreamingResponse!!.decodeClientRequest(input_data)
+      requireHttp2().decodeClientRequest(input_data)
     }
 
   @Throws(Exception::class)
   override fun encodeClientRequest(input_data: ByteArray): ByteArray =
     if (httpVersion == HTTPVersion.HTTP1) {
-      http1StreamingResponse!!.encodeClientRequest(input_data)
+      requireHttp1().encodeClientRequest(input_data)
     } else {
-      http2StreamingResponse!!.encodeClientRequest(input_data)
+      requireHttp2().encodeClientRequest(input_data)
     }
 
   @Throws(Exception::class)
@@ -157,7 +176,7 @@ open class EncodeHTTPStreamingResponse : Encoder {
     if (httpVersion == HTTPVersion.HTTP1) {
       super.putToClientFlowControlledQueue(frames)
     } else {
-      http2StreamingResponse!!.putToClientFlowControlledQueue(frames)
+      requireHttp2().putToClientFlowControlledQueue(frames)
     }
   }
 
@@ -166,7 +185,7 @@ open class EncodeHTTPStreamingResponse : Encoder {
     if (httpVersion == HTTPVersion.HTTP1) {
       super.putToServerFlowControlledQueue(frames)
     } else {
-      http2StreamingResponse!!.putToServerFlowControlledQueue(frames)
+      requireHttp2().putToServerFlowControlledQueue(frames)
     }
   }
 
@@ -174,14 +193,14 @@ open class EncodeHTTPStreamingResponse : Encoder {
     if (httpVersion == HTTPVersion.HTTP1) {
       super.getClientFlowControlledInputStream()
     } else {
-      http2StreamingResponse!!.getClientFlowControlledInputStream()
+      requireHttp2().getClientFlowControlledInputStream()
     }
 
   override fun getServerFlowControlledInputStream(): InputStream =
     if (httpVersion == HTTPVersion.HTTP1) {
       super.getServerFlowControlledInputStream()
     } else {
-      http2StreamingResponse!!.getServerFlowControlledInputStream()
+      requireHttp2().getServerFlowControlledInputStream()
     }
 
   @Throws(Exception::class)
@@ -231,7 +250,7 @@ open class EncodeHTTPStreamingResponse : Encoder {
     if (httpVersion == HTTPVersion.HTTP1) {
       super.setGroupId(packet)
     } else {
-      http2StreamingResponse!!.setGroupId(packet)
+      requireHttp2().setGroupId(packet)
     }
   }
 

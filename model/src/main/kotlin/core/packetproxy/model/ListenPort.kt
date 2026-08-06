@@ -87,7 +87,7 @@ open class ListenPort {
     this.protocol = type.getProtocol()
   }
 
-  fun isEnabled(): Boolean = this.enabled!!
+  fun isEnabled(): Boolean = this.enabled ?: false
 
   fun setEnabled() {
     this.enabled = true
@@ -142,5 +142,9 @@ open class ListenPort {
 
   override fun hashCode(): Int = this.getId()
 
-  fun equals(obj: ListenPort): Boolean = this.getId() == obj.getId()
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is ListenPort) return false
+    return this.getId() == other.getId()
+  }
 }

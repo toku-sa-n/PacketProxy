@@ -109,12 +109,30 @@ class Projects(
 
   @Throws(Exception::class)
   fun createNewProject(name: String): String {
-    require(name.trim().isNotEmpty()) { "Project name cannot be empty" }
+    val sanitized = sanitizeProjectName(name)
     var projectDirectory = Paths.get(System.getProperty("user.home"), ".packetproxy", "projects")
     Files.createDirectories(projectDirectory)
-    var database = projectDirectory.resolve("${name.trim()}.sqlite3")
+    var database = projectDirectory.resolve("$sanitized.sqlite3").normalize()
+    if (!database.startsWith(projectDirectory.normalize())) {
+      throw IllegalArgumentException("Invalid project name")
+    }
     this.database.openAt(database.toString())
     recentProjectsStore.add(database)
     return database.toString()
+  }
+
+  companion object {
+    fun sanitizeProjectName(name: String): String {
+      val trimmed = name.trim()
+      require(trimmed.isNotEmpty()) { "Project name cannot be empty" }
+      require(!trimmed.contains("..")) { "Project name must not contain path traversal" }
+      require(!trimmed.contains('/') && !trimmed.contains('\\')) {
+        "Project name must not contain path separators"
+      }
+      require(trimmed.matches(Regex("^[\\w.\\- ]+$"))) {
+        "Project name contains invalid characters"
+      }
+      return trimmed
+    }
   }
 }

@@ -127,6 +127,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     main.modelServices.filters.addPropertyChangeListener(this)
   }
 
+  fun dispose() {
+    packets.removePropertyChangeListener(this)
+    main.modelServices.filters.removePropertyChangeListener(this)
+  }
+
   fun getTableModel(): DefaultTableModel = tableModel
 
   fun filter() {
@@ -270,9 +275,10 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
 
   fun searchFromRequest(searchWord: String): List<Int> {
     val ids = ArrayList<Int>()
+    val pattern = ".*${java.util.regex.Pattern.quote(searchWord)}.*".toRegex()
     for (i in 0 until table.rowCount) {
       val request = tableModel.getValueAt(i, 1) as String
-      if (request.matches(String.format(".*%s.*", searchWord).toRegex())) {
+      if (request.matches(pattern)) {
         ids.add(i)
       }
     }
@@ -672,7 +678,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       object : ComponentAdapter() {
         override fun componentResized(event: ComponentEvent) {
           try {
-            if (!autoScroll.isEnabled()) {
+            if (!autoScroll.isAutoScrollEnabled()) {
               return
             }
             table.scrollRectToVisible(table.getCellRect(table.rowCount - 1, 0, true))
@@ -721,11 +727,11 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
         override fun onApproved(file: File, extension: String) {
           try {
             main.modelServices.database.Save(file.absolutePath)
-            JOptionPane.showMessageDialog(null, i18nString("Data saved successfully"))
+            JOptionPane.showMessageDialog(owner, i18nString("Data saved successfully"))
             updateRequest(true)
           } catch (exception: Exception) {
             errWithStackTrace(exception)
-            JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+            JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
           }
           dialogOnce = false
         }
@@ -733,7 +739,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
         override fun onCanceled() {}
 
         override fun onError() {
-          JOptionPane.showMessageDialog(null, i18nString("Data can't be saved with error"))
+          JOptionPane.showMessageDialog(owner, i18nString("Data can't be saved with error"))
         }
       }
     )

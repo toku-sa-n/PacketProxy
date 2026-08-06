@@ -1,5 +1,6 @@
 # Eclipse
 /bin/
+**/bin/
 /.project
 /.classpath
 /.settings/
@@ -17,6 +18,7 @@
 
 # othres
 /logs/
+**/logs/
 /***/*.sqlite3
 /***/*.class
 /***/.DS_Store

@@ -62,7 +62,7 @@ class Servers(private val database: Database) : PropertyChangeListener {
 
   @Throws(Exception::class)
   fun queryByHostNameAndPort(hostname: String, port: Int): Server? {
-    val cache_key = hostname + port.toString()
+    val cache_key = "$hostname|$port"
     val ret = cache.query("queryByHostNameAndPort", cache_key)
     if (ret != null) {
       return ret[0]
@@ -76,7 +76,10 @@ class Servers(private val database: Database) : PropertyChangeListener {
         servers[0]
       }
 
-    cache.set("queryByHostNameAndPort", cache_key, server!!)
+    if (server == null) {
+      return null
+    }
+    cache.set("queryByHostNameAndPort", cache_key, server)
     return server
   }
 
@@ -223,12 +226,8 @@ class Servers(private val database: Database) : PropertyChangeListener {
     val message = evt.newValue as DatabaseMessage
     try {
       when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
+        DatabaseMessage.PAUSE,
+        DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(Server::class.java, this)

@@ -70,7 +70,10 @@ class WriteFileChooserWrapper {
         )
       ) {
         JOptionPane.YES_OPTION -> listener?.onApproved(finalFile, fileExtension)
-        JOptionPane.NO_OPTION,
+        JOptionPane.NO_OPTION -> {
+          showSaveDialog()
+          return
+        }
         JOptionPane.CLOSED_OPTION -> return
         JOptionPane.CANCEL_OPTION -> listener?.onCanceled()
       }
@@ -97,6 +100,6 @@ class WriteFileChooserWrapper {
 
   private companion object {
     const val EVENTLISTENER_IS_ALREADY_EXISTS = -1
-    const val EVENTLISTENER_IS_ADDED = -1
+    const val EVENTLISTENER_IS_ADDED = 0
   }
 }

@@ -58,8 +58,14 @@ open class EncodeGRPC : EncodeHTTPBase {
         throw Exception("gRPC: compressed flag in gRPC message is not supported yet")
       }
       pos += 1
+      if (pos + 4 > raw.size) {
+        throw Exception("gRPC: truncated message length")
+      }
       val messageLength = ByteBuffer.wrap(Arrays.copyOfRange(raw, pos, pos + 4)).getInt()
       pos += 4
+      if (messageLength < 0 || pos + messageLength > raw.size) {
+        throw Exception("gRPC: invalid message length $messageLength")
+      }
       val grpcMsg = Arrays.copyOfRange(raw, pos, pos + messageLength)
       val decodedMsg = decodeGrpcClientPayload(grpcMsg)
       if (body.size() > 0) {
@@ -126,8 +132,14 @@ open class EncodeGRPC : EncodeHTTPBase {
         throw Exception("gRPC: compressed flag in gRPC message is not supported yet")
       }
       pos += 1
+      if (pos + 4 > raw.size) {
+        throw Exception("gRPC: truncated message length")
+      }
       val messageLength = ByteBuffer.wrap(Arrays.copyOfRange(raw, pos, pos + 4)).getInt()
       pos += 4
+      if (messageLength < 0 || pos + messageLength > raw.size) {
+        throw Exception("gRPC: invalid message length $messageLength")
+      }
       val grpcMsg = Arrays.copyOfRange(raw, pos, pos + messageLength)
       val decodedMsg = decodeGrpcServerPayload(grpcMsg)
       if (body.size() > 0) {

@@ -127,20 +127,23 @@ class PrivateDNSClient(
   }
 
   fun getByName6(host: String): InetAddress? {
-    val hostIP: InetAddress?
     try {
-      val lookup = Lookup(host, Type.AAAA)
-      // lookup.setResolver(resolver);
-      val records = lookup.run()
-      if (records == null) {
-        return null
+      if (host == "localhost") {
+        return InetAddress.getByName("::1")
       }
-      hostIP = (records[0] as AAAARecord).address
+      if (!dnsLooping(host)) {
+        return InetAddress.getAllByName(host).firstOrNull { it is java.net.Inet6Address }
+      }
+      val lookup = Lookup(host, Type.AAAA)
+      val records = lookup.run() ?: return null
+      return (records[0] as AAAARecord).address
     } catch (ex: TextParseException) {
       log("'%s'", ex.message)
       throw IllegalStateException(ex)
+    } catch (ex: Exception) {
+      errWithStackTrace(ex)
+      return null
     }
-    return hostIP
   }
 
   @Throws(Exception::class)

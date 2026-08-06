@@ -7,15 +7,20 @@
 package packetproxy
 
 import java.security.KeyStore
+import java.util.LinkedHashMap
 import packetproxy.model.CAs.CA
 
-class CertCacheManager() {
-  private val certCache = HashMap<String, KeyStore>()
+class CertCacheManager(private val maxSize: Int = 256) {
+  private val certCache =
+    object : LinkedHashMap<String, KeyStore>(16, 0.75f, true) {
+      override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, KeyStore>?): Boolean =
+        size > maxSize
+    }
 
   @Throws(Exception::class)
   fun getKeyStore(commonName: String, domainNames: Array<String>, ca: CA): KeyStore {
     synchronized(this) {
-      val key = commonName + domainNames.joinToString(separator = "") + ca.getName()
+      val key = buildKey(commonName, domainNames, ca)
       certCache[key]?.let {
         return it
       }
@@ -24,6 +29,9 @@ class CertCacheManager() {
   }
 
   fun clearCache() {
-    certCache.clear()
+    synchronized(this) { certCache.clear() }
   }
+
+  private fun buildKey(commonName: String, domainNames: Array<String>, ca: CA): String =
+    listOf(commonName, *domainNames, ca.getName()).joinToString(separator = "\u0000")
 }

@@ -21,8 +21,6 @@ import org.jline.reader.UserInterruptException
 import packetproxy.CoreServices
 import packetproxy.cli.DecodeModeHandler
 import packetproxy.cli.EncodeModeHandler
-import packetproxy.common.ConfigIO
-import packetproxy.common.Utils
 import packetproxy.gulp.input.ScriptSource
 import packetproxy.gulp.input.TerminalFactory
 import packetproxy.model.ModelServices
@@ -93,33 +91,6 @@ class GulpTerminal {
           }
         }
       }
-    }
-  }
-
-  /** JSON設定ファイルを読み込んで適用 ListenPortManager初期化後に呼び出すことで、設定ファイル内の有効なプロキシが自動的に開始される */
-  private fun loadSettingsFromJson(modelServices: ModelServices, jsonPath: String?) {
-    if (jsonPath?.isEmpty() ?: true) return
-
-    try {
-      Logging.log("設定ファイルを読み込みます: $jsonPath")
-      val jsonBytes = Utils.readfile(jsonPath)
-      val json = String(jsonBytes, Charsets.UTF_8)
-
-      val configIO =
-        ConfigIO(
-          modelServices.database,
-          modelServices.listenPorts,
-          modelServices.servers,
-          modelServices.modifications,
-          modelServices.sslPassThroughs,
-        )
-      configIO.setOptions(json)
-
-      Logging.log("設定ファイルを正常に読み込みました: $jsonPath")
-      Logging.log("設定ファイル内の有効なプロキシは自動的に開始されます")
-    } catch (e: Exception) {
-      Logging.err("設定ファイルの読み込みに失敗しました: ${e.message}", e)
-      Logging.errWithStackTrace(e)
     }
   }
 }

@@ -16,16 +16,10 @@
 package packetproxy.model
 
 import com.j256.ormlite.dao.Dao
-import java.beans.PropertyChangeEvent
-import java.beans.PropertyChangeListener
-import java.beans.PropertyChangeSupport
-import packetproxy.model.Database.DatabaseMessage
-import packetproxy.model.PropertyChangeEventType.DATABASE_MESSAGE
 import packetproxy.model.PropertyChangeEventType.FILTERS
-import packetproxy.util.errWithStackTrace
 
-class Filters(private val database: Database) : PropertyChangeListener {
-  private val changes = PropertyChangeSupport(this)
+class Filters(database: Database) : AbstractDaoManager(database) {
+  override val updateEventType = FILTERS
 
   private var dao: Dao<Filter, Int> = database.createTable(Filter::class.java, this)
 
@@ -68,47 +62,11 @@ class Filters(private val database: Database) : PropertyChangeListener {
     firePropertyChange()
   }
 
-  fun addPropertyChangeListener(listener: PropertyChangeListener) {
-    changes.addPropertyChangeListener(listener)
+  override fun onReconnect() {
+    dao = database.createTable(Filter::class.java, this)
   }
 
-  fun removePropertyChangeListener(listener: PropertyChangeListener) {
-    changes.removePropertyChangeListener(listener)
-  }
-
-  private fun firePropertyChange() {
-    changes.firePropertyChange(FILTERS.toString(), null, null)
-  }
-
-  private fun firePropertyChange(value: Any?) {
-    changes.firePropertyChange(FILTERS.toString(), null, value)
-  }
-
-  override fun propertyChange(evt: PropertyChangeEvent) {
-    if (!DATABASE_MESSAGE.matches(evt)) {
-      return
-    }
-
-    val message = evt.newValue as DatabaseMessage
-    try {
-      when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
-        DatabaseMessage.DISCONNECT_NOW -> {}
-        DatabaseMessage.RECONNECT -> {
-          dao = database.createTable(Filter::class.java, this)
-          firePropertyChange(message)
-        }
-        DatabaseMessage.RECREATE -> {
-          dao = database.createTable(Filter::class.java, this)
-        }
-      }
-    } catch (e: Exception) {
-      errWithStackTrace(e)
-    }
+  override fun onRecreate() {
+    dao = database.createTable(Filter::class.java, this)
   }
 }

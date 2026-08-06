@@ -66,6 +66,8 @@ class Logging {
 
   fun getLogTextInternal(): String = logSink.getLogText()
 
+  fun getStructuredEntriesInternal(): List<StructuredLogEntry> = logSink.getStructuredEntries()
+
   fun initInternal(isGulp: Boolean) {
     this.isGulp = isGulp
     val context = LoggerFactory.getILoggerFactory() as LoggerContext
@@ -226,6 +228,18 @@ fun errWithStackTrace(e: Throwable) {
 
 /** Returns retained log text from the installed [Logging] sink, or empty if none is installed. */
 fun getLogText(): String = processWideLogging?.getLogTextInternal() ?: ""
+
+/** Tails the process-wide gulp log file when [Logging.installFallback] has been called. */
+suspend fun tailLog() {
+  val instance =
+    processWideLogging
+      ?: throw IllegalStateException("Logging is not installed; call Logging.installFallback first")
+  instance.tailLog()
+}
+
+/** Returns structured log entries with levels when available. */
+fun getStructuredLogEntries(): List<StructuredLogEntry> =
+  processWideLogging?.getStructuredEntriesInternal() ?: emptyList()
 
 @Volatile private var processWideLogging: Logging? = null
 

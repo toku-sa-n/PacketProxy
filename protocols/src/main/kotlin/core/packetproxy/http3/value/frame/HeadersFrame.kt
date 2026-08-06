@@ -56,6 +56,11 @@ class HeadersFrame private constructor(frameData: ByteArray) : Frame {
     fun parse(buffer: ByteBuffer): HeadersFrame {
       parseVarInt(buffer)
       val frameLength = parseVarInt(buffer)
+      if (frameLength > buffer.remaining().toLong()) {
+        throw Exception(
+          "Incomplete HeadersFrame: need $frameLength bytes but only ${buffer.remaining()} remaining"
+        )
+      }
       val frameData = readSimpleBytes(buffer, frameLength)
       return HeadersFrame(frameData)
     }

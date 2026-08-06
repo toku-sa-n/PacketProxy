@@ -63,8 +63,7 @@ class InterceptController(
     pendingDeferred?.complete(InterceptDecision.Forward(data))
   }
 
-  @Suppress("FunctionName")
-  fun forward_multiple(data: ByteArray) {
+  fun forwardMultiple(data: ByteArray) {
     pendingDeferred?.complete(InterceptDecision.ForwardMultiple(data))
   }
 

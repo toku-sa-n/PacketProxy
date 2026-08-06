@@ -1,9 +1,15 @@
 package packetproxy.gui
 
 import java.awt.Color
+import java.util.Date
+import java.util.concurrent.CompletableFuture
 import javax.swing.*
 import packetproxy.common.Range
+import packetproxy.common.i18nString
+import packetproxy.controller.ResendController.ResendWorker
 import packetproxy.model.OneShotPacket
+import packetproxy.util.errWithStackTrace
+import packetproxy.vulchecker.VulCheckPattern
 import packetproxy.vulchecker.VulChecker
 
 class GUIVulCheckTab(
@@ -56,6 +62,18 @@ class GUIVulCheckTab(
       GUIVulCheckSendTable(
         main.coreServices.encoderManager.packetSummarizer,
         { generator ->
+          if (selectedGeneratorName.isNotEmpty() && selectedGeneratorName != generator) {
+            var previous = manager.findVulCheckPattern(selectedGeneratorName)
+            var previousPacket = previous.getPacket()
+            var edited = sendData.getData()
+            if (!previousPacket.getData().contentEquals(edited)) {
+              previousPacket.setData(edited)
+              manager.saveVulCheckPattern(
+                selectedGeneratorName,
+                VulCheckPattern(previous.getName(), previousPacket, null),
+              )
+            }
+          }
           selectedGeneratorName = generator
           manager.findVulCheckPattern(generator).let {
             sendData.setData(it.getPacket().getData(), it.getRange())
@@ -74,10 +92,122 @@ class GUIVulCheckTab(
           true
         },
       )
+    var sendButton = JButton(i18nString("send")).apply { addActionListener { sendSelected() } }
+    var sendAllButton =
+      JButton(i18nString("send all")).apply { addActionListener { sendAllEnabled() } }
+    var bottom =
+      JPanel().apply {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        add(sendData.tabPanel)
+        add(
+          JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.LINE_AXIS)
+            add(sendButton)
+            add(sendAllButton)
+          }
+        )
+      }
     return JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
       add(sendTable.createPanel())
-      add(sendData.tabPanel)
+      add(bottom)
       dividerLocation = 200
+    }
+  }
+
+  private fun sendSelected() {
+    try {
+      var generatorName = sendTable.selectedGeneratorName
+      if (generatorName.isEmpty() || !manager.isEnabled(generatorName)) {
+        return
+      }
+      var pattern = manager.findVulCheckPattern(generatorName)
+      var packet = pattern.getPacket()
+      var data = manager.extractMacro(generatorName, sendData.getData())
+      if (data == null || data.isEmpty()) {
+        return
+      }
+      packet.setData(data)
+      var sentTime = Date()
+      var resendController = main.coreServices.resendController
+      resendController.resend(
+        resendController.run {
+          object : ResendWorker(packet, 1) {
+            override fun process(oneshots: MutableList<OneShotPacket>) {
+              var recvTime = Date()
+              try {
+                for (oneshot in oneshots) {
+                  recvPackets[recvPacketId] = oneshot
+                  recvTable.add(
+                    recvPacketId,
+                    pattern.getName(),
+                    oneshot,
+                    recvTime.time - sentTime.time,
+                  )
+                  recvPacketId++
+                }
+              } catch (e: Exception) {
+                errWithStackTrace(e)
+              }
+            }
+          }
+        }
+      )
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    }
+  }
+
+  private fun sendAllEnabled() {
+    try {
+      var future = CompletableFuture.completedFuture("send all packets")
+      var resendController = main.coreServices.resendController
+      for (pattern in manager.getAllEnabledVulCheckPattern()) {
+        future =
+          future.thenApplyAsync { arg ->
+            try {
+              var sentTime = Date()
+              var packet = pattern.getPacket()
+              packet.setData(manager.extractMacro(pattern.getName(), packet.getData()))
+              resendController.resend(
+                resendController.run {
+                  object : ResendWorker(packet, 1) {
+                    override fun process(oneshots: MutableList<OneShotPacket>) {
+                      var recvTime = Date()
+                      try {
+                        for (res in oneshots) {
+                          recvPackets[recvPacketId] = res
+                          recvTable.add(
+                            recvPacketId,
+                            pattern.getName(),
+                            res,
+                            recvTime.time - sentTime.time,
+                          )
+                          recvPacketId++
+                        }
+                      } catch (e: Exception) {
+                        errWithStackTrace(e)
+                      }
+                    }
+                  }
+                }
+              )
+            } catch (e: Exception) {
+              errWithStackTrace(e)
+            }
+            arg
+          }
+        future =
+          future.thenApplyAsync { arg ->
+            try {
+              Thread.sleep(100)
+            } catch (e: Exception) {
+              errWithStackTrace(e)
+            }
+            arg
+          }
+      }
+    } catch (e: Exception) {
+      errWithStackTrace(e)
     }
   }
 
@@ -92,11 +222,5 @@ class GUIVulCheckTab(
       add(recvData.tabPanel)
       dividerLocation = 200
     }
-  }
-
-  companion object {
-    private var owner: JFrame? = null
-
-    @JvmStatic fun getOwner(): JFrame? = owner
   }
 }

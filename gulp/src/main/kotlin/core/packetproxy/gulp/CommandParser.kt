@@ -32,8 +32,8 @@ class CommandParser {
   private val regex = Regex("""[^\s"]+|"([^"]*)"""")
 
   fun parse(line: String): ParsedCommand? {
-    // #以降をコメントとして削除する
-    val processedLine = line.split("#").first()
+    // Strip # comments, but ignore # inside double quotes.
+    val processedLine = stripUnquotedComment(line)
 
     // マッチした部分を全てリストへ
     val tokens =
@@ -55,5 +55,17 @@ class CommandParser {
     val cleaned = args.dropWhile { it.isEmpty() }
     if (cleaned.isEmpty()) return null
     return Pair(cleaned.first().trim(), cleaned.drop(1))
+  }
+
+  private fun stripUnquotedComment(line: String): String {
+    var inQuotes = false
+    for (i in line.indices) {
+      val c = line[i]
+      when {
+        c == '"' -> inQuotes = !inQuotes
+        c == '#' && !inQuotes -> return line.substring(0, i)
+      }
+    }
+    return line
   }
 }

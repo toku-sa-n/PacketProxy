@@ -41,6 +41,7 @@ constructor(
   private val listen_socket: ServerSocket,
   private val listen_info: ListenPort,
   private val duplexFactory: DuplexFactory,
+  private val duplexManager: DuplexManager,
   private val endpointFactory: EndpointFactory,
   private val servers: Servers,
   private val resolutions: Resolutions,
@@ -139,7 +140,7 @@ constructor(
           endpointFactory.createServerEndpoint(hostPort.getInetSocketAddress(resolutions))
         }
 
-      val server = servers.queryByHostNameAndPort(hostPort.hostName, listen_info.getPort())
+      val server = servers.queryByHostNameAndPort(hostPort.hostName, hostPort.port)
       createConnection(client_e, server_e, server)
     } catch (e: ConnectException) {
       val addr = hostPort.getInetSocketAddress(resolutions)
@@ -154,6 +155,6 @@ constructor(
       if (server == null) duplexFactory.createDuplexAsync(client_e, server_e, "HTTP")
       else duplexFactory.createDuplexAsync(client_e, server_e, server.getEncoder()!!)
     duplex.start()
-    // DuplexManager.getInstance().registerDuplex(duplex);
+    duplexManager.registerDuplex(duplex)
   }
 }

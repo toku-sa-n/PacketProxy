@@ -4,7 +4,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.ImageIcon
 import javax.swing.JLabel
-import packetproxy.util.err
+import packetproxy.util.log
 
 class GUIHistoryAutoScroll : JLabel(disabledIcon) {
   private var autoScrollEnabled = false
@@ -19,7 +19,7 @@ class GUIHistoryAutoScroll : JLabel(disabledIcon) {
     )
   }
 
-  @Synchronized override fun isEnabled(): Boolean = autoScrollEnabled
+  @Synchronized fun isAutoScrollEnabled(): Boolean = autoScrollEnabled
 
   @Synchronized
   fun doToggle() {
@@ -37,7 +37,7 @@ class GUIHistoryAutoScroll : JLabel(disabledIcon) {
     }
     icon = enabledIcon
     autoScrollEnabled = true
-    err("Auto scrolling was turned ON!")
+    log("Auto scrolling was turned ON!")
   }
 
   @Synchronized
@@ -47,7 +47,7 @@ class GUIHistoryAutoScroll : JLabel(disabledIcon) {
     }
     icon = disabledIcon
     autoScrollEnabled = false
-    err("Auto scrolling was turned OFF")
+    log("Auto scrolling was turned OFF")
   }
 
   companion object {

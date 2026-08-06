@@ -32,6 +32,7 @@ import packetproxy.CoreServices
 import packetproxy.gui.GUIMain
 import packetproxy.gui.GuiServiceExtension
 import packetproxy.model.Extension
+import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
 enum class LogLevel {
@@ -52,6 +53,7 @@ class MCPServerExtension : Extension, CoreServiceExtension, GuiServiceExtension 
   private var isRunning = false
   private val logMessages: MutableList<LogEntry> = ArrayList()
   private val prettyGson = GsonBuilder().setPrettyPrinting().create()
+  private val MAX_LOG_MESSAGES = 1000
 
   private data class LogEntry(val timestamp: Date, val level: LogLevel, val message: String)
 
@@ -147,32 +149,22 @@ class MCPServerExtension : Extension, CoreServiceExtension, GuiServiceExtension 
           addLog(message, level)
         }
 
-      // Start HTTP server for MCP
-      httpServer = HttpServer.create(InetSocketAddress(HTTP_PORT), 0)
+      // Start HTTP server for MCP (localhost only — tools still validate access_token)
+      httpServer = HttpServer.create(InetSocketAddress("127.0.0.1", HTTP_PORT), 0)
       httpServer!!.createContext("/mcp", MCPHttpHandler())
       httpServer!!.setExecutor(null) // creates a default executor
       httpServer!!.start()
 
-      var serverThread = Thread {
-        try {
-          server!!.run()
-        } catch (e: Exception) {
-          addLog("Server error: " + e.message, LogLevel.ERROR)
-          e.printStackTrace()
-        }
-      }
-      serverThread.setDaemon(true)
-      serverThread.start()
-
+      // HTTP mode does not need the stdin/stdout MCP loop.
       isRunning = true
       startButton!!.setEnabled(false)
       stopButton!!.setEnabled(true)
       addLog("MCP Server started")
-      addLog("HTTP endpoint available at http://localhost:$HTTP_PORT/mcp")
+      addLog("HTTP endpoint available at http://127.0.0.1:$HTTP_PORT/mcp")
       log("MCP Server started with HTTP endpoint on port $HTTP_PORT")
     } catch (e: Exception) {
       addLog("Failed to start server: " + e.message, LogLevel.ERROR)
-      e.printStackTrace()
+      errWithStackTrace(e)
     }
   }
 
@@ -199,13 +191,18 @@ class MCPServerExtension : Extension, CoreServiceExtension, GuiServiceExtension 
       log("MCP Server stopped")
     } catch (e: Exception) {
       addLog("Failed to stop server: " + e.message, LogLevel.ERROR)
-      e.printStackTrace()
+      errWithStackTrace(e)
     }
   }
 
   private fun addLog(message: String, level: LogLevel = LogLevel.INFO) {
     var entry = LogEntry(Date(), level, message)
-    synchronized(logMessages) { logMessages.add(entry) }
+    synchronized(logMessages) {
+      logMessages.add(entry)
+      while (logMessages.size > MAX_LOG_MESSAGES) {
+        logMessages.removeAt(0)
+      }
+    }
     if (logArea != null) {
       SwingUtilities.invokeLater { appendStyledEntry(entry) }
     }
@@ -290,10 +287,12 @@ class MCPServerExtension : Extension, CoreServiceExtension, GuiServiceExtension 
         "Received HTTP request: " + exchange.getRequestMethod() + " " + exchange.getRequestURI()
       )
 
-      // Enable CORS
-      exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*")
+      // Localhost-only server; still require CORS for local tooling
+      exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "http://127.0.0.1")
       exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "POST, OPTIONS")
-      exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type")
+      exchange
+        .getResponseHeaders()
+        .add("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
       if ("OPTIONS" == exchange.getRequestMethod()) {
         exchange.sendResponseHeaders(200, 0)
@@ -307,6 +306,18 @@ class MCPServerExtension : Extension, CoreServiceExtension, GuiServiceExtension 
         var os = exchange.getResponseBody()
         os.write(response.toByteArray())
         os.close()
+        return
+      }
+
+      if (!isAuthorized(exchange)) {
+        var response =
+          "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32001,\"message\":\"Unauthorized\"},\"id\":null}"
+        exchange.getResponseHeaders().add("Content-Type", "application/json")
+        exchange.sendResponseHeaders(
+          401,
+          response.toByteArray(StandardCharsets.UTF_8).size.toLong(),
+        )
+        exchange.getResponseBody().use { it.write(response.toByteArray(StandardCharsets.UTF_8)) }
         return
       }
 
@@ -354,6 +365,22 @@ class MCPServerExtension : Extension, CoreServiceExtension, GuiServiceExtension 
         os.write(errorResponse.toByteArray())
         os.close()
       }
+    }
+
+    private fun isAuthorized(exchange: HttpExchange): Boolean {
+      var configured =
+        packetproxy.model
+          .ConfigString(coreServices.modelServices.configs, "SharingConfigsAccessToken")
+          .getString()
+      if (configured.isEmpty()) {
+        return false
+      }
+      var auth = exchange.requestHeaders.getFirst("Authorization") ?: return false
+      var bearerPrefix = "Bearer "
+      if (!auth.startsWith(bearerPrefix, ignoreCase = true)) {
+        return false
+      }
+      return auth.substring(bearerPrefix.length).trim() == configured
     }
   }
 

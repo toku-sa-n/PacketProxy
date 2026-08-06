@@ -114,31 +114,8 @@ class SSLPassThroughs(private val database: Database) : PropertyChangeListener {
   }
 
   @Throws(Exception::class)
-  fun queryEnabled(serverName: String, listenPort: ListenPort): List<SSLPassThrough> {
-    val cache_key = serverName + listenPort.hashCode().toString()
-    var ret = cache.query("queryEnabled2", cache_key)
-    if (ret != null) {
-      return ret
-    }
-
-    ret =
-      dao
-        .queryBuilder()
-        .where()
-        .eq("server_name", serverName)
-        .or()
-        .eq("listen_port", listenPort)
-        .and()
-        .eq("enabled", true)
-        .query()
-
-    cache.set("queryEnabled2", cache_key, ret)
-    return ret
-  }
-
-  @Throws(Exception::class)
   fun includes(serverName: String, listenPort: Int): Boolean {
-    val cache_key = serverName + listenPort.toString()
+    val cache_key = "$serverName|$listenPort"
     var spts = cache.query("includes", cache_key)
     if (spts == null) {
       spts =
@@ -191,12 +168,8 @@ class SSLPassThroughs(private val database: Database) : PropertyChangeListener {
     val message = evt.newValue as DatabaseMessage
     try {
       when (message) {
-        DatabaseMessage.PAUSE -> {
-          // TODO ロックを取る
-        }
-        DatabaseMessage.RESUME -> {
-          // TODO ロックを解除
-        }
+        DatabaseMessage.PAUSE,
+        DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(SSLPassThrough::class.java, this)

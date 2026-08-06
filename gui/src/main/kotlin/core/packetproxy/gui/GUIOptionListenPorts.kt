@@ -21,7 +21,7 @@ class GUIOptionListenPorts(owner: GUIMain) : GUIOptionComponentBase<ListenPort>(
             if (row < 0) return
             table.setRowSelectionInterval(row, row)
             if (table.columnAtPoint(e.point) == 0) {
-              val port = getSelectedTableContent()
+              val port = getSelectedTableContent() ?: return
               if (table.getValueAt(row, 0) as Boolean) port.setDisabled() else port.setEnabled()
               listenPorts.update(port)
             }
@@ -47,7 +47,7 @@ class GUIOptionListenPorts(owner: GUIMain) : GUIOptionComponentBase<ListenPort>(
         },
         {
           try {
-            val old = getSelectedTableContent()
+            val old = getSelectedTableContent() ?: return@createComponent
             GUIOptionListenPortDialog(owner).showDialog(old)?.let {
               listenPorts.delete(old)
               it.setEnabled()
@@ -59,13 +59,18 @@ class GUIOptionListenPorts(owner: GUIMain) : GUIOptionComponentBase<ListenPort>(
         },
         {
           try {
-            listenPorts.delete(getSelectedTableContent())
+            getSelectedTableContent()?.let { listenPorts.delete(it) }
           } catch (e: Exception) {
             errWithStackTrace(e)
           }
         },
       )
     updateImpl()
+  }
+
+  fun dispose() {
+    listenPorts.removePropertyChangeListener(this)
+    owner.modelServices.servers.removePropertyChangeListener(this)
   }
 
   override fun addTableContent(value: ListenPort) {
@@ -101,7 +106,10 @@ class GUIOptionListenPorts(owner: GUIMain) : GUIOptionComponentBase<ListenPort>(
     this.values.clear()
   }
 
-  override fun getSelectedTableContent() = getTableContent(table.selectedRow)
+  override fun getSelectedTableContent(): ListenPort? {
+    val rowIndex = selectedModelRowOrNull() ?: return null
+    return getTableContent(rowIndex)
+  }
 
   override fun getTableContent(rowIndex: Int) = values[rowIndex]
 }

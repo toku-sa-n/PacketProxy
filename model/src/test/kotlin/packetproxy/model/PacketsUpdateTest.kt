@@ -73,8 +73,6 @@ class PacketsUpdateTest {
     packets.update(packet)
 
     assertTrue(latch.await(3, TimeUnit.SECONDS))
-    // Allow flush executor to settle
-    Thread.sleep(100)
     var loaded = requireNotNull(packets.query(id))
     assertEquals("application/json", loaded.getContentType())
     assertEquals("world", String(loaded.getDecodedData()))

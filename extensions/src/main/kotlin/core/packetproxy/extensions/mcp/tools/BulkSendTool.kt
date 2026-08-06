@@ -16,6 +16,7 @@ import packetproxy.model.Configs
 import packetproxy.model.OneShotPacket
 import packetproxy.model.Packet
 import packetproxy.model.Packets
+import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
 /** 複数パケット一括送信ツール フェーズ2: 順次送信モード、modifications適用、regex_params機能 */
@@ -761,7 +762,7 @@ class BulkSendTool(
         }
       } catch (e: Exception) {
         log("BulkSendTool: Regex param failed: " + e.message)
-        e.printStackTrace()
+        errWithStackTrace(e)
       }
     }
 

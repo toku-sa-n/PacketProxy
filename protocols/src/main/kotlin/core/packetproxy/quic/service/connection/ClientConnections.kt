@@ -6,7 +6,6 @@ import java.net.InetSocketAddress
 import java.util.ArrayList
 import java.util.LinkedHashMap
 import java.util.Optional
-import java.util.concurrent.Executors
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.CertCacheManager
 import packetproxy.model.CAs.CA
@@ -20,9 +19,8 @@ class ClientConnections(
   private val ca: CA,
   private val certCacheManager: CertCacheManager,
 ) {
-  private val connes = LinkedHashMap<ConnectionId, ClientConnection>()
+  private val connections = LinkedHashMap<ConnectionId, ClientConnection>()
   private val alreadyReceivedInitialSecrets = ArrayList<ConnectionId>()
-  private val executor = Executors.newFixedThreadPool(2)
   val socket: DatagramSocket =
     try {
       DatagramSocket(listenPort)
@@ -33,8 +31,7 @@ class ClientConnections(
 
   fun close() {
     if (!socket.isClosed) {
-      connes.values.forEach { it.close() }
-      executor.shutdownNow()
+      connections.values.forEach { it.close() }
       socket.close()
     }
   }
@@ -55,7 +52,7 @@ class ClientConnections(
     }
   }
 
-  fun find(dest: ConnectionId) = Optional.ofNullable(connes[dest])
+  fun find(dest: ConnectionId) = Optional.ofNullable(connections[dest])
 
   @Throws(Exception::class)
   fun create(initialSecret: ConnectionId, peer: InetSocketAddress): Optional<ClientConnection> {
@@ -66,25 +63,25 @@ class ClientConnections(
     alreadyReceivedInitialSecrets.add(initialSecret)
     val pair = ConnectionIdPair.generateRandom()
     val conn = ClientConnection(pair, initialSecret, socket, peer, ca, certCacheManager, listenPort)
-    connes[pair.srcConnId] = conn
+    connections[pair.srcConnId] = conn
     pruneConnectionCache()
     return Optional.of(conn)
   }
 
   @Throws(Exception::class)
   private fun recvUdpPacket(): DatagramPacket {
-    val buf = ByteArray(4096)
-    val p = DatagramPacket(buf, 4096)
+    val buf = ByteArray(65535)
+    val p = DatagramPacket(buf, 65535)
     socket.receive(p)
     p.data = ArrayUtils.subarray(p.data, 0, p.length)
     return p
   }
 
   private fun pruneConnectionCache() {
-    while (connes.size > MAX_CONNECTION_CACHE) {
-      val oldest = connes.entries.firstOrNull() ?: break
+    while (connections.size > MAX_CONNECTION_CACHE) {
+      val oldest = connections.entries.firstOrNull() ?: break
       oldest.value.close()
-      connes.remove(oldest.key)
+      connections.remove(oldest.key)
     }
   }
 

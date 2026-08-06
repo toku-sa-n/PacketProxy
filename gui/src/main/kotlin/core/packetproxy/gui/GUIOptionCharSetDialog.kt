@@ -112,7 +112,11 @@ class GUIOptionCharSetDialog(private val owner: JFrame) : JDialog(owner) {
     DefaultTableModel(data, columns) {
     override fun isCellEditable(row: Int, column: Int) = column == 0
 
-    override fun getColumnClass(column: Int): Class<*> = getValueAt(0, column).javaClass
+    override fun getColumnClass(column: Int): Class<*> =
+      when (column) {
+        0 -> Boolean::class.java
+        else -> String::class.java
+      }
 
     val checkedValues: List<CharSet>
       get() =

@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.Endpoint
+import packetproxy.util.errWithStackTrace
 
 class DuplexAsync
 @Throws(Exception::class)
@@ -104,7 +105,7 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
         flow_controlled_client_input.close()
         closeOnClientChunkFlowControl()
       } catch (e: Exception) {
-        // errWithStackTrace(e);
+        errWithStackTrace(e)
       }
     }
 
@@ -118,7 +119,7 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
         flow_controlled_server_input.close()
         closeOnServerChunkFlowControl()
       } catch (e: Exception) {
-        // errWithStackTrace(e);
+        errWithStackTrace(e)
       }
     }
 
@@ -137,9 +138,9 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
           flow_controlled_client_input.close()
           client_output!!.close()
         } catch (e1: Exception) {
-          // errWithStackTrace(e1);
+          errWithStackTrace(e1)
         }
-        // errWithStackTrace(e);
+        errWithStackTrace(e)
       }
     }
 
@@ -158,9 +159,9 @@ constructor(private val client: Endpoint, private val server: Endpoint) : Duplex
           flow_controlled_server_input.close()
           server_output!!.close()
         } catch (e1: Exception) {
-          // errWithStackTrace(e1);
+          errWithStackTrace(e1)
         }
-        // errWithStackTrace(e);
+        errWithStackTrace(e)
       }
     }
   }

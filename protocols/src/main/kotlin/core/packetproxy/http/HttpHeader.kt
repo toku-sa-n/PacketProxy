@@ -135,7 +135,7 @@ class HttpHeader(rawHttp: ByteArray) {
         }
       }
       // first lineはスペース区切りでmethod pas, HTTP/?.?になってる
-      var strs = String(line).split(" ")
+      var strs = String(line, StandardCharsets.UTF_8).split(" ")
       if (strs.size != 3) {
         return false
       }

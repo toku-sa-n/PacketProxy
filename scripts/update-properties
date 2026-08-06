@@ -1,39 +1,57 @@
 #!/bin/bash
+# Collect i18nString("...") keys from all Gradle modules and merge into
+# app/src/main/resources/strings_ja.properties
+
+set -euo pipefail
 
 function last_modified() {
-	if [ $(uname) == "Darwin" ]; then
-		timestamp=$(stat -f "%m" $1)
+	if [ "$(uname)" = "Darwin" ]; then
+		stat -f "%m" "$1"
 	else
-		timestamp=$(stat -c %Y $1)
+		stat -c %Y "$1"
 	fi
-	echo $timestamp
 }
 
-cd src
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
 
-tmp1=`mktemp`
-tmp2=`mktemp`
+ja_properties=app/src/main/resources/strings_ja.properties
+ja_properties_ja_orig=$(mktemp)
+ja_properties_ja_new=$(mktemp)
+ja_properties_ja_merged=$(mktemp)
+ja_properties_ja_sorted=$(mktemp)
+tmp_keys=$(mktemp)
+tmp_msgs=$(mktemp)
 
-ja_properties=main/resources/strings_ja.properties
-ja_properties_ja_orig=`mktemp`
-ja_properties_ja_new=`mktemp`
-ja_properties_ja_merged=`mktemp`
-ja_properties_ja_sorted=`mktemp`
+# Match i18nString("...") / i18nString('...') across multi-module sources.
+grep -R --include='*.kt' --include='*.java' -ohE 'i18nString\("[^"]*"' \
+	app common model protocols core extensions gui gulp 2>/dev/null \
+	| grep -oE '"[^"]*"' | sed 's/"//g' | sort -u > "$tmp_msgs" || true
 
-grep -r -o -E 'I18nString.get\("[^"]*"' * | grep -o -E '".*"' | sed 's/"//g' | sed 's/ /_/g' | sed 's/=/_/g' | sed 's/:/\\:/g' | sed 's/(/\\(/g' | sed 's/)/\\)/g' > $tmp1
-grep -r -o -E 'I18nString.get\("[^"]*"' * | grep -o -E '".*"' | sed 's/"//g' > $tmp2
+# Also keep legacy I18nString.get("...") if any remain.
+grep -R --include='*.kt' --include='*.java' -ohE 'I18nString\.get\("[^"]*"' \
+	app common model protocols core extensions gui gulp 2>/dev/null \
+	| grep -oE '"[^"]*"' | sed 's/"//g' | sort -u >> "$tmp_msgs" || true
 
-cat $ja_properties | sort -b | sed 's/=/@@/g' | sed 's/@@/=/' > $ja_properties_ja_orig
-paste -d = $tmp1 $tmp2 | sort -b | uniq > $ja_properties_ja_new
-join -t = -a 1 -o "1.1 2.2" $ja_properties_ja_new $ja_properties_ja_orig > $ja_properties_ja_merged
-join -t = -v 2 $ja_properties_ja_new $ja_properties_ja_orig >> $ja_properties_ja_merged
-sort -b $ja_properties_ja_merged | sed 's/@@/=/g' > $ja_properties_ja_sorted
+sort -u "$tmp_msgs" -o "$tmp_msgs"
 
-old=$(last_modified $ja_properties_ja_sorted)
-vim $ja_properties_ja_sorted
-new=$(last_modified $ja_properties_ja_sorted)
-if [ $old -eq $new ]; then
+# Normalize keys the same way I18nString.normalize does.
+sed 's/ /_/g; s/=/_/g; s/:/\\:/g; s/(/\\(/g; s/)/\\)/g' "$tmp_msgs" > "$tmp_keys"
+
+sort -b "$ja_properties" | sed 's/=/@@/g' | sed 's/@@/=/' > "$ja_properties_ja_orig"
+paste -d = "$tmp_keys" "$tmp_msgs" | sort -b | uniq > "$ja_properties_ja_new"
+join -t = -a 1 -o "1.1 2.2" "$ja_properties_ja_new" "$ja_properties_ja_orig" > "$ja_properties_ja_merged"
+join -t = -v 2 "$ja_properties_ja_new" "$ja_properties_ja_orig" >> "$ja_properties_ja_merged"
+sort -b "$ja_properties_ja_merged" | sed 's/@@/=/g' > "$ja_properties_ja_sorted"
+
+old=$(last_modified "$ja_properties_ja_sorted")
+"${EDITOR:-vim}" "$ja_properties_ja_sorted"
+new=$(last_modified "$ja_properties_ja_sorted")
+if [ "$old" -eq "$new" ]; then
 	echo "Abort"
-else
-	cp $ja_properties_ja_sorted $ja_properties
+	exit 1
 fi
+cp "$ja_properties_ja_sorted" "$ja_properties"
+echo "Updated $ja_properties"
+
+rm -f "$ja_properties_ja_orig" "$ja_properties_ja_new" "$ja_properties_ja_merged" "$ja_properties_ja_sorted" "$tmp_keys" "$tmp_msgs"

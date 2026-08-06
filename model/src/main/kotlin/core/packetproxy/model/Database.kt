@@ -68,6 +68,13 @@ class Database {
     dropTable(Server::class.java)
     dropTable(Modification::class.java)
     dropTable(SSLPassThrough::class.java)
+    dropTable(InterceptOption::class.java)
+    dropTable(ClientCertificate::class.java)
+    dropTable(Resolution::class.java)
+    dropTable(OpenVPNForwardPort::class.java)
+    dropTable(Extension::class.java)
+    dropTable(SessionProfile::class.java)
+    dropTable(CharSet::class.java)
     firePropertyChange(DatabaseMessage.RECONNECT)
   }
 
@@ -126,13 +133,41 @@ class Database {
     firePropertyChange(DatabaseMessage.RESUME)
   }
 
+  /**
+   * Loads a sqlite3 snapshot into the project database path (copy, not move).
+   *
+   * Uses a temporary file only as an intermediate, then replaces the intended DB path so we are not
+   * stuck on `resources_temp.sqlite3`. Prefer [LoadAndReplace] when the source file should be moved
+   * onto the current [databasePath] instead of copied.
+   */
   fun Load(path: String) {
     firePropertyChange(DatabaseMessage.DISCONNECT_NOW)
     source.close()
-    val dest = FileSystems.getDefault().getPath(databaseDir.toString() + "/resources_temp.sqlite3")
-    Files.copy(FileSystems.getDefault().getPath(path), dest, StandardCopyOption.REPLACE_EXISTING)
-    deleteOrphanWalSidecars(dest)
-    databasePath = dest
+    val intended = intendedDatabasePath()
+    val temp = databaseDir.resolve("resources_temp.sqlite3")
+    Files.copy(FileSystems.getDefault().getPath(path), temp, StandardCopyOption.REPLACE_EXISTING)
+    deleteOrphanWalSidecars(temp)
+    Files.move(temp, intended, StandardCopyOption.REPLACE_EXISTING)
+    deleteOrphanWalSidecars(intended)
+    databasePath = intended
+    source = JdbcConnectionSource(databaseURL)
+    applyConnectionPragmas()
+    firePropertyChange(DatabaseMessage.RECONNECT)
+  }
+
+  /**
+   * Moves [path] onto the current [databasePath] and reconnects. Unlike [Load], the source file is
+   * consumed (moved), and the active path is unchanged.
+   */
+  fun LoadAndReplace(path: String) {
+    firePropertyChange(DatabaseMessage.DISCONNECT_NOW)
+    source.close()
+    Files.move(
+      FileSystems.getDefault().getPath(path),
+      databasePath,
+      StandardCopyOption.REPLACE_EXISTING,
+    )
+    deleteOrphanWalSidecars(databasePath)
     source = JdbcConnectionSource(databaseURL)
     applyConnectionPragmas()
     firePropertyChange(DatabaseMessage.RECONNECT)
@@ -149,20 +184,6 @@ class Database {
     }
     newDb.close()
     firePropertyChange(DatabaseMessage.RESUME)
-  }
-
-  fun LoadAndReplace(path: String) {
-    firePropertyChange(DatabaseMessage.DISCONNECT_NOW)
-    source.close()
-    Files.move(
-      FileSystems.getDefault().getPath(path),
-      databasePath,
-      StandardCopyOption.REPLACE_EXISTING,
-    )
-    deleteOrphanWalSidecars(databasePath)
-    source = JdbcConnectionSource(databaseURL)
-    applyConnectionPragmas()
-    firePropertyChange(DatabaseMessage.RECONNECT)
   }
 
   fun getDatabasePath(): Path = databasePath
@@ -299,6 +320,15 @@ class Database {
     changes.firePropertyChange(PropertyChangeEventType.DATABASE_MESSAGE.toString(), null, message)
   }
 
+  /** Project DB path; never `resources_temp.sqlite3` even if a prior Load left us there. */
+  private fun intendedDatabasePath(): Path {
+    val name = databasePath.fileName?.toString() ?: return databaseDir.resolve("resources.sqlite3")
+    if (name == "resources_temp.sqlite3") {
+      return databaseDir.resolve("resources.sqlite3")
+    }
+    return databasePath
+  }
+
   private val databaseURL: String
     get() = "jdbc:sqlite:$databasePath"
 
@@ -318,12 +348,14 @@ class Database {
       try {
         val source: ConnectionSource = JdbcConnectionSource("jdbc:sqlite:$srcDBPath")
         val conn = source.readWriteConnection
+        val dstEscaped = dstDBPath.toAbsolutePath().toString().replace("'", "''")
+        val srcEscaped = srcDBPath.toAbsolutePath().toString().replace("'", "''")
         conn.executeStatement(
-          "attach database '${dstDBPath.toAbsolutePath()}' as 'dstDB'",
+          "attach database '$dstEscaped' as 'dstDB'",
           DatabaseConnection.DEFAULT_RESULT_FLAGS,
         )
         conn.executeStatement(
-          "attach database '${srcDBPath.toAbsolutePath()}' as 'srcDB'",
+          "attach database '$srcEscaped' as 'srcDB'",
           DatabaseConnection.DEFAULT_RESULT_FLAGS,
         )
         val queries =
@@ -333,13 +365,17 @@ class Database {
             "INSERT OR REPLACE INTO dstDB.filters (id, name, filter) SELECT id, name, filter FROM srcDB.filters",
             "INSERT OR REPLACE INTO dstDB.listenports (id, enabled, ca_name, port, type, server_id) SELECT id, enabled, ca_name, port, type, server_id FROM srcDB.listenports",
             "INSERT OR REPLACE INTO dstDB.configs (key, value) SELECT key, value FROM srcDB.configs",
-            "INSERT OR REPLACE INTO dstDB.servers (id, ip, port, encoder, use_ssl, resolved_by_dns, resolved_by_dns6, http_proxy, comment) SELECT id, ip, port, encoder, use_ssl, resolved_by_dns, resolved_by_dns6, http_proxy, comment FROM srcDB.servers",
+            "INSERT OR REPLACE INTO dstDB.servers (id, ip, port, encoder, use_ssl, resolved_by_dns, resolved_by_dns6, http_proxy, comment, descriptor_path) SELECT id, ip, port, encoder, use_ssl, resolved_by_dns, resolved_by_dns6, http_proxy, comment, descriptor_path FROM srcDB.servers",
             "INSERT OR REPLACE INTO dstDB.clientCertificates (id, enabled, type, serverId, subject, issuer, path, storePassword, keyPassword) SELECT id, enabled, type, serverId, subject, issuer, path, storePassword, keyPassword FROM srcDB.clientCertificates",
             "INSERT OR REPLACE INTO dstDB.interceptOptions (id, enabled, direction, type, relationship, method, pattern, server_id) SELECT id, enabled, direction, type, relationship, method, pattern, server_id FROM srcDB.interceptOptions",
             "INSERT OR REPLACE INTO dstDB.modifications (id, enabled, server_id, direction, pattern, method, path, replaced) SELECT id, enabled, server_id, direction, pattern, method, path, replaced FROM srcDB.modifications",
             "INSERT OR REPLACE INTO dstDB.sslpassthroughs (id, enabled, server_name, listen_port) SELECT id, enabled, server_name, listen_port FROM srcDB.sslpassthroughs",
             "INSERT OR REPLACE INTO dstDB.charsets (id, charsetname) SELECT id, charsetname FROM srcDB.charsets",
             "INSERT OR REPLACE INTO dstDB.resender_packets (id, resends_index, resend_index, direction, data, listen_port, client_ip, client_port, server_ip, server_port, server_name, use_ssl, encoder_name, alpn, auto_modified, conn, `group`) SELECT id, resends_index, resend_index, direction, data, listen_port, client_ip, client_port, server_ip, server_port, server_name, use_ssl, encoder_name, alpn, auto_modified, conn, `group` FROM srcDB.resender_packets",
+            "INSERT OR REPLACE INTO dstDB.resolutions (id, ip, hostname, enabled, comment) SELECT id, ip, hostname, enabled, comment FROM srcDB.resolutions",
+            "INSERT OR REPLACE INTO dstDB.extensions (name, enabled, path) SELECT name, enabled, path FROM srcDB.extensions",
+            "INSERT OR REPLACE INTO dstDB.session_profiles (id, name, authorization, cookie) SELECT id, name, authorization, cookie FROM srcDB.session_profiles",
+            "INSERT OR REPLACE INTO dstDB.openvpn_forward_ports (id, type, fromPort, toPort) SELECT id, type, fromPort, toPort FROM srcDB.openvpn_forward_ports",
           )
         queries.forEach {
           try {

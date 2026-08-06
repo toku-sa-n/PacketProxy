@@ -26,10 +26,20 @@ class EncodeSampleQuic(ALPN: String?) : Encoder(ALPN) {
   /* 1つのリクエスト/レスポンスのサイズで区切ってください */
   @Throws(Exception::class)
   override fun checkDelimiter(input_data: ByteArray): Int {
+    if (input_data.size < 16) {
+      return -1
+    }
     val buffer = ByteBuffer.wrap(input_data)
     buffer.getLong()
     val length = buffer.getLong()
-    return (8 + 8 + length).toInt()
+    if (length < 0) {
+      return -1
+    }
+    val total = 8 + 8 + length
+    if (total > Int.MAX_VALUE.toLong() || total > input_data.size) {
+      return -1
+    }
+    return total.toInt()
   }
 
   @Throws(Exception::class)

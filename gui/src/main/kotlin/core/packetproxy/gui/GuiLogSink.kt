@@ -26,4 +26,7 @@ class GuiLogSink(private val guiLog: GUILog = GUILog()) : LogSink {
   override fun createPanel(): JComponent = guiLog.createPanel()
 
   override fun getLogText(): String = guiLog.getLogText()
+
+  override fun getStructuredEntries(): List<packetproxy.util.StructuredLogEntry> =
+    guiLog.getStructuredEntries()
 }

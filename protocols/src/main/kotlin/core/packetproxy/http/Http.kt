@@ -9,7 +9,6 @@ package packetproxy.http
 import com.google.re2j.Pattern
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.net.InetSocketAddress
 import java.net.URL
 import java.net.URLDecoder
@@ -315,7 +314,7 @@ private constructor(
 
       if (enc.isPresent && enc.get().equals("chunked", ignoreCase = true)) {
         header.removeAll(headerName)
-        cookedBody = getChankedHttpBodyFussy(cookedBody)
+        cookedBody = getChunkedHttpBody(cookedBody, fussy = true) ?: cookedBody
       }
     }
 
@@ -491,7 +490,7 @@ private constructor(
         ) {
           return -1
         }
-        body = getChankedHttpBody(body)
+        body = getChunkedHttpBody(body, fussy = false)
         if (body == null) return -1
       }
 
@@ -622,9 +621,11 @@ private constructor(
 
     @Throws(Exception::class)
     private fun br_decompress(input_data: ByteArray): ByteArray {
-      var `in` = ByteArrayInputStream(input_data)
-      var brIn = BrotliCompressorInputStream(`in`)
-      return IOUtils.toByteArray(brIn)
+      ByteArrayInputStream(input_data).use { `in` ->
+        BrotliCompressorInputStream(`in`).use { brIn ->
+          return IOUtils.toByteArray(brIn)
+        }
+      }
     }
 
     @Throws(Exception::class)
@@ -633,22 +634,25 @@ private constructor(
         return input_data
       }
       try {
-        var `in` = ByteArrayInputStream(input_data)
-        var gzin = GZIPInputStream(`in`)
-        return IOUtils.toByteArray(gzin)
+        ByteArrayInputStream(input_data).use { `in` ->
+          GZIPInputStream(`in`).use { gzin ->
+            return IOUtils.toByteArray(gzin)
+          }
+        }
       } catch (e: Exception) {
         /* Streaming Responseサポートのため、中途半端なgzipを展開しないといけないケースが多々ある */
         var zipped = input_data
-        var `in`: InputStream = GZIPInputStream(ByteArrayInputStream(zipped))
-        var inflates = ByteArray(zipped.size * 10)
-        var inflatesLength: Int
-        var unzipped = ByteArrayOutputStream()
-        try {
-          while (`in`.read(inflates, 0, inflates.size).also { inflatesLength = it } > 0) {
-            unzipped.write(ArrayUtils.subarray(inflates, 0, inflatesLength))
-          }
-        } catch (e1: Exception) {}
-        return unzipped.toByteArray()
+        GZIPInputStream(ByteArrayInputStream(zipped)).use { `in` ->
+          var inflates = ByteArray(zipped.size * 10)
+          var inflatesLength: Int
+          var unzipped = ByteArrayOutputStream()
+          try {
+            while (`in`.read(inflates, 0, inflates.size).also { inflatesLength = it } > 0) {
+              unzipped.write(ArrayUtils.subarray(inflates, 0, inflatesLength))
+            }
+          } catch (e1: Exception) {}
+          return unzipped.toByteArray()
+        }
       }
     }
 
@@ -661,70 +665,62 @@ private constructor(
       return out.toByteArray()
     }
 
+    /**
+     * Decode a chunked transfer-encoding body. Accepts CRLF or LF chunk delimiters. When [fussy] is
+     * true, returns whatever body was decoded so far on parse errors / incomplete input; otherwise
+     * returns null.
+     */
     @Throws(Exception::class)
-    private fun getChankedHttpBodyFussy(input_data: ByteArray): ByteArray {
-      // TODO 改行コードの対応
-      var search_word = "\r\n".toByteArray()
-      var index: Int
-      var start_index = 0
+    private fun getChunkedHttpBody(input_data: ByteArray, fussy: Boolean): ByteArray? {
+      var startIndex = 0
       var body = byteArrayOf()
-      while (
-        Utils.indexOf(input_data, start_index, input_data.size, search_word).also { index = it } >=
-          0
-      ) {
+      while (true) {
+        val lineEnd =
+          findChunkLineEnding(input_data, startIndex) ?: return if (fussy) body else null
+        val (index, delimSize) = lineEnd
         try {
-          var chank_header = ArrayUtils.subarray(input_data, start_index, index)
-          var chank_length_str =
-            String(chank_header, StandardCharsets.UTF_8).replace(Regex("^0+([^0].*)$"), "$1")
-          var chank_length = chank_length_str.trim().toInt(16)
-          if (chank_length == 0) {
+          val chunkHeader = ArrayUtils.subarray(input_data, startIndex, index)
+          val chunkLengthStr =
+            String(chunkHeader, StandardCharsets.UTF_8).replace(Regex("^0+([^0].*)$"), "$1")
+          val chunkLength = chunkLengthStr.trim().toInt(16)
+          if (chunkLength == 0) {
             return body
           }
-          var chank =
-            ArrayUtils.subarray(
-              input_data,
-              index + search_word.size,
-              index + search_word.size + chank_length,
-            )
-          body += chank
-          start_index = index + search_word.size * 2 + chank_length
-        } catch (e: Exception) {
-          return body
+          val dataStart = index + delimSize
+          val dataEnd = dataStart + chunkLength
+          if (dataEnd > input_data.size) {
+            return if (fussy) body else null
+          }
+          body += ArrayUtils.subarray(input_data, dataStart, dataEnd)
+          // Skip trailing chunk delimiter (CRLF or LF) after the data.
+          startIndex =
+            when {
+              dataEnd + 2 <= input_data.size &&
+                input_data[dataEnd] == '\r'.code.toByte() &&
+                input_data[dataEnd + 1] == '\n'.code.toByte() -> dataEnd + 2
+              dataEnd + 1 <= input_data.size && input_data[dataEnd] == '\n'.code.toByte() ->
+                dataEnd + 1
+              else -> return if (fussy) body else null
+            }
+        } catch (_: Exception) {
+          return if (fussy) body else null
         }
       }
-      return body
     }
 
-    @Throws(Exception::class)
-    private fun getChankedHttpBody(input_data: ByteArray): ByteArray? {
-      // TODO 改行コードの対応
-      var search_word = "\r\n".toByteArray()
-      var index: Int
-      var start_index = 0
-      var body = byteArrayOf()
-      while (
-        Utils.indexOf(input_data, start_index, input_data.size, search_word).also { index = it } >=
-          0
-      ) {
-        try {
-          var chank_header = ArrayUtils.subarray(input_data, start_index, index)
-          var chank_length_str =
-            String(chank_header, StandardCharsets.UTF_8).replace(Regex("^0+([^0].*)$"), "$1")
-          var chank_length = chank_length_str.trim().toInt(16)
-          if (chank_length == 0) {
-            return body
-          }
-          var chank =
-            ArrayUtils.subarray(
-              input_data,
-              index + search_word.size,
-              index + search_word.size + chank_length,
-            )
-          body += chank
-          start_index = index + search_word.size * 2 + chank_length
-        } catch (e: Exception) {
-          return null
+    /**
+     * Returns (index of line ending, delimiter byte length) for CRLF or LF, whichever comes first.
+     */
+    private fun findChunkLineEnding(input: ByteArray, start: Int): Pair<Int, Int>? {
+      var i = start
+      while (i < input.size) {
+        when {
+          input[i] == '\r'.code.toByte() &&
+            i + 1 < input.size &&
+            input[i + 1] == '\n'.code.toByte() -> return Pair(i, 2)
+          input[i] == '\n'.code.toByte() -> return Pair(i, 1)
         }
+        i++
       }
       return null
     }

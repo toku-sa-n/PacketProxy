@@ -93,6 +93,15 @@ object SchemaMigrator {
       } else {
         "\n" + i18nString("Failed to create a backup.")
       }
+    val headless =
+      java.awt.GraphicsEnvironment.isHeadless() ||
+        System.getProperty("java.awt.headless") == "true" ||
+        System.getProperty("packetproxy.schema.autoRecreate") == "true"
+    if (headless) {
+      log("SchemaMigrator: headless/auto-recreate — recreating %s without dialog", tableLabel)
+      onRecreate()
+      return
+    }
     val option =
       JOptionPane.showConfirmDialog(
         null,

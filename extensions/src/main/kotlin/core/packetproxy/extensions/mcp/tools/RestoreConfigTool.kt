@@ -1,15 +1,17 @@
 package packetproxy.extensions.mcp.tools
 
 import com.google.gson.Gson
-import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import java.io.File
 import java.io.FileReader
 import java.io.IOException
+import packetproxy.common.ConfigIO
 import packetproxy.model.Configs
+import packetproxy.util.errWithStackTrace
 import packetproxy.util.log
 
-class RestoreConfigTool(private val configs: Configs) : AuthenticatedMCPTool(configs) {
+class RestoreConfigTool(private val configIO: ConfigIO, configs: Configs) :
+  AuthenticatedMCPTool(configs) {
 
   private val gson = Gson()
 
@@ -55,64 +57,50 @@ class RestoreConfigTool(private val configs: Configs) : AuthenticatedMCPTool(con
       else false
 
     try {
-      log("RestoreConfigTool step 1: Loading backup configuration")
       var backupConfig = loadBackupConfig(backupId)
-      log("RestoreConfigTool step 2: Backup configuration loaded successfully")
 
-      log("RestoreConfigTool step 3: Restoring configuration using UpdateConfigTool")
       var updateArgs = JsonObject()
       updateArgs.add("config_json", backupConfig)
       updateArgs.addProperty("backup", true)
       updateArgs.addProperty("suppress_dialog", suppressDialog)
       updateArgs.addProperty("access_token", arguments.get("access_token").getAsString())
 
-      var updateTool = UpdateConfigTool(configs)
-      updateTool.call(updateArgs)
-      log("RestoreConfigTool step 4: Configuration restored successfully")
+      UpdateConfigTool(configIO, configs).call(updateArgs)
 
-      log("RestoreConfigTool step 5: Building response data")
       var data = JsonObject()
       data.addProperty("success", true)
       data.addProperty("backup_id_restored", backupId)
       data.addProperty("config_restored", true)
 
-      var jsonText = data.toString()
-      log("RestoreConfigTool step 6: Response data JSON: $jsonText")
-
-      var content = JsonObject()
-      content.addProperty("type", "text")
-      content.addProperty("text", jsonText)
-
-      var contentArray = JsonArray()
-      contentArray.add(content)
-
-      var result = JsonObject()
-      result.add("content", contentArray)
-
-      var resultJson = result.toString()
-      log("RestoreConfigTool step 7: Final result JSON length: " + resultJson.length)
-      log("RestoreConfigTool step 8: Configuration restore completed successfully")
-      return result
+      log("RestoreConfigTool: Configuration restore completed successfully")
+      return data
     } catch (e: Exception) {
       log("RestoreConfigTool error: " + e.message)
-      e.printStackTrace()
+      errWithStackTrace(e)
       throw Exception("Failed to restore configuration: " + e.message)
     }
   }
 
   @Throws(Exception::class)
   private fun loadBackupConfig(backupId: String): JsonObject {
-    // Construct backup file path
-    var backupDir = File("backup")
+    var backupDir = File(System.getProperty("user.home"), ".packetproxy/backups")
     if (!backupDir.exists()) {
       throw Exception("Backup directory does not exist")
     }
 
-    var backupFileName = "$backupId.json"
-    var backupFile = File(backupDir, backupFileName)
+    if (backupId.contains("..") || backupId.contains("/") || backupId.contains("\\")) {
+      throw Exception("Invalid backup_id")
+    }
+
+    var backupFile = File(backupDir, "$backupId.json")
+    var normalizedBackup = backupFile.toPath().normalize()
+    var normalizedDir = backupDir.toPath().normalize()
+    if (!normalizedBackup.startsWith(normalizedDir)) {
+      throw Exception("Invalid backup_id path")
+    }
 
     if (!backupFile.exists()) {
-      throw Exception("Backup file not found: $backupFileName")
+      throw Exception("Backup file not found: $backupId.json")
     }
 
     log("Loading backup from: " + backupFile.getAbsolutePath())
@@ -120,12 +108,9 @@ class RestoreConfigTool(private val configs: Configs) : AuthenticatedMCPTool(con
     try {
       FileReader(backupFile).use { reader ->
         var backupConfig = gson.fromJson(reader, JsonObject::class.java)
-
         if (backupConfig == null) {
           throw Exception("Invalid backup file format")
         }
-
-        log("Backup configuration loaded successfully from: $backupFileName")
         return backupConfig
       }
     } catch (e: IOException) {

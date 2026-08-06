@@ -79,14 +79,19 @@ class Utils {
 
     @JvmStatic
     fun readfile(filename: String): ByteArray {
-      var fileInputStream = FileInputStream(filename)
-      var input = BufferedInputStream(fileInputStream)
-      var output = ByteArrayOutputStream()
-      var buffer = ByteArray(4096)
-      var length: Int
-      while (input.read(buffer, 0, 4096).also { length = it } > 0) output.write(buffer, 0, length)
-      fileInputStream.close()
-      return output.toByteArray()
+      FileInputStream(filename).use { fileInputStream ->
+        BufferedInputStream(fileInputStream).use { input ->
+          var output = ByteArrayOutputStream()
+          var buffer = ByteArray(4096)
+          var length: Int
+          while (input.read(buffer, 0, 4096).also { length = it } > 0) output.write(
+            buffer,
+            0,
+            length,
+          )
+          return output.toByteArray()
+        }
+      }
     }
 
     @JvmStatic
@@ -97,31 +102,33 @@ class Utils {
 
     @JvmStatic
     fun writefile(filename: String, data: ByteArray) {
-      var output = BufferedOutputStream(FileOutputStream(filename))
-      output.write(data)
-      output.flush()
-      output.close()
+      BufferedOutputStream(FileOutputStream(filename)).use { output ->
+        output.write(data)
+        output.flush()
+      }
     }
 
     @JvmStatic
     fun gzip(src: ByteArray): ByteArray {
       var output = ByteArrayOutputStream()
-      var gzipOutput = GZIPOutputStream(output)
-      gzipOutput.write(src)
-      gzipOutput.flush()
-      gzipOutput.finish()
+      GZIPOutputStream(output).use { gzipOutput ->
+        gzipOutput.write(src)
+        gzipOutput.flush()
+        gzipOutput.finish()
+      }
       return output.toByteArray()
     }
 
     @JvmStatic
     fun ungzip(src: ByteArray): ByteArray {
       var output = ByteArrayOutputStream()
-      var gzipInput = GZIPInputStream(ByteArrayInputStream(src))
-      var buffer = ByteArray(1024)
-      while (true) {
-        var length = gzipInput.read(buffer)
-        if (length < 0) break
-        output.write(buffer, 0, length)
+      GZIPInputStream(ByteArrayInputStream(src)).use { gzipInput ->
+        var buffer = ByteArray(1024)
+        while (true) {
+          var length = gzipInput.read(buffer)
+          if (length < 0) break
+          output.write(buffer, 0, length)
+        }
       }
       return output.toByteArray()
     }
@@ -191,17 +198,28 @@ class Utils {
       var output = ByteArrayOutputStream()
       var buffer = ByteArray(4096)
       var length: Int
-      while (process.inputStream.read(buffer, 0, 4096).also { length = it } > 0) output.write(
-        buffer,
-        0,
-        length,
-      )
+      process.inputStream.use { input ->
+        while (input.read(buffer, 0, 4096).also { length = it } > 0) output.write(buffer, 0, length)
+      }
       if (logError) {
         var errorOutput = ByteArrayOutputStream()
-        while (process.errorStream.read(buffer, 0, 4096).also { length = it } > 0) errorOutput
-          .write(buffer, 0, length)
-        if (errorOutput.size() > 0) err(errorOutput.toString())
+        process.errorStream.use { errorStream ->
+          while (errorStream.read(buffer, 0, 4096).also { length = it } > 0) errorOutput.write(
+            buffer,
+            0,
+            length,
+          )
+        }
+        if (errorOutput.size() > 0) err(errorOutput.toString(Charsets.UTF_8.name()))
+      } else {
+        // Drain stderr to avoid process hang even when not logging.
+        process.errorStream.use { errorStream ->
+          while (errorStream.read(buffer, 0, 4096).also { length = it } > 0) {
+            // discard
+          }
+        }
       }
+      process.waitFor()
       return output.toByteArray()
     }
   }

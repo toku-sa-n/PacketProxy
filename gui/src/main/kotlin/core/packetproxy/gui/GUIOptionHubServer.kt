@@ -4,6 +4,7 @@ import java.awt.Color
 import java.awt.Dimension
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
+import java.security.SecureRandom
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JCheckBox
@@ -11,7 +12,6 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
-import org.apache.commons.lang3.RandomStringUtils
 import packetproxy.common.*
 import packetproxy.model.ConfigBoolean
 import packetproxy.model.ConfigString
@@ -24,6 +24,7 @@ class GUIOptionHubServer(private val frame: GUIMain) : PropertyChangeListener {
   private lateinit var token: JTextField
   private lateinit var regenerate: JButton
   private var server: ConfigHttpServer? = null
+  private val secureRandom = SecureRandom()
 
   init {
     panel.background = Color.WHITE
@@ -31,6 +32,10 @@ class GUIOptionHubServer(private val frame: GUIMain) : PropertyChangeListener {
     panel.add(createCheckBox())
     panel.add(createTokenPanel())
     frame.modelServices.configs.addPropertyChangeListener(this)
+  }
+
+  fun dispose() {
+    frame.modelServices.configs.removePropertyChangeListener(this)
   }
 
   fun createPanel(): JComponent {
@@ -105,7 +110,9 @@ class GUIOptionHubServer(private val frame: GUIMain) : PropertyChangeListener {
   }
 
   private fun generateAccessToken() {
-    ConfigString(frame.modelServices.configs, "SharingConfigsAccessToken")
-      .setString(RandomStringUtils.randomAlphabetic(20))
+    val bytes = ByteArray(20)
+    secureRandom.nextBytes(bytes)
+    val tokenValue = bytes.joinToString("") { b -> "%02x".format(b) }.take(20)
+    ConfigString(frame.modelServices.configs, "SharingConfigsAccessToken").setString(tokenValue)
   }
 }
