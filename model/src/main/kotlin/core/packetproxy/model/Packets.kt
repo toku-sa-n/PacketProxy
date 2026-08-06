@@ -155,6 +155,36 @@ class Packets(
     firePropertyChange(id)
   }
 
+  /**
+   * Update persisted summary columns without rewriting BLOB columns. No-op when id <= 0. When
+   * [notify] is false, skips [firePropertyChange] (for bulk History restore backfill).
+   */
+  fun updatePersistedSummaries(
+    id: Int,
+    summarizedRequest: String?,
+    summarizedResponse: String?,
+    displayLength: Int,
+    notify: Boolean = true,
+  ) {
+    if (id <= 0) {
+      return
+    }
+    synchronized(dao) {
+      dao
+        .updateBuilder()
+        .apply {
+          updateColumnValue("summarized_request", summarizedRequest)
+          updateColumnValue("summarized_response", summarizedResponse)
+          updateColumnValue("display_length", displayLength)
+          where().eq("id", id)
+        }
+        .update()
+    }
+    if (notify) {
+      firePropertyChange(id)
+    }
+  }
+
   fun deleteAll() {
     synchronized(dao) {
       dao.deleteBuilder().delete()

@@ -323,67 +323,105 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   }
 
   fun updateAllAsync() {
-    // 一覧のスケルトン構築にはid/color/direction/group等のメタデータのみで十分なため、
-    // BLOB列を含まないqueryPageMetadataで軽量に取得する。
-    val packetList = packets.queryPageMetadata(0, packets.countOf(), true)
-    tableModel.rowCount = 0
-    colorManager.clear()
-    idRow.clear()
-    pairingService.clear()
-    for (packet in packetList) {
-      val id = packet.getId()
-      val color = packet.getColor()
-      val groupId = packet.getGroup()
-      val isResponse = packet.getDirection() == Packet.Direction.SERVER
-      val packetCount = countAndTrackPacket(packet)
-      if (shouldUnmergeExisting(packetCount, groupId)) {
-        unmergeExistingPairingInAsyncModel(groupId)
+    Thread {
+        try {
+          rebuildAsyncSkeleton()
+          fillAsyncRowsFromMetadata()
+        } catch (exception: Exception) {
+          errWithStackTrace(exception)
+        }
       }
-      if (shouldMergeResponse(groupId, isResponse)) {
-        mergeResponseMappingOnly(id, groupId)
-      } else {
-        addNewAsyncPlaceholderRowWithGroupTracking(id, isResponse, groupId)
-      }
-      when (color) {
-        "green" -> colorManager.add(id, packetColorGreen)
-        "brown" -> colorManager.add(id, packetColorBrown)
-        "yellow" -> colorManager.add(id, packetColorYellow)
+      .start()
+  }
+
+  /** スケルトン構築をバックグラウンドで進め、テーブル操作だけ EDT に載せる。 */
+  private fun rebuildAsyncSkeleton() {
+    SwingUtilities.invokeAndWait {
+      tableModel.rowCount = 0
+      colorManager.clear()
+      idRow.clear()
+      pairingService.clear()
+      updatePacketIds.clear()
+    }
+    packets.forEachMetadataPage(SKELETON_PAGE_SIZE) { page ->
+      SwingUtilities.invokeAndWait {
+        for (packet in page) {
+          val id = packet.getId()
+          val color = packet.getColor()
+          val groupId = packet.getGroup()
+          val isResponse = packet.getDirection() == Packet.Direction.SERVER
+          val packetCount = countAndTrackPacket(packet)
+          if (shouldUnmergeExisting(packetCount, groupId)) {
+            unmergeExistingPairingInAsyncModel(groupId)
+          }
+          if (shouldMergeResponse(groupId, isResponse)) {
+            mergeResponseMappingOnly(id, groupId)
+          } else {
+            addNewAsyncPlaceholderRowWithGroupTracking(id, isResponse, groupId)
+          }
+          when (color) {
+            "green" -> colorManager.add(id, packetColorGreen)
+            "brown" -> colorManager.add(id, packetColorBrown)
+            "yellow" -> colorManager.add(id, packetColorYellow)
+          }
+        }
       }
     }
-    updatePacketIds.clear()
-    Thread {
-        var limit = 100L
-        var index = packetList.size.toLong()
-        while (index > 0) {
+  }
+
+  /** メタデータで埋め、永続要約が空の行だけ BLOB を読んで backfill する。新しい行から順に UI を更新する。 */
+  private fun fillAsyncRowsFromMetadata() {
+    var limit = FILL_PAGE_SIZE
+    var index = packets.countOf()
+    while (index > 0) {
+      try {
+        val offset =
+          if (index - limit < 0) {
+            limit = index
+            0L
+          } else {
+            index - limit
+          }
+        val range = packets.queryPageMetadata(offset, limit, true)
+        val packetsForUpdate = range.map { meta -> resolvePacketForAsyncFill(meta) }.filterNotNull()
+        SwingUtilities.invokeLater {
           try {
-            val offset =
-              if (index - limit < 0) {
-                limit = index
-                0L
-              } else {
-                index - limit
-              }
-            // BLOB付きで読み、永続要約が空の既存行は encoder から再計算して backfill する
-            val range = packets.queryRange(offset, limit)
-            for (packet in range) {
-              backfillPersistedSummariesIfNeeded(packet)
+            for (packet in packetsForUpdate) {
+              updateOne(packet)
             }
-            SwingUtilities.invokeLater {
-              try {
-                for (packet in range) {
-                  updateOne(packet)
-                }
-              } catch (exception: Exception) {
-                errWithStackTrace(exception)
-              }
-            }
-            index -= limit
           } catch (exception: Exception) {
             errWithStackTrace(exception)
           }
         }
+        index -= limit
+      } catch (exception: Exception) {
+        errWithStackTrace(exception)
       }
-      .start()
+    }
+  }
+
+  private fun resolvePacketForAsyncFill(meta: Packet): Packet? {
+    if (!needsPersistedSummaryBackfill(meta)) {
+      return meta
+    }
+    return try {
+      val full = packets.query(meta.getId()) ?: return meta
+      backfillPersistedSummariesIfNeeded(full)
+      full
+    } catch (exception: Exception) {
+      errWithStackTrace(exception)
+      meta
+    }
+  }
+
+  private fun needsPersistedSummaryBackfill(packet: Packet): Boolean {
+    val needsRequest =
+      packet.getDirection() == Packet.Direction.CLIENT &&
+        packet.getSummarizedRequestColumn().isNullOrEmpty()
+    val needsResponse =
+      packet.getDirection() == Packet.Direction.SERVER &&
+        packet.getSummarizedResponseColumn().isNullOrEmpty()
+    return needsRequest || needsResponse
   }
 
   /**
@@ -391,19 +429,18 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
    * Request/Response 列が埋まる。
    */
   private fun backfillPersistedSummariesIfNeeded(packet: Packet) {
-    val needsRequest =
-      packet.getDirection() == Packet.Direction.CLIENT &&
-        packet.getSummarizedRequestColumn().isNullOrEmpty()
-    val needsResponse =
-      packet.getDirection() == Packet.Direction.SERVER &&
-        packet.getSummarizedResponseColumn().isNullOrEmpty()
-    val needsLength = packet.getDisplayLength() <= 0
-    if (!needsRequest && !needsResponse && !needsLength) {
+    if (!needsPersistedSummaryBackfill(packet)) {
       return
     }
     try {
       packet.refreshPersistedSummaries(packetSummarizer)
-      packets.updateSync(packet)
+      packets.updatePersistedSummaries(
+        packet.getId(),
+        packet.getSummarizedRequestColumn(),
+        packet.getSummarizedResponseColumn(),
+        packet.getDisplayLength(),
+        notify = false,
+      )
     } catch (exception: Exception) {
       errWithStackTrace(exception)
     }
@@ -1191,5 +1228,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     private val COL_CONTENT_TYPE = 11
     private val NUMERIC_RIGHT_ALIGNED_COLUMNS =
       intArrayOf(COL_ID, COL_SERVER_RESPONSE, COL_LENGTH, COL_CLIENT_PORT, COL_SERVER_PORT)
+    private const val SKELETON_PAGE_SIZE = 500L
+    private const val FILL_PAGE_SIZE = 100L
   }
 }
