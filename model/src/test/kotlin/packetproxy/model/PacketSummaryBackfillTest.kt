@@ -150,6 +150,85 @@ class PacketSummaryBackfillTest {
     assertEquals(summary, meta.getSummarizedRequestColumn())
   }
 
+  @Test
+  fun updatePersistedSummaries_withSqlCommentPayload_doesNotOverwriteOtherRows() {
+    var payload = "GET /api HTTP/1.1\r\nHost: example.com\r\n\r\n".toByteArray()
+    var first = sampleClientPacket()
+    first.setDecodedData(payload)
+    packets.updateSync(first)
+    var firstId = first.getId()
+    packets.updatePersistedSummaries(
+      firstId,
+      "GET https://example.com/first",
+      "",
+      payload.size,
+      notify = false,
+    )
+
+    var second = sampleClientPacket()
+    second.setDecodedData(payload)
+    packets.updateSync(second)
+    var secondId = second.getId()
+    var evilSummary = "POST https://api.example.com/live/%22--%3e'--%3e%60--%3e"
+    packets.updatePersistedSummaries(secondId, evilSummary, "", payload.size, notify = false)
+
+    assertEquals(
+      "GET https://example.com/first",
+      requireNotNull(packets.queryByIdMetadata(firstId)).getSummarizedRequestColumn(),
+    )
+    assertEquals(
+      evilSummary,
+      requireNotNull(packets.queryByIdMetadata(secondId)).getSummarizedRequestColumn(),
+    )
+  }
+
+  @Test
+  fun clearPersistedSummariesOnce_clearsSummariesThenSkipsSecondRun() {
+    var payload = "GET /api HTTP/1.1\r\nHost: example.com\r\n\r\n".toByteArray()
+    var packet = sampleClientPacket()
+    packet.setDecodedData(payload)
+    packets.updateSync(packet)
+    var id = packet.getId()
+    packets.updatePersistedSummaries(
+      id,
+      "GET https://example.com/corrupt",
+      "200 OK",
+      payload.size,
+      notify = false,
+    )
+    assertEquals(
+      "GET https://example.com/corrupt",
+      requireNotNull(packets.queryByIdMetadata(id)).getSummarizedRequestColumn(),
+    )
+
+    var dao = database.createTable(Packet::class.java)
+    dao.executeRaw("DELETE FROM packetproxy_migrations WHERE name = ?", "summary_selectarg_v1")
+    packets = Packets(database, false)
+
+    var cleared = requireNotNull(packets.queryByIdMetadata(id))
+    assertTrue(cleared.getSummarizedRequestColumn().isNullOrEmpty())
+    assertTrue(cleared.getSummarizedResponseColumn().isNullOrEmpty())
+    assertTrue(
+      dao
+        .queryRaw("SELECT 1 FROM packetproxy_migrations WHERE name = ?", "summary_selectarg_v1")
+        .results
+        .isNotEmpty()
+    )
+
+    packets.updatePersistedSummaries(
+      id,
+      "GET https://example.com/repaired",
+      "",
+      payload.size,
+      notify = false,
+    )
+    packets = Packets(database, false)
+    assertEquals(
+      "GET https://example.com/repaired",
+      requireNotNull(packets.queryByIdMetadata(id)).getSummarizedRequestColumn(),
+    )
+  }
+
   private fun sampleClientPacket(): Packet {
     var client = InetSocketAddress("127.0.0.1", 12345)
     var server = InetSocketAddress("127.0.0.1", 443)

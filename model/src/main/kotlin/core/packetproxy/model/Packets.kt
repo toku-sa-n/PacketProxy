@@ -45,6 +45,7 @@ class Packets(
     SchemaMigrator.ensureColumns(dao)
     ensurePairIndex()
     ensureFts()
+    clearPersistedSummariesOnceForSelectArgRepair()
     if (restore) {
       SchemaMigrator.ensureCompatible(database, dao, "packets") {
         database.dropTable(Packet::class.java)
@@ -360,6 +361,7 @@ class Packets(
             dao.executeRaw("ALTER TABLE `packets` ADD COLUMN display_length INTEGER DEFAULT 0")
           ensurePairIndex()
           ensureFts()
+          clearPersistedSummariesOnceForSelectArgRepair()
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
@@ -382,6 +384,36 @@ class Packets(
     dao.executeRaw(
       "CREATE INDEX IF NOT EXISTS packets_pair_idx ON packets(`group`, `conn`, `direction`)"
     )
+  }
+
+  /**
+   * One-shot repair for summaries corrupted by SQL-literal embedding before SelectArg. Clears
+   * persisted summaries once so History can re-backfill safely.
+   */
+  private fun clearPersistedSummariesOnceForSelectArgRepair() {
+    try {
+      synchronized(dao) {
+        dao.executeRaw("CREATE TABLE IF NOT EXISTS packetproxy_migrations (name TEXT PRIMARY KEY)")
+        val existing =
+          dao
+            .queryRaw(
+              "SELECT 1 FROM packetproxy_migrations WHERE name = ?",
+              SUMMARY_SELECTARG_REPAIR_MARKER,
+            )
+            .results
+        if (existing.isNotEmpty()) {
+          return
+        }
+        dao.executeRaw("UPDATE packets SET summarized_request = NULL, summarized_response = NULL")
+        dao.executeRaw(
+          "INSERT INTO packetproxy_migrations(name) VALUES (?)",
+          SUMMARY_SELECTARG_REPAIR_MARKER,
+        )
+        log("cleared persisted packet summaries for SelectArg repair migration")
+      }
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    }
   }
 
   private fun ensureFts() {
@@ -601,6 +633,7 @@ class Packets(
     const val KEY_AUTO_PRUNE_ENABLED = "history.auto_prune.enabled"
     const val KEY_AUTO_PRUNE_MAX_PACKETS = "history.auto_prune.max_packets"
     const val KEY_AUTO_PRUNE_MAX_DB_MB = "history.auto_prune.max_db_mb"
+    private const val SUMMARY_SELECTARG_REPAIR_MARKER = "summary_selectarg_v1"
     private const val FTS_BODY_MAX_BYTES = 64 * 1024
     private const val FTS_BODY_MAX_CHARS = 64_000
     private const val PRUNE_BATCH_SIZE = 500
