@@ -176,7 +176,7 @@ class GUIOptionGrpcDescriptorDialog(
       chooser.setAcceptAllFileFilterUsed(false)
       if (chooser.showOpenDialog(this) == NativeFileChooser.APPROVE_OPTION) {
         val f = chooser.getSelectedFile()
-        if (f != null && protoSet.addFile(f)) {
+        if (protoSet.addFile(f)) {
           protoTableModel.addRow(arrayOf(f.absolutePath))
         }
       }
@@ -196,7 +196,7 @@ class GUIOptionGrpcDescriptorDialog(
       chooser.setDialogTitle(i18nString("Select directory"))
       if (chooser.showDirectoryDialog(this) == NativeFileChooser.APPROVE_OPTION) {
         val dir = chooser.getSelectedFile()
-        if (dir != null && dir.isDirectory) {
+        if (dir.isDirectory) {
           val n = protoSet.addDirectoryShallow(dir)
           if (n == 0) {
             JOptionPane.showMessageDialog(
@@ -302,7 +302,7 @@ class GUIOptionGrpcDescriptorDialog(
       chooser.setAcceptAllFileFilterUsed(true)
       if (chooser.showOpenDialog(this) == NativeFileChooser.APPROVE_OPTION) {
         val f = chooser.getSelectedFile()
-        if (f != null && f.isFile) {
+        if (f.isFile) {
           workingPath = f.absolutePath
           updatePathLabel()
           refreshServiceList()

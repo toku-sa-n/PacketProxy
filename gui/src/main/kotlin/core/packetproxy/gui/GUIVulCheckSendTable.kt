@@ -65,7 +65,7 @@ class GUIVulCheckSendTable(
 
   fun add(name: String, packet: OneShotPacket, enabled: Boolean) {
     model.addRow(
-      arrayOf(
+      arrayOf<Any?>(
         enabled,
         name,
         packet.getSummarizedRequest(packetSummarizer),

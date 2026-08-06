@@ -22,6 +22,7 @@ import java.nio.ByteBuffer
 import java.util.StringJoiner
 import net.arnx.jsonic.JSON
 import org.xbill.DNS.utils.base64
+import packetproxy.util.asStringKeyMap
 import packetproxy.util.errWithStackTrace
 
 class GRPCMessage {
@@ -48,7 +49,9 @@ class GRPCMessage {
 
   constructor(json: Map<String, Any?>) {
     type = json["type"].toString().toInt()
-    message = json["message"] as Map<String, Any?>
+    message =
+      json["message"].asStringKeyMap()
+        ?: throw RuntimeException("message must be a string-keyed Map")
   }
 
   fun toBytes(): ByteArray {

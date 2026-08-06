@@ -32,7 +32,9 @@ class GUIRegexParamsTableDialog(
 
   fun updateTable() {
     model.rowCount = 0
-    regexParams.forEach { model.addRow(arrayOf(it.getPacketId(), it.getName(), it.getRegex())) }
+    regexParams.forEach {
+      model.addRow(arrayOf<Any?>(it.getPacketId(), it.getName(), it.getRegex()))
+    }
   }
 
   fun createPanel(): JComponent {

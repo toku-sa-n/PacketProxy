@@ -326,10 +326,11 @@ class Https(
     applySni(socket, addr.hostString)
     socket.startHandshake()
     var session = socket.session
-    var servercerts = session.peerCertificates as Array<X509Certificate>
+    var servercerts = session.peerCertificates.mapNotNull { it as? X509Certificate }.toTypedArray()
+    if (servercerts.isEmpty()) return ""
 
     var pattern = Pattern.compile("CN=([^,]+)", Pattern.CASE_INSENSITIVE)
-    var matcher = pattern.matcher(servercerts[0].subjectDN.getName())
+    var matcher = pattern.matcher(servercerts[0].subjectX500Principal.name)
     if (matcher.find()) {
       return matcher.group(1)
     }

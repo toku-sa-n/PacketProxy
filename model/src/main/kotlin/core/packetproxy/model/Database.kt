@@ -46,12 +46,12 @@ class Database {
   private var databasePath = Paths.get(databaseDir.toString() + "/resources.sqlite3")
   private lateinit var source: ConnectionSource
 
-  fun <T> createTable(c: Class<T>, listener: PropertyChangeListener): Dao<T, Int> {
+  fun <T, ID> createTable(c: Class<T>, listener: PropertyChangeListener): Dao<T, ID> {
     addPropertyChangeListener(listener)
     return createTable(c)
   }
 
-  fun <T> createTable(c: Class<T>): Dao<T, Int> {
+  fun <T, ID> createTable(c: Class<T>): Dao<T, ID> {
     TableUtils.createTableIfNotExists(source, c)
     return DaoManager.createDao(source, c)
   }

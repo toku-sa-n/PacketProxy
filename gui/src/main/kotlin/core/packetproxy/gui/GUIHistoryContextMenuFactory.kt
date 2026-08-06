@@ -69,9 +69,6 @@ class GUIHistoryContextMenuFactory {
           val id = context.selectedPacketId
           val packet = packets.query(id) ?: return@createMenuItem
           val data = guiPacket.getData()
-          if (packet == null) {
-            return@createMenuItem
-          }
           owner.coreServices.resendController.resend(packet.getOneShotPacket(data))
           packet.setResend()
           packets.update(packet)
@@ -107,7 +104,7 @@ class GUIHistoryContextMenuFactory {
         try {
           val data = guiPacket.getData()
           val authorization = extract(data)
-          if (authorization == null || authorization.isEmpty()) {
+          if (authorization.isEmpty()) {
             JOptionPane.showMessageDialog(
               owner,
               i18nString("No Authorization header found in the current request."),

@@ -167,10 +167,6 @@ class ResendPacketTool(
         originalPacket.getOneShotFromDecodedData()
       }
 
-    if (originalOneShot == null) {
-      throw IllegalArgumentException("Cannot create OneShotPacket from packet ID $packetId")
-    }
-
     log("ResendPacketTool: Original packet found, preparing for resend")
 
     // ジョブIDを生成

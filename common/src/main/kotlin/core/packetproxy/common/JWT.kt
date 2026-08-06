@@ -18,6 +18,8 @@ package packetproxy.common
 import java.io.ByteArrayInputStream
 import java.util.HashMap
 import net.arnx.jsonic.JSON
+import packetproxy.util.asMutableStringKeyMap
+import packetproxy.util.asStringKeyMap
 import packetproxy.util.log
 
 open class JWT {
@@ -68,7 +70,7 @@ open class JWT {
     var cur: Map<String, Any?>? = JSON().parse(chunk)
     for (i in 0 until keys.size - 1) {
       cur ?: return null
-      cur = cur[keys[i]] as? Map<String, Any?>
+      cur = cur[keys[i]].asStringKeyMap()
     }
     return cur?.get(keys.last()) as? String
   }
@@ -79,8 +81,7 @@ open class JWT {
     var cur = root
     for (i in 0 until keys.size - 1) {
       val next =
-        cur[keys[i]] as? MutableMap<String, Any?>
-          ?: HashMap<String, Any?>().also { cur[keys[i]] = it }
+        cur[keys[i]].asMutableStringKeyMap() ?: HashMap<String, Any?>().also { cur[keys[i]] = it }
       cur = next
     }
     cur[keys.last()] = value

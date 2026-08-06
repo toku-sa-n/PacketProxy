@@ -71,22 +71,22 @@ class GUIOptionClientCertificate(owner: GUIMain) :
     clientCertificates.removePropertyChangeListener(this)
   }
 
-  override fun addTableContent(certificate: ClientCertificate) {
-    tableList.add(certificate)
+  override fun addTableContent(value: ClientCertificate) {
+    tableList.add(value)
     option_model.addRow(
-      arrayOf<Any>(
-        certificate.isEnabled(),
-        certificate.getType()!!.getText(),
-        certificate.getServerName(owner.modelServices.database),
-        certificate.getSubject() ?: "",
-        certificate.getIssuer() ?: "",
+      arrayOf<Any?>(
+        value.isEnabled(),
+        value.getType()!!.getText(),
+        value.getServerName(owner.modelServices.database),
+        value.getSubject() ?: "",
+        value.getIssuer() ?: "",
       )
     )
   }
 
-  override fun updateTable(certificateList: List<ClientCertificate>) {
+  override fun updateTable(values: List<ClientCertificate>) {
     clearTableContents()
-    certificateList.forEach(::addTableContent)
+    values.forEach(::addTableContent)
   }
 
   override fun updateImpl() {

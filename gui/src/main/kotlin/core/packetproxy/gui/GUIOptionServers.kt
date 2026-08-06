@@ -82,7 +82,7 @@ class GUIOptionServers(owner: GUIMain) : GUIOptionComponentBase<Server>(owner) {
   override fun addTableContent(value: Server) {
     values.add(value)
     option_model.addRow(
-      arrayOf(
+      arrayOf<Any?>(
         value.getIp(),
         value.getPort(),
         value.getUseSSL(),

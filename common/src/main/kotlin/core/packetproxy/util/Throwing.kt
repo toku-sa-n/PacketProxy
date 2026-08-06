@@ -13,10 +13,6 @@ import javax.annotation.Nonnull
 
 @Nonnull fun <T, R> rethrowF(@Nonnull function: ThrowingFunction<T, R>): Function<T, R> = function
 
-fun <E : Throwable> sneakyThrow(@Nonnull ex: Throwable): Unit {
-  throw sneakType(ex)
-}
-
-private fun <T : Throwable> sneakType(ex: Throwable): T {
-  throw ex as T
+fun sneakyThrow(@Nonnull ex: Throwable): Unit {
+  throw ex
 }

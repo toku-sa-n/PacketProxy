@@ -1,7 +1,5 @@
 package packetproxy.common
 
-import org.apache.commons.io.IOUtils
-
 class AppVersion {
   private val DEFAULT_VERSION = "1.0.0"
   private var cached: String? = null
@@ -15,8 +13,9 @@ class AppVersion {
 
   private fun load(): String =
     try {
-      javaClass.getResourceAsStream("/version")?.use { IOUtils.toString(it).trim() }
-        ?: DEFAULT_VERSION
+      javaClass.getResourceAsStream("/version")?.use {
+        it.bufferedReader(Charsets.UTF_8).readText().trim()
+      } ?: DEFAULT_VERSION
     } catch (_: java.io.IOException) {
       DEFAULT_VERSION
     }

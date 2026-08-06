@@ -173,7 +173,7 @@ class ClientCertificate {
 
   @Throws(Exception::class)
   fun getServer(database: Database): Server? =
-    database.createTable(Server::class.java).queryForId(this.serverId)
+    database.createTable<Server, Int>(Server::class.java).queryForId(this.serverId)
 
   @Throws(Exception::class)
   fun getServerName(database: Database): String {
@@ -223,8 +223,8 @@ class ClientCertificate {
 
       // Extract CommonName and Issuer
       val crt = ks.getCertificate(alias) as X509Certificate
-      val subject = getCommonName(crt.subjectDN.name)
-      val issuer = crt.issuerDN.name
+      val subject = getCommonName(crt.subjectX500Principal.name)
+      val issuer = crt.issuerX500Principal.name
 
       return ClientCertificate(
         type,

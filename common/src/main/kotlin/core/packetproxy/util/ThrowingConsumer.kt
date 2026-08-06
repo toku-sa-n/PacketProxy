@@ -7,7 +7,7 @@ fun interface ThrowingConsumer<T> : Consumer<T> {
     try {
       accept0(e)
     } catch (ex: Throwable) {
-      sneakyThrow<RuntimeException>(ex)
+      sneakyThrow(ex)
     }
   }
 

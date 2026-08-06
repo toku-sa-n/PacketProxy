@@ -43,7 +43,7 @@ abstract class ExtendedTextPane(
 ) : PlainTextCopyTextPane() {
   private var data: ByteArray? = null
   private var showAll = false
-  private val listenerList = EventListenerList()
+  private val dataChangedListeners = EventListenerList()
 
   @JvmField var prev_text_panel = ""
 
@@ -177,7 +177,7 @@ abstract class ExtendedTextPane(
   }
 
   fun addDataChangedListener(listener: DataChangedListener) {
-    listenerList.add(DataChangedListener::class.java, listener)
+    dataChangedListeners.add(DataChangedListener::class.java, listener)
   }
 
   @Throws(Exception::class) abstract fun setData(data: ByteArray)
@@ -185,7 +185,7 @@ abstract class ExtendedTextPane(
   abstract fun getData(): ByteArray
 
   protected fun callDataChanged(data: ByteArray) {
-    for (listener in listenerList.getListeners(DataChangedListener::class.java)) {
+    for (listener in dataChangedListeners.getListeners(DataChangedListener::class.java)) {
       listener.dataChanged(data)
     }
   }

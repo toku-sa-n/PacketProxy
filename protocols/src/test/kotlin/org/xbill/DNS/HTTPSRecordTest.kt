@@ -33,8 +33,8 @@ class HTTPSRecordTest {
     assertEquals(ipv4List, ipv4hint.addresses)
 
     val data = byteArrayOf('a'.code.toByte(), 'b'.code.toByte(), 'c'.code.toByte())
-    val echconfig = SVCBBase.ParameterEchConfig(data)
-    assertEquals(HTTPSRecord.ECHCONFIG, echconfig.key)
+    val echconfig = SVCBBase.ParameterEch(data)
+    assertEquals(HTTPSRecord.ECH, echconfig.key)
     assertEquals(data, echconfig.data)
 
     val ipv6List = listOf(InetAddress.getByName("2001::1") as Inet6Address)

@@ -120,11 +120,11 @@ class Connection {
 
   fun getDirection(): Direction = direction
 
-  override fun equals(obj: Any?): Boolean {
-    if (obj !is Connection) {
+  override fun equals(other: Any?): Boolean {
+    if (other !is Connection) {
       return false
     }
-    val conn = obj
+    val conn = other
     if (
       listen_port != conn.listen_port ||
         client != conn.getClient() ||

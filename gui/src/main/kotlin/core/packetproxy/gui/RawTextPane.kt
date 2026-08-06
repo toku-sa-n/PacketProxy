@@ -27,7 +27,6 @@ import java.nio.charset.Charset
 import java.util.Base64
 import javax.swing.JMenuItem
 import javax.swing.JPopupMenu
-import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.commons.lang3.StringUtils
 import packetproxy.common.*
 import packetproxy.common.FontManager
@@ -50,7 +49,7 @@ class RawTextPane(
     addKeyListener(
       object : KeyAdapter() {
         override fun keyPressed(event: KeyEvent) {
-          if (Toolkit.getDefaultToolkit().menuShortcutKeyMask and event.modifiers == 0) return
+          if (Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx and event.modifiersEx == 0) return
           when (event.keyCode) {
             KeyEvent.VK_Z -> {
               if (event.isShiftDown) {
@@ -142,9 +141,7 @@ class RawTextPane(
       )
       menu.add(menuItem("JWT Decoder") { decodeJwt(selectionBytes()) })
       menu.add(
-        menuItem("Unicode Unescaper") {
-          StringEscapeUtils.unescapeJava(String(selectionBytes(), selectedCharset()))
-        }
+        menuItem("Unicode Unescaper") { unescapeJava(String(selectionBytes(), selectedCharset())) }
       )
       menu.addSeparator()
       menu.add(title("Encoders"))
@@ -239,4 +236,64 @@ class RawTextPane(
     }
 
   private fun stripTrailingNewlines(value: String): String = value.trimEnd('\n', '\r')
+
+  /** Minimal subset of Apache StringEscapeUtils.unescapeJava for unicode / common escapes. */
+  private fun unescapeJava(input: String): String {
+    val out = StringBuilder(input.length)
+    var i = 0
+    while (i < input.length) {
+      val c = input[i]
+      if (c != '\\' || i + 1 >= input.length) {
+        out.append(c)
+        i++
+        continue
+      }
+      when (val next = input[i + 1]) {
+        'u' -> {
+          if (i + 5 < input.length) {
+            val hex = input.substring(i + 2, i + 6)
+            val code = hex.toIntOrNull(16)
+            if (code != null) {
+              out.append(code.toChar())
+              i += 6
+              continue
+            }
+          }
+          out.append('\\').append(next)
+          i += 2
+        }
+        'n' -> {
+          out.append('\n')
+          i += 2
+        }
+        'r' -> {
+          out.append('\r')
+          i += 2
+        }
+        't' -> {
+          out.append('\t')
+          i += 2
+        }
+        'b' -> {
+          out.append('\b')
+          i += 2
+        }
+        'f' -> {
+          out.append('\u000C')
+          i += 2
+        }
+        '\\',
+        '\'',
+        '"' -> {
+          out.append(next)
+          i += 2
+        }
+        else -> {
+          out.append('\\').append(next)
+          i += 2
+        }
+      }
+    }
+    return out.toString()
+  }
 }

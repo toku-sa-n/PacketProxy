@@ -935,7 +935,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     groupId: Long,
   ) {
     tableModel.addRow(
-      arrayOf(
+      arrayOf<Any?>(
         packetId,
         "Loading...",
         "Loading...",
@@ -1094,7 +1094,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       return
     }
     tableModel.addRow(
-      arrayOf(
+      arrayOf<Any?>(
         responsePacketId,
         "Loading...",
         "Loading...",

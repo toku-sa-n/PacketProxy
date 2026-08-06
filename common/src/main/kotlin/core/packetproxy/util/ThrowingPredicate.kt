@@ -7,7 +7,7 @@ fun interface ThrowingPredicate<T> : Predicate<T> {
     try {
       return test0(e)
     } catch (ex: Throwable) {
-      sneakyThrow<RuntimeException>(ex)
+      sneakyThrow(ex)
       throw IllegalStateException("Unreachable")
     }
   }

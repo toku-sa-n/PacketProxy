@@ -46,7 +46,7 @@ class GUIBulkSenderTable(
 
   fun add(packet: OneShotPacket) {
     model.addRow(
-      arrayOf(
+      arrayOf<Any?>(
         packet.getId(),
         if (type == Type.CLIENT) packet.getSummarizedRequest(packetSummarizer)
         else packet.getSummarizedResponse(packetSummarizer),

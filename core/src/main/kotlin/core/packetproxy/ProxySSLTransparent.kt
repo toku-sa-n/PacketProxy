@@ -25,7 +25,6 @@ import javax.net.ssl.SNIServerName
 import org.apache.commons.lang3.ArrayUtils
 import packetproxy.common.*
 import packetproxy.common.EndpointFactory
-import packetproxy.common.SSLCapabilities
 import packetproxy.common.SSLSocketEndpoint
 import packetproxy.common.SocketEndpoint
 import packetproxy.common.WrapEndpoint
@@ -76,7 +75,6 @@ constructor(
 
     var buffer = ByteArray(0xFF)
     var position = 0
-    val capabilities: SSLCapabilities?
 
     // Read the header of TLS record
     while (position < RECORD_HEADER_SIZE) {
@@ -103,11 +101,8 @@ constructor(
       position += n
     }
 
-    // Explore
-    capabilities = explore(buffer, 0, recordLength)
-    if (capabilities == null) {
-      throw Exception("capabilities not found.")
-    }
+    // Explore (throws on failure rather than returning null)
+    val capabilities = explore(buffer, 0, recordLength)
 
     val serverNames: List<SNIServerName> = capabilities.getServerNames()
     if (serverNames.isEmpty()) {

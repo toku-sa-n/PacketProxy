@@ -69,21 +69,21 @@ class GUIOptionResolutions(owner: GUIMain) : GUIOptionComponentBase<Resolution>(
     resolutions.removePropertyChangeListener(this)
   }
 
-  override fun addTableContent(resolution: Resolution) {
-    tableList.add(resolution)
+  override fun addTableContent(value: Resolution) {
+    tableList.add(value)
     option_model.addRow(
-      arrayOf<Any>(
-        resolution.getIp() ?: "",
-        resolution.getHostName() ?: "",
-        resolution.isEnabled(),
-        resolution.getComment() ?: "",
+      arrayOf<Any?>(
+        value.getIp() ?: "",
+        value.getHostName() ?: "",
+        value.isEnabled(),
+        value.getComment() ?: "",
       )
     )
   }
 
-  override fun updateTable(resolutionList: List<Resolution>) {
+  override fun updateTable(values: List<Resolution>) {
     clearTableContents()
-    resolutionList.forEach(::addTableContent)
+    values.forEach(::addTableContent)
   }
 
   override fun updateImpl() {

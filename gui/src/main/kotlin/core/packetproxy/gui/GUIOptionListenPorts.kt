@@ -77,7 +77,7 @@ class GUIOptionListenPorts(owner: GUIMain) : GUIOptionComponentBase<ListenPort>(
     values.add(value)
     val serverNull = if (value.getType()!!.isForwarder()) "Deleted" else ""
     option_model.addRow(
-      arrayOf(
+      arrayOf<Any?>(
         value.isEnabled(),
         value.getProtocol(),
         value.getPort(),

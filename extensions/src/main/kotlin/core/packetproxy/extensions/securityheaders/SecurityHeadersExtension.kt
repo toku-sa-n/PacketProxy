@@ -406,13 +406,9 @@ class SecurityHeadersExtension : Extension(), CoreServiceExtension {
       val reqHttp = Http.create(reqPacket.getDecodedData())
 
       val method = reqHttp.method
-      val host = reqHttp.header.getValue("Host").orElse(reqPacket.getServerName())
+      val host = reqHttp.header.getValue("Host").orElse(reqPacket.getServerName()) ?: return
       val path = reqHttp.path
       val statusCode = resHttp.statusCode
-
-      if (method == null || host == null || path == null || statusCode == null) {
-        return
-      }
 
       val url = (if (reqPacket.getUseSSL()) "https://" else "http://") + host + path
 

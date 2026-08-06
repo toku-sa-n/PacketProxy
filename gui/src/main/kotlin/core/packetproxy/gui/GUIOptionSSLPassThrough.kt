@@ -79,21 +79,20 @@ class GUIOptionSSLPassThrough(owner: GUIMain) : GUIOptionComponentBase<SSLPassTh
   override fun shouldHandlePropertyChange(evt: PropertyChangeEvent): Boolean =
     SSL_PASS_THROUGHS.matches(evt)
 
-  override fun addTableContent(sslPassThrough: SSLPassThrough) {
-    tableList.add(sslPassThrough)
+  override fun addTableContent(value: SSLPassThrough) {
+    tableList.add(value)
     option_model.addRow(
-      arrayOf<Any>(
-        sslPassThrough.isEnabled(),
-        sslPassThrough.getServerName() ?: "",
-        if (sslPassThrough.getListenPort() == SSLPassThrough.ALL_PORTS) "*"
-        else sslPassThrough.getListenPort(),
+      arrayOf<Any?>(
+        value.isEnabled(),
+        value.getServerName() ?: "",
+        if (value.getListenPort() == SSLPassThrough.ALL_PORTS) "*" else value.getListenPort(),
       )
     )
   }
 
-  override fun updateTable(sslPassThroughList: List<SSLPassThrough>) {
+  override fun updateTable(values: List<SSLPassThrough>) {
     clearTableContents()
-    sslPassThroughList.forEach(::addTableContent)
+    values.forEach(::addTableContent)
   }
 
   override fun updateImpl() {

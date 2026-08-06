@@ -67,7 +67,7 @@ class CustomScrollPane : JScrollPane() {
         getParentScrollPane(),
         e.id,
         e.getWhen(),
-        e.modifiers,
+        e.modifiersEx,
         1,
         1,
         e.clickCount,

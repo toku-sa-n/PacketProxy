@@ -74,7 +74,7 @@ class GUIFilterConfig(private var owner: JFrame) {
   private fun updateImpl() {
     model.rowCount = 0
     owner.modelServices.filters.queryAll().forEach {
-      model.addRow(arrayOf(it.getId(), it.getName(), it.getFilter()))
+      model.addRow(arrayOf<Any?>(it.getId(), it.getName(), it.getFilter()))
     }
   }
 

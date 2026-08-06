@@ -49,29 +49,29 @@ open class EncodeHTTPWebSocket : Encoder {
   override fun getName(): String = "HTTP WebSocket"
 
   @Throws(Exception::class)
-  override fun checkDelimiter(input: ByteArray): Int {
+  override fun checkDelimiter(input_data: ByteArray): Int {
     return if (binary_start) {
-      WebSocket.checkDelimiter(input)
+      WebSocket.checkDelimiter(input_data)
     } else {
-      Http.parseHttpDelimiter(input)
+      Http.parseHttpDelimiter(input_data)
     }
   }
 
   @Throws(Exception::class)
-  override fun clientRequestArrived(input: ByteArray) {
+  override fun clientRequestArrived(input_data: ByteArray) {
     if (binary_start) {
-      clientWebSocket.frameArrived(input)
+      clientWebSocket.frameArrived(input_data)
     } else {
-      super.clientRequestArrived(input)
+      super.clientRequestArrived(input_data)
     }
   }
 
   @Throws(Exception::class)
-  override fun serverResponseArrived(input: ByteArray) {
+  override fun serverResponseArrived(input_data: ByteArray) {
     if (binary_start) {
-      serverWebSocket.frameArrived(input)
+      serverWebSocket.frameArrived(input_data)
     } else {
-      super.serverResponseArrived(input)
+      super.serverResponseArrived(input_data)
     }
   }
 
@@ -126,33 +126,33 @@ open class EncodeHTTPWebSocket : Encoder {
   }
 
   @Throws(Exception::class)
-  override fun decodeServerResponse(input: ByteArray): ByteArray {
+  override fun decodeServerResponse(input_data: ByteArray): ByteArray {
     if (binary_start) {
-      if (input.isEmpty()) {
+      if (input_data.isEmpty()) {
         return EMPTY_PAYLOAD_PLACEHOLDER
       }
-      return decodeWebsocketResponse(input)
+      return decodeWebsocketResponse(input_data)
     } else {
-      val http = Http.create(input)
+      val http = Http.create(input_data)
       return http.toByteArray()
     }
   }
 
   @Throws(Exception::class)
-  override fun encodeServerResponse(input: ByteArray): ByteArray {
+  override fun encodeServerResponse(input_data: ByteArray): ByteArray {
     if (binary_start) {
       val payload: ByteArray =
         if (serverEmptyPayloadFlag) {
           serverEmptyPayloadFlag = false
-          if (Arrays.equals(input, EMPTY_PAYLOAD_PLACEHOLDER)) ByteArray(0)
-          else encodeWebsocketResponse(input)
+          if (Arrays.equals(input_data, EMPTY_PAYLOAD_PLACEHOLDER)) ByteArray(0)
+          else encodeWebsocketResponse(input_data)
         } else {
-          encodeWebsocketResponse(input)
+          encodeWebsocketResponse(input_data)
         }
       val frame = WebSocketFrame.of(serverWebSocket.lastDequeuedOpCode(), payload, false)
       return frame.getBytes()
     } else {
-      val http = Http.create(input)
+      val http = Http.create(input_data)
       // encodeでやらないと、Switching Protocolsのレスポンス自体がwebsocketとしてencodeされてしまう
       binary_start = http.statusCode.matches(Regex("101"))
       return http.toByteArray()
@@ -160,54 +160,58 @@ open class EncodeHTTPWebSocket : Encoder {
   }
 
   @Throws(Exception::class)
-  override fun decodeClientRequest(input: ByteArray): ByteArray {
+  override fun decodeClientRequest(input_data: ByteArray): ByteArray {
     if (binary_start) {
-      if (input.isEmpty()) {
+      if (input_data.isEmpty()) {
         return EMPTY_PAYLOAD_PLACEHOLDER
       }
-      return decodeWebsocketRequest(input)
+      return decodeWebsocketRequest(input_data)
     } else {
-      val http = Http.create(input)
+      val http = Http.create(input_data)
       return http.toByteArray()
     }
   }
 
   @Throws(Exception::class)
-  override fun encodeClientRequest(input: ByteArray): ByteArray {
+  override fun encodeClientRequest(input_data: ByteArray): ByteArray {
     if (binary_start) {
       val payload: ByteArray =
         if (clientEmptyPayloadFlag) {
           clientEmptyPayloadFlag = false
-          if (Arrays.equals(input, EMPTY_PAYLOAD_PLACEHOLDER)) ByteArray(0)
-          else encodeWebsocketRequest(input)
+          if (Arrays.equals(input_data, EMPTY_PAYLOAD_PLACEHOLDER)) ByteArray(0)
+          else encodeWebsocketRequest(input_data)
         } else {
-          encodeWebsocketRequest(input)
+          encodeWebsocketRequest(input_data)
         }
       val frame = WebSocketFrame.of(clientWebSocket.lastDequeuedOpCode(), payload, true)
       return frame.getBytes()
     } else {
-      val http = Http.create(input)
+      val http = Http.create(input_data)
       return http.toByteArray()
     }
   }
 
   @Throws(Exception::class)
-  override fun getContentType(input: ByteArray): String {
+  override fun getContentType(input_data: ByteArray): String {
     return if (binary_start) {
       "WebSocket"
     } else {
-      val http = Http.create(input)
+      val http = Http.create(input_data)
       http.getFirstHeader("Content-Type")
     }
   }
 
-  @Throws(Exception::class) open fun decodeWebsocketRequest(input: ByteArray): ByteArray = input
+  @Throws(Exception::class)
+  open fun decodeWebsocketRequest(input_data: ByteArray): ByteArray = input_data
 
-  @Throws(Exception::class) open fun encodeWebsocketRequest(input: ByteArray): ByteArray = input
+  @Throws(Exception::class)
+  open fun encodeWebsocketRequest(input_data: ByteArray): ByteArray = input_data
 
-  @Throws(Exception::class) open fun decodeWebsocketResponse(input: ByteArray): ByteArray = input
+  @Throws(Exception::class)
+  open fun decodeWebsocketResponse(input_data: ByteArray): ByteArray = input_data
 
-  @Throws(Exception::class) open fun encodeWebsocketResponse(input: ByteArray): ByteArray = input
+  @Throws(Exception::class)
+  open fun encodeWebsocketResponse(input_data: ByteArray): ByteArray = input_data
 
   companion object {
     /**

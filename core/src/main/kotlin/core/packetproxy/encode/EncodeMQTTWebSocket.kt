@@ -45,16 +45,16 @@ class EncodeMQTTWebSocket @Throws(Exception::class) constructor(ALPN: String?) :
   }
 
   @Throws(Exception::class)
-  override fun decodeWebsocketRequest(input: ByteArray): ByteArray = decodeMQTT(input)
+  override fun decodeWebsocketRequest(input_data: ByteArray): ByteArray = decodeMQTT(input_data)
 
   @Throws(Exception::class)
-  override fun encodeWebsocketRequest(input: ByteArray): ByteArray = encodeMQTT(input)
+  override fun encodeWebsocketRequest(input_data: ByteArray): ByteArray = encodeMQTT(input_data)
 
   @Throws(Exception::class)
-  override fun decodeWebsocketResponse(input: ByteArray): ByteArray = decodeMQTT(input)
+  override fun decodeWebsocketResponse(input_data: ByteArray): ByteArray = decodeMQTT(input_data)
 
   @Throws(Exception::class)
-  override fun encodeWebsocketResponse(input: ByteArray): ByteArray = encodeMQTT(input)
+  override fun encodeWebsocketResponse(input_data: ByteArray): ByteArray = encodeMQTT(input_data)
 
   override fun getSummarizedRequest(packet: Packet): String {
     if (packet.getDecodedData().isEmpty() && packet.getModifiedData().isEmpty()) {
@@ -69,7 +69,7 @@ class EncodeMQTTWebSocket @Throws(Exception::class) constructor(ALPN: String?) :
       val http = Http.create(data)
       val method = http.method
       val url = http.getURL(packet.getServerPort(), packet.getUseSSL())
-      if (method == null) return getSummarizedMessage(encodeMQTT(data))
+      if (method.isEmpty()) return getSummarizedMessage(encodeMQTT(data))
       return "$method $url"
     } catch (e: Exception) {
       return "Headlineを生成できません・・・"

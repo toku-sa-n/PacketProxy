@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.util.TreeMap
+import packetproxy.util.asStringKeyMap
 import packetproxy.util.err
 import packetproxy.util.errWithStackTrace
 
@@ -308,7 +309,10 @@ class MessagePack {
             key.fitType(length.toLong())
             output.write(key.toFirstByte().toInt())
             if (!key.fix) output.write(encodeInteger(key.size, false, length.toLong()))
-            for (child in list) encodeData(child as Map<String, Any?>, output)
+            for (child in list) encodeData(
+              child.asStringKeyMap() ?: error("MessagePack child must be a string-keyed Map"),
+              output,
+            )
           }
           Key.Type.Extension -> {
             val (type, data) = (message as String).split(":", limit = 2)

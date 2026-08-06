@@ -7,7 +7,7 @@ fun interface ThrowingBiConsumer<T, R> : BiConsumer<T, R> {
     try {
       accept0(t, r)
     } catch (ex: Throwable) {
-      sneakyThrow<RuntimeException>(ex)
+      sneakyThrow(ex)
     }
   }
 

@@ -21,7 +21,7 @@ class ResenderPackets(private val database: Database) : PropertyChangeListener {
       return
     }
     database.dropTable(ResenderPacket::class.java)
-    database.createTable(ResenderPacket::class.java, this)
+    database.createTable<ResenderPacket, Int>(ResenderPacket::class.java, this)
   }
 
   fun createResend(resenderPacket: ResenderPacket) {

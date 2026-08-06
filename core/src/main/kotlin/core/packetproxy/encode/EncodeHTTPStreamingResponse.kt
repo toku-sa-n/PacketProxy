@@ -74,36 +74,36 @@ open class EncodeHTTPStreamingResponse : Encoder {
   override fun getName(): String = "HTTP Streaming Response"
 
   @Throws(Exception::class)
-  override fun checkRequestDelimiter(data: ByteArray): Int =
+  override fun checkRequestDelimiter(input_data: ByteArray): Int =
     if (httpVersion == HTTPVersion.HTTP1) {
-      requireHttp1().checkRequestDelimiter(data)
+      requireHttp1().checkRequestDelimiter(input_data)
     } else {
-      requireHttp2().checkDelimiter(data)
+      requireHttp2().checkDelimiter(input_data)
     }
 
   @Throws(Exception::class)
-  override fun checkResponseDelimiter(data: ByteArray): Int =
+  override fun checkResponseDelimiter(input_data: ByteArray): Int =
     if (httpVersion == HTTPVersion.HTTP1) {
-      requireHttp1().checkResponseDelimiter(data)
+      requireHttp1().checkResponseDelimiter(input_data)
     } else {
-      requireHttp2().checkDelimiter(data)
+      requireHttp2().checkDelimiter(input_data)
     }
 
   @Throws(Exception::class)
-  override fun clientRequestArrived(data: ByteArray) {
+  override fun clientRequestArrived(input_data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP1) {
-      requireHttp1().clientRequestArrived(data)
+      requireHttp1().clientRequestArrived(input_data)
     } else {
-      requireHttp2().clientRequestArrived(data)
+      requireHttp2().clientRequestArrived(input_data)
     }
   }
 
   @Throws(Exception::class)
-  override fun serverResponseArrived(data: ByteArray) {
+  override fun serverResponseArrived(input_data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP1) {
-      requireHttp1().serverResponseArrived(data)
+      requireHttp1().serverResponseArrived(input_data)
     } else {
-      requireHttp2().serverResponseArrived(data)
+      requireHttp2().serverResponseArrived(input_data)
     }
   }
 
@@ -172,20 +172,20 @@ open class EncodeHTTPStreamingResponse : Encoder {
     }
 
   @Throws(Exception::class)
-  override fun putToClientFlowControlledQueue(frames: ByteArray) {
+  override fun putToClientFlowControlledQueue(output_data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP1) {
-      super.putToClientFlowControlledQueue(frames)
+      super.putToClientFlowControlledQueue(output_data)
     } else {
-      requireHttp2().putToClientFlowControlledQueue(frames)
+      requireHttp2().putToClientFlowControlledQueue(output_data)
     }
   }
 
   @Throws(Exception::class)
-  override fun putToServerFlowControlledQueue(frames: ByteArray) {
+  override fun putToServerFlowControlledQueue(output_data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP1) {
-      super.putToServerFlowControlledQueue(frames)
+      super.putToServerFlowControlledQueue(output_data)
     } else {
-      requireHttp2().putToServerFlowControlledQueue(frames)
+      requireHttp2().putToServerFlowControlledQueue(output_data)
     }
   }
 

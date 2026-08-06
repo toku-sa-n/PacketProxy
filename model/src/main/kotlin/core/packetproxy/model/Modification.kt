@@ -93,7 +93,7 @@ class Modification {
 
   @Throws(Exception::class)
   fun getServer(database: Database): Server? =
-    database.createTable(Server::class.java).queryForId(this.server_id)
+    database.createTable<Server, Int>(Server::class.java).queryForId(this.server_id)
 
   @Throws(Exception::class)
   fun getServerName(database: Database): String {

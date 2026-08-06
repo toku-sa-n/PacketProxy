@@ -140,13 +140,13 @@ class GrpcSchemaResolver(private val serviceRegistryStore: GrpcServiceRegistrySt
         while (p.nextToken() != null) {
           if (p.currentToken() == JsonToken.START_OBJECT) {
             if (depth == 0) {
-              start = p.tokenLocation.charOffset.toInt()
+              start = p.currentTokenLocation().charOffset.toInt()
             }
             depth++
           } else if (p.currentToken() == JsonToken.END_OBJECT) {
             depth--
             if (depth == 0 && start >= 0) {
-              val end = p.currentLocation.charOffset.toInt() + 1
+              val end = p.currentLocation().charOffset.toInt() + 1
               out.add(text.substring(start, end))
             }
           }

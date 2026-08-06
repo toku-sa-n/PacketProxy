@@ -74,7 +74,7 @@ class ModificationPathTest {
 
   @Test
   fun schema_includesPathInUniqueConstraint() {
-    var dao = database.createTable(Modification::class.java)
+    var dao = database.createTable<Modification, Int>(Modification::class.java)
     var sql =
       dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='modifications'").firstResult[0]
     assertEquals(

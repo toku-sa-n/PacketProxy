@@ -417,10 +417,10 @@ class GUIRequestResponsePanel(private val owner: GUIMain) {
 
   private fun resolveDecodedData(packet: Packet): ByteArray {
     var decodedData = packet.getDecodedData()
-    if (decodedData == null || decodedData.isEmpty()) {
+    if (decodedData.isEmpty()) {
       decodedData = packet.getModifiedData()
     }
-    return decodedData ?: EMPTY_DATA
+    return decodedData
   }
 
   private fun updateRequestPanel() {

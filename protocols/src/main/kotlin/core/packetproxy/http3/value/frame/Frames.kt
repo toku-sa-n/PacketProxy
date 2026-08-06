@@ -48,7 +48,7 @@ class Frames {
 
   fun anyMatch(pred: Predicate<Frame>): Boolean = frames.stream().anyMatch(pred)
 
-  fun toList(): List<Frame> = frames.clone() as ArrayList<Frame>
+  fun toList(): List<Frame> = ArrayList(frames)
 
   override fun toString(): String = "Frames(frames=$frames)"
 

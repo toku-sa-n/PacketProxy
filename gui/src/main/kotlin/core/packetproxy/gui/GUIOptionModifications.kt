@@ -84,24 +84,24 @@ class GUIOptionModifications(owner: GUIMain) : GUIOptionComponentBase<Modificati
     modifications.removePropertyChangeListener(this)
   }
 
-  override fun addTableContent(modification: Modification) {
-    tableList.add(modification)
+  override fun addTableContent(value: Modification) {
+    tableList.add(value)
     option_model.addRow(
       arrayOf<Any?>(
-        modification.isEnabled(),
-        modification.getDirection(),
-        modification.getMethod(),
-        modification.getPattern(),
-        modification.getReplaced(),
-        modification.getPath(),
-        modification.getServerName(owner.modelServices.database),
+        value.isEnabled(),
+        value.getDirection(),
+        value.getMethod(),
+        value.getPattern(),
+        value.getReplaced(),
+        value.getPath(),
+        value.getServerName(owner.modelServices.database),
       )
     )
   }
 
-  override fun updateTable(modificationList: List<Modification>) {
+  override fun updateTable(values: List<Modification>) {
     clearTableContents()
-    modificationList.forEach(::addTableContent)
+    values.forEach(::addTableContent)
   }
 
   override fun updateImpl() {

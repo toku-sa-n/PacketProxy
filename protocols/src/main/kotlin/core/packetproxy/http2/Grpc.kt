@@ -107,12 +107,12 @@ open class Grpc(private val uniqueId: UniqueID) : FramesBase() {
   }
 
   @Throws(Exception::class)
-  override fun encodeClientRequestToFrames(http: ByteArray): ByteArray =
-    encodeToFrames(http, getClientHpackEncoder())
+  override fun encodeClientRequestToFrames(data: ByteArray): ByteArray =
+    encodeToFrames(data, getClientHpackEncoder())
 
   @Throws(Exception::class)
-  override fun encodeServerResponseToFrames(http: ByteArray): ByteArray =
-    encodeToFrames(http, getServerHpackEncoder())
+  override fun encodeServerResponseToFrames(data: ByteArray): ByteArray =
+    encodeToFrames(data, getServerHpackEncoder())
 
   @Throws(Exception::class)
   private fun encodeToFrames(data: ByteArray, encoder: HpackEncoder): ByteArray {

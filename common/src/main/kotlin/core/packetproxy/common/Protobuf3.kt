@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.TreeMap
+import packetproxy.util.asStringKeyMap
 import packetproxy.util.err
 
 class Protobuf3 {
@@ -277,7 +278,11 @@ class Protobuf3 {
           }
           "embedded message" -> {
             Key(fieldNumber, Key.Type.LengthDelimited).writeTo(output)
-            val temporary = encodeData(messages[key] as Map<String, Any?>)
+            val temporary =
+              encodeData(
+                messages[key].asStringKeyMap()
+                  ?: error("embedded message must be a string-keyed Map")
+              )
             writeVar(temporary.size.toLong(), output)
             output.write(temporary)
           }

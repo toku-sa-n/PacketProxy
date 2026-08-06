@@ -200,10 +200,6 @@ class VulCheckHelperTool(
         originalPacket.getOneShotFromDecodedData()
       }
 
-    if (originalOneShot == null) {
-      throw IllegalArgumentException("Cannot create OneShotPacket from packet ID $packetId")
-    }
-
     // VulCheckerを取得
     var vulChecker = vulCheckerManager.createInstance(vulCheckType)
     if (vulChecker == null) {
@@ -535,7 +531,7 @@ class VulCheckHelperTool(
 
       try {
         var payload = generator.generate(targetData)
-        if (payload != null && payload != targetData) {
+        if (payload != targetData) {
           result.generatedPayloads.add(payload)
           payloadCount++
 

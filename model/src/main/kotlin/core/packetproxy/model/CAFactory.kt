@@ -60,9 +60,10 @@ class CAFactory {
         val file_name = file_path.fileName
         val ca_class_path =
           ca_package + "." + file_name.toString().replace(Regex("\\.class.*$"), "")
-        val klass = Class.forName(ca_class_path) as Class<CA>
+        val klass = Class.forName(ca_class_path)
         if (ca_class.isAssignableFrom(klass) && ca_class != klass) {
-          val ca = klass.getDeclaredConstructor().newInstance()
+          val caKlass = klass.asSubclass(CA::class.java)
+          val ca = caKlass.getDeclaredConstructor().newInstance()
           ca_list.add(ca)
         }
         ca_list.stream().sorted(comparing(CA::getName))

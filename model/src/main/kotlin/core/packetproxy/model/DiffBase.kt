@@ -99,10 +99,10 @@ abstract class DiffBase {
 
     @JvmStatic
     protected fun chunkLengthPerLine(a: Chunk): Int =
-      sumOfCharactersPerLine(a.getLines() as List<String>)
+      sumOfCharactersPerLine(a.getLines().map { it.toString() })
 
     @JvmStatic
     protected fun chunkLengthPerCharacter(a: Chunk): Int =
-      sumOfCharactersPerCharacter(a.getLines() as List<String>)
+      sumOfCharactersPerCharacter(a.getLines().map { it.toString() })
   }
 }

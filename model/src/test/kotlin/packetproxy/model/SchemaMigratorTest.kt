@@ -33,7 +33,7 @@ class SchemaMigratorTest {
 
   @Test
   fun ensureColumns_addsMissingColumnAndKeepsExistingRows() {
-    val dao = database.createTable(Filter::class.java)
+    val dao = database.createTable<Filter, Int>(Filter::class.java)
     dao.executeRaw("DROP TABLE `filters`")
     dao.executeRaw(
       "CREATE TABLE `filters` (`id` INTEGER PRIMARY KEY AUTOINCREMENT , `name` VARCHAR )"
@@ -50,7 +50,7 @@ class SchemaMigratorTest {
 
   @Test
   fun ensureColumns_softAddsModificationPathColumn() {
-    val dao = database.createTable(Modification::class.java)
+    val dao = database.createTable<Modification, Int>(Modification::class.java)
     dao.executeRaw("DROP TABLE `modifications`")
     dao.executeRaw(
       """
@@ -86,7 +86,7 @@ class SchemaMigratorTest {
     val tempDb = dir.resolve("resources.sqlite3")
     val isolated = Database()
     isolated.openAt(tempDb.toString())
-    val dao = isolated.createTable(Filter::class.java)
+    val dao = isolated.createTable<Filter, Int>(Filter::class.java)
     dao.create(Filter("a", "b"))
 
     repeat(6) { index ->

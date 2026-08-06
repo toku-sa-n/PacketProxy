@@ -79,7 +79,7 @@ class GUIOptionExtensions(owner: GUIMain) : GUIOptionComponentBase<Extension>(ow
 
   override fun addTableContent(value: Extension) {
     extensionList.add(value)
-    option_model.addRow(arrayOf(value.isEnabled(), value.getName(), value.getPath()))
+    option_model.addRow(arrayOf<Any?>(value.isEnabled(), value.getName(), value.getPath()))
   }
 
   override fun updateTable(values: List<Extension>) {

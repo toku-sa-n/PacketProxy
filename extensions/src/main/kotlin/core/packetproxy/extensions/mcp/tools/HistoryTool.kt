@@ -129,10 +129,8 @@ class HistoryTool(private val packets: Packets, configs: Configs) : Authenticate
     }
   }
 
-  private fun matchesFilter(rowFilter: RowFilter<*, *>, packet: Packet): Boolean {
-    var rowData = createRowDataFromPacket(packet)
-    var entry = MockTableEntry(rowData)
-    return rowFilter.include(entry as RowFilter.Entry<Nothing, Nothing>)
+  private fun matchesFilter(rowFilter: RowFilter<in Any, in Any>, packet: Packet): Boolean {
+    return rowFilter.include(MockTableEntry(createRowDataFromPacket(packet)))
   }
 
   @Throws(Exception::class)

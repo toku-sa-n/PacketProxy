@@ -90,7 +90,7 @@ class Http1StreamingResponse(private val packets: Packets) {
       }
       val guiHistoryUpdater = Thread {
         try {
-          if (http.getBody() != null && http.getBody().isNotEmpty()) {
+          if (http.getBody().isNotEmpty()) {
             val matchingPackets =
               packets.queryFullText(http.getFirstHeader("X-PacketProxy-HTTP1-UUID"))
             for (packet in matchingPackets) {

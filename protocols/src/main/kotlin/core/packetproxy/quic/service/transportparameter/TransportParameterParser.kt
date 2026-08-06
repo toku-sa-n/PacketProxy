@@ -41,8 +41,9 @@ class TransportParameterParser {
           .replaceFirst("^.*$pkg".toRegex(), pkg)
           .replace("""\.class.*$""".toRegex(), "")
       val klass = Class.forName(path)
-      if (cls.isAssignableFrom(klass) && !Modifier.isAbstract(klass.modifiers))
-        map!![klass.getField("ID").getLong(null)] = klass as Class<out TransportParameter>
+      if (!cls.isAssignableFrom(klass) || Modifier.isAbstract(klass.modifiers)) continue
+      val tpKlass = klass.asSubclass(TransportParameter::class.java)
+      map!![klass.getField("ID").getLong(null)] = tpKlass
     }
   }
 }

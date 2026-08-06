@@ -26,11 +26,11 @@ class FrameParser {
           .replaceFirst("^.*$framePackage".toRegex(), framePackage)
           .replace("""\.class.*$""".toRegex(), "")
       val klass = Class.forName(path)
-      if (frameClass.isAssignableFrom(klass) && !Modifier.isAbstract(klass.modifiers)) {
-        (klass.getMethod("supportedTypes").invoke(null) as List<Byte>).forEach {
-          frameMap!![it] = klass as Class<out Frame>
-        }
-      }
+      if (!frameClass.isAssignableFrom(klass) || Modifier.isAbstract(klass.modifiers)) continue
+      val frameKlass = klass.asSubclass(Frame::class.java)
+      val types = klass.getMethod("supportedTypes").invoke(null)
+      if (types !is List<*>) continue
+      types.forEach { type -> if (type is Byte) frameMap!![type] = frameKlass }
     }
   }
 

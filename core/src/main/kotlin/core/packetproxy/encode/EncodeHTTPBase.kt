@@ -75,34 +75,34 @@ abstract class EncodeHTTPBase : Encoder {
     httpVersion == HTTPVersion.HTTP2 || httpVersion == HTTPVersion.HTTP3
 
   @Throws(Exception::class)
-  override fun checkDelimiter(data: ByteArray): Int =
+  override fun checkDelimiter(input_data: ByteArray): Int =
     when (httpVersion) {
-      HTTPVersion.HTTP1 -> Http.parseHttpDelimiter(data)
-      HTTPVersion.HTTP2 -> http2!!.checkDelimiter(data)
-      else -> http3!!.checkDelimiter(data)
+      HTTPVersion.HTTP1 -> Http.parseHttpDelimiter(input_data)
+      HTTPVersion.HTTP2 -> http2!!.checkDelimiter(input_data)
+      else -> http3!!.checkDelimiter(input_data)
     }
 
   @Throws(Exception::class)
-  override fun checkResponseDelimiter(data: ByteArray): Int {
-    if (requestMethodFor(data) == "HEAD") return data.size
-    return checkDelimiter(data)
+  override fun checkResponseDelimiter(input_data: ByteArray): Int {
+    if (requestMethodFor(input_data) == "HEAD") return input_data.size
+    return checkDelimiter(input_data)
   }
 
   @Throws(Exception::class)
-  override fun clientRequestArrived(frames: ByteArray) {
+  override fun clientRequestArrived(input_data: ByteArray) {
     when (httpVersion) {
-      HTTPVersion.HTTP1 -> super.clientRequestArrived(frames)
-      HTTPVersion.HTTP2 -> http2!!.clientRequestArrived(frames)
-      else -> http3!!.clientRequestArrived(frames)
+      HTTPVersion.HTTP1 -> super.clientRequestArrived(input_data)
+      HTTPVersion.HTTP2 -> http2!!.clientRequestArrived(input_data)
+      else -> http3!!.clientRequestArrived(input_data)
     }
   }
 
   @Throws(Exception::class)
-  override fun serverResponseArrived(frames: ByteArray) {
+  override fun serverResponseArrived(input_data: ByteArray) {
     when (httpVersion) {
-      HTTPVersion.HTTP1 -> super.serverResponseArrived(frames)
-      HTTPVersion.HTTP2 -> http2!!.serverResponseArrived(frames)
-      else -> http3!!.serverResponseArrived(frames)
+      HTTPVersion.HTTP1 -> super.serverResponseArrived(input_data)
+      HTTPVersion.HTTP2 -> http2!!.serverResponseArrived(input_data)
+      else -> http3!!.serverResponseArrived(input_data)
     }
   }
 
@@ -210,20 +210,20 @@ abstract class EncodeHTTPBase : Encoder {
   }
 
   @Throws(Exception::class)
-  override fun putToClientFlowControlledQueue(frames: ByteArray) {
+  override fun putToClientFlowControlledQueue(output_data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP2) {
-      http2!!.putToClientFlowControlledQueue(frames)
+      http2!!.putToClientFlowControlledQueue(output_data)
     } else {
-      super.putToClientFlowControlledQueue(frames)
+      super.putToClientFlowControlledQueue(output_data)
     }
   }
 
   @Throws(Exception::class)
-  override fun putToServerFlowControlledQueue(frames: ByteArray) {
+  override fun putToServerFlowControlledQueue(output_data: ByteArray) {
     if (httpVersion == HTTPVersion.HTTP2) {
-      http2!!.putToServerFlowControlledQueue(frames)
+      http2!!.putToServerFlowControlledQueue(output_data)
     } else {
-      super.putToServerFlowControlledQueue(frames)
+      super.putToServerFlowControlledQueue(output_data)
     }
   }
 

@@ -40,8 +40,9 @@ open class FrameParser {
     }
 
     private fun register(klass: Class<out Frame>) {
-      val types = klass.getMethod("supportedTypes").invoke(null) as List<*>
-      types.forEach { type -> frameMap[type as Long] = klass }
+      val types = klass.getMethod("supportedTypes").invoke(null)
+      if (types !is List<*>) return
+      types.forEach { type -> if (type is Long) frameMap[type] = klass }
     }
 
     @JvmStatic

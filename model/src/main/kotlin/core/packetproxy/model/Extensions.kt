@@ -36,14 +36,13 @@ class Extensions(private val database: Database) : PropertyChangeListener {
   private var ext_instances: MutableMap<String, Extension> = HashMap()
   // Retain URLClassLoaders for the lifetime of loaded jar extensions.
   private val extensionClassLoaders = ArrayList<URLClassLoader>()
-  private var dao: Dao<Extension, String> =
-    database.createTable(Extension::class.java, this) as Dao<Extension, String>
+  private var dao: Dao<Extension, String> = database.createTable(Extension::class.java, this)
   private var cache = DaoQueryCache<Extension>()
 
   init {
     SchemaMigrator.ensureCompatible(database, dao, "extensions") {
       database.dropTable(Extension::class.java)
-      dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
+      dao = database.createTable(Extension::class.java, this)
     }
     ensurePresets()
   }
@@ -249,14 +248,14 @@ class Extensions(private val database: Database) : PropertyChangeListener {
         DatabaseMessage.RESUME,
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
+          dao = database.createTable(Extension::class.java, this)
           ext_instances.clear()
           cache.clear()
           ensurePresets()
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
-          dao = database.createTable(Extension::class.java, this) as Dao<Extension, String>
+          dao = database.createTable(Extension::class.java, this)
           ext_instances.clear()
           cache.clear()
           ensurePresets()

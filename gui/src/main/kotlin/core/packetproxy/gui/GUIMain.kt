@@ -261,7 +261,7 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     val p = contentPane as JPanel
     val im = p.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
     val am = p.actionMap
-    val hotkey = KeyEvent.CTRL_MASK or KeyEvent.META_MASK
+    val hotkey = KeyEvent.CTRL_DOWN_MASK or KeyEvent.META_DOWN_MASK
     registerTabShortcut(KeyEvent.VK_H, hotkey, im, am, Panes.HISTORY.ordinal)
     registerTabShortcut(KeyEvent.VK_I, hotkey, im, am, Panes.INTERCEPT.ordinal)
     registerTabShortcut(KeyEvent.VK_R, hotkey, im, am, Panes.RESENDER.ordinal)
@@ -269,22 +269,23 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     registerTabShortcut(KeyEvent.VK_O, hotkey, im, am, Panes.OPTIONS.ordinal)
     registerTabShortcut(KeyEvent.VK_L, hotkey, im, am, Panes.LOG.ordinal)
 
+    val menuShortcut = Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
     val bindings1 =
       arrayOf(
         JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().menuShortcutKeyMask),
+          KeyStroke.getKeyStroke(KeyEvent.VK_C, menuShortcut),
           DefaultEditorKit.copyAction,
         ),
         JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().menuShortcutKeyMask),
+          KeyStroke.getKeyStroke(KeyEvent.VK_V, menuShortcut),
           DefaultEditorKit.pasteAction,
         ),
         JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().menuShortcutKeyMask),
+          KeyStroke.getKeyStroke(KeyEvent.VK_X, menuShortcut),
           DefaultEditorKit.cutAction,
         ),
         JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().menuShortcutKeyMask),
+          KeyStroke.getKeyStroke(KeyEvent.VK_A, menuShortcut),
           DefaultEditorKit.selectAllAction,
         ),
       )
@@ -309,7 +310,7 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     val p = contentPane as JPanel
     val im = p.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
     val am = p.actionMap
-    val hotkey = KeyEvent.CTRL_MASK
+    val hotkey = KeyEvent.CTRL_DOWN_MASK
     registerTabShortcut(KeyEvent.VK_H, hotkey, im, am, Panes.HISTORY.ordinal)
     registerTabShortcut(KeyEvent.VK_I, hotkey, im, am, Panes.INTERCEPT.ordinal)
     registerTabShortcut(KeyEvent.VK_R, hotkey, im, am, Panes.RESENDER.ordinal)

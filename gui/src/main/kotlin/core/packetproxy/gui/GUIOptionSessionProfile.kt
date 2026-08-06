@@ -105,16 +105,16 @@ constructor(owner: GUIMain, private val authorizationSupplier: Supplier<String>?
   override fun shouldHandlePropertyChange(evt: PropertyChangeEvent): Boolean =
     SESSION_PROFILES.matches(evt)
 
-  override fun addTableContent(profile: SessionProfile) {
-    tableList.add(profile)
+  override fun addTableContent(value: SessionProfile) {
+    tableList.add(value)
     option_model.addRow(
-      arrayOf<Any?>(profile.name, SessionProfile.formatAuthorizationPreview(profile.authorization))
+      arrayOf<Any?>(value.name, SessionProfile.formatAuthorizationPreview(value.authorization))
     )
   }
 
-  override fun updateTable(profileList: List<SessionProfile>) {
+  override fun updateTable(values: List<SessionProfile>) {
     clearTableContents()
-    for (profile in profileList) {
+    for (profile in values) {
       addTableContent(profile)
     }
   }

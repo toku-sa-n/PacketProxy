@@ -8,24 +8,35 @@ package packetproxy.common
 
 import com.google.re2j.Pattern
 import java.io.ByteArrayOutputStream
+import java.security.SecureRandom
 import net.arnx.jsonic.JSON
 import org.apache.commons.lang3.ArrayUtils
-import org.apache.commons.lang3.RandomStringUtils
 import packetproxy.util.Logging
 
 class StringUtils {
   companion object {
+    private val secureRandom = SecureRandom()
+    private const val HEX_ALPHABET = "0123456789abcdef"
+
+    private fun randomFromAlphabet(length: Int, alphabet: String): String {
+      val chars = CharArray(length)
+      for (i in chars.indices) {
+        chars[i] = alphabet[secureRandom.nextInt(alphabet.length)]
+      }
+      return String(chars)
+    }
+
     @JvmStatic
     fun randomUUID(): String = buildString {
-      append(RandomStringUtils.random(8, "0123456789abcdef"))
+      append(randomFromAlphabet(8, HEX_ALPHABET))
       append("-")
-      append(RandomStringUtils.random(4, "0123456789abcdef"))
+      append(randomFromAlphabet(4, HEX_ALPHABET))
       append("-")
-      append(RandomStringUtils.random(4, "0123456789abcdef"))
+      append(randomFromAlphabet(4, HEX_ALPHABET))
       append("-")
-      append(RandomStringUtils.random(4, "0123456789abcdef"))
+      append(randomFromAlphabet(4, HEX_ALPHABET))
       append("-")
-      append(RandomStringUtils.random(12, "0123456789abcdef"))
+      append(randomFromAlphabet(12, HEX_ALPHABET))
     }
 
     @JvmStatic

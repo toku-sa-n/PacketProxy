@@ -117,7 +117,7 @@ open class ListenPort {
 
   @Throws(Exception::class)
   open fun getServer(database: Database): Server? =
-    database.createTable(Server::class.java).queryForId(this.server_id)
+    database.createTable<Server, Int>(Server::class.java).queryForId(this.server_id)
 
   fun getProtocol(): Protocol {
     if (this.protocol == null) {

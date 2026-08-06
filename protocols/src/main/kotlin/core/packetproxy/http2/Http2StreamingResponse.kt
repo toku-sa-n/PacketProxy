@@ -165,11 +165,11 @@ open class Http2StreamingResponse(private val packets: Packets, private val uniq
   }
 
   @Throws(Exception::class)
-  override fun encodeClientRequestToFrames(http: ByteArray): ByteArray =
-    encodeToFrames(http, getClientHpackEncoder())
+  override fun encodeClientRequestToFrames(data: ByteArray): ByteArray =
+    encodeToFrames(data, getClientHpackEncoder())
 
   @Throws(Exception::class)
-  override fun encodeServerResponseToFrames(http: ByteArray): ByteArray? = null
+  override fun encodeServerResponseToFrames(data: ByteArray): ByteArray? = null
 
   @Throws(Exception::class)
   private fun encodeToFrames(data: ByteArray, encoder: HpackEncoder): ByteArray {

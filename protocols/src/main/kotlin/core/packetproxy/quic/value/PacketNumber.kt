@@ -1,6 +1,6 @@
 package packetproxy.quic.value
 
-data class PacketNumber private constructor(val number: Long, private val infinite: Boolean) {
+class PacketNumber private constructor(val number: Long, private val infinite: Boolean) {
   fun isInfinite() = infinite
 
   fun getTruncatedPacketNumber(largestAckedPn: PacketNumber): TruncatedPacketNumber? =
@@ -23,6 +23,18 @@ data class PacketNumber private constructor(val number: Long, private val infini
       ((number shr 8) and 0xff).toByte(),
       (number and 0xff).toByte(),
     )
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is PacketNumber) return false
+    return number == other.number && infinite == other.infinite
+  }
+
+  override fun hashCode(): Int {
+    var result = number.hashCode()
+    result = 31 * result + infinite.hashCode()
+    return result
+  }
 
   override fun toString() = "PacketNumber(${if (infinite) "INF" else number})"
 

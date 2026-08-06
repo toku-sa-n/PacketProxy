@@ -88,9 +88,7 @@ class PrivateDnsResponseBuilder {
     }
     if (answers != null) {
       for (record in answers) {
-        if (record != null) {
-          response.addRecord(record, Section.ANSWER)
-        }
+        response.addRecord(record, Section.ANSWER)
       }
     }
     if (spoofIP != null) {

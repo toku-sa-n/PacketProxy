@@ -123,7 +123,7 @@ class GUIVulCheckTab(
       var pattern = manager.findVulCheckPattern(generatorName)
       var packet = pattern.getPacket()
       var data = manager.extractMacro(generatorName, sendData.getData())
-      if (data == null || data.isEmpty()) {
+      if (data.isEmpty()) {
         return
       }
       packet.setData(data)

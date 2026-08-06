@@ -24,8 +24,7 @@ import packetproxy.util.errWithStackTrace
 
 class Configs(private val database: Database) : PropertyChangeListener {
   private val changes = PropertyChangeSupport(this)
-  private var dao: Dao<Config, String> =
-    database.createTable(Config::class.java, this) as Dao<Config, String>
+  private var dao: Dao<Config, String> = database.createTable(Config::class.java, this)
   private var cache = DaoQueryCache<Config>()
 
   fun create(config: Config) {
@@ -88,12 +87,12 @@ class Configs(private val database: Database) : PropertyChangeListener {
         DatabaseMessage.RESUME -> {}
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
-          dao = database.createTable(Config::class.java, this) as Dao<Config, String>
+          dao = database.createTable(Config::class.java, this)
           cache.clear()
           firePropertyChange(PropertyChangeEventType.CONFIGS.toString(), null, event.newValue)
         }
         DatabaseMessage.RECREATE -> {
-          dao = database.createTable(Config::class.java, this) as Dao<Config, String>
+          dao = database.createTable(Config::class.java, this)
           cache.clear()
         }
       }
