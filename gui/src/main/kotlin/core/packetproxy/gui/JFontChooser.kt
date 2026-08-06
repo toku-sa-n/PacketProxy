@@ -20,6 +20,7 @@ import javax.swing.AbstractAction
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JButton
+import javax.swing.JCheckBox
 import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JLabel
@@ -48,7 +49,13 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
   private val fontSizeList =
     JList(fontSizes).apply { selectionMode = ListSelectionModel.SINGLE_SELECTION }
   private val sampleText = JTextField("AaBbYyZz")
+  private val monospacedOnly = JCheckBox(i18nString("Monospaced fonts only"))
   private var dialogResultValue = ERROR_OPTION
+
+  /** 等幅判定はフォントごとにメトリクスを引くので、一度だけ計算して使い回す */
+  private val monospacedFamilies: Array<String> by lazy {
+    fontFamilies.filter { isMonospaced(it) }.toTypedArray()
+  }
 
   init {
     fontFamilyTextField.addFocusListener(SelectAllFocusListener(fontFamilyTextField))
@@ -69,6 +76,7 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
         updateSampleFont()
       }
     }
+    monospacedOnly.addActionListener { updateFontFamilyList() }
     fontFamilyList.selectedIndex = 0
     fontSizeList.selectedIndex = 0
     layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -84,6 +92,7 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
                 fontFamilyTextField,
                 fontFamilyList,
                 Dimension(200, 200),
+                monospacedOnly,
               )
             )
             add(
@@ -117,7 +126,7 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
 
   fun getFontSizeList(): JList<String> = fontSizeList
 
-  fun getSelectedFontFamily(): String = fontFamilyList.selectedValue
+  fun getSelectedFontFamily(): String = fontFamilyList.selectedValue ?: fontFamilyTextField.text
 
   fun getSelectedFontSize(): Int =
     fontSizeTextField.text.toIntOrNull() ?: fontSizeList.selectedValue.toInt()
@@ -125,10 +134,15 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
   fun getSelectedFont(): Font = Font(getSelectedFontFamily(), Font.PLAIN, getSelectedFontSize())
 
   fun setSelectedFontFamily(name: String) {
-    fontFamilies
-      .indexOfFirst { it.equals(name, ignoreCase = true) }
-      .takeIf { it >= 0 }
-      ?.let { fontFamilyList.selectedIndex = it }
+    var model = fontFamilyList.model
+    for (index in 0 until model.size) {
+      if (!model.getElementAt(index).equals(name, ignoreCase = true)) {
+        continue
+      }
+      fontFamilyList.selectedIndex = index
+      fontFamilyList.ensureIndexIsVisible(index)
+      break
+    }
     updateSampleFont()
   }
 
@@ -189,7 +203,26 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
     sampleText.font = getSelectedFont()
   }
 
-  private fun createPanel(title: String, field: JTextField, list: JList<String>, size: Dimension) =
+  /** 等幅フォントだけの一覧と全フォントの一覧を切り替える。選択中のフォントは可能な限り維持する。 */
+  private fun updateFontFamilyList() {
+    var selected = getSelectedFontFamily()
+    fontFamilyList.setListData(if (monospacedOnly.isSelected) monospacedFamilies else fontFamilies)
+    setSelectedFontFamily(selected)
+  }
+
+  /** 幅の狭い文字と広い文字が同じ幅で描画されるフォントを等幅とみなす */
+  private fun isMonospaced(family: String): Boolean {
+    var metrics = sampleText.getFontMetrics(Font(family, Font.PLAIN, 12))
+    return metrics.charWidth('i') == metrics.charWidth('W')
+  }
+
+  private fun createPanel(
+    title: String,
+    field: JTextField,
+    list: JList<String>,
+    size: Dimension,
+    footer: JComponent? = null,
+  ) =
     JPanel(BorderLayout()).apply {
       preferredSize = size
       border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -204,6 +237,7 @@ class JFontChooser(preset: Font = DEFAULT_SELECTED_FONT) : JComponent() {
             },
             BorderLayout.CENTER,
           )
+          footer?.let { add(it, BorderLayout.SOUTH) }
         },
         BorderLayout.CENTER,
       )

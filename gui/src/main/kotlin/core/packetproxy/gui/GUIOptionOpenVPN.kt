@@ -1,6 +1,5 @@
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.event.MouseAdapter
@@ -160,20 +159,20 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
     rewriteGroup.add(manual)
 
     val manualPanel = JPanel()
-    manualPanel.background = Color.WHITE
+    manualPanel.background = ThemeColors.panelBackground()
     manualPanel.layout = BoxLayout(manualPanel, BoxLayout.X_AXIS)
     manualPanel.add(manual)
     manualPanel.add(textField)
 
     val rewriteRuleBorder = TitledBorder(i18nString("Rewrite Rule"))
-    rewriteRuleBorder.border = LineBorder(Color.BLACK, 1)
+    rewriteRuleBorder.border = LineBorder(ThemeColors.borderColor(), 1)
     rewriteRuleBorder.titleFont = owner.modelServices.fontManager.getUIFont()
     rewriteRuleBorder.titleJustification = TitledBorder.LEFT
     rewriteRuleBorder.titlePosition = TitledBorder.TOP
 
     val rewriteRule = JPanel()
     rewriteRule.layout = BoxLayout(rewriteRule, BoxLayout.Y_AXIS)
-    rewriteRule.background = Color.WHITE
+    rewriteRule.background = ThemeColors.panelBackground()
     rewriteRule.border = rewriteRuleBorder
     rewriteRule.add(auto)
     rewriteRule.add(manualPanel)
@@ -181,7 +180,7 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
       Dimension(rewriteRule.preferredSize.width, rewriteRule.minimumSize.height)
 
     val panel = JPanel()
-    panel.background = Color.WHITE
+    panel.background = ThemeColors.panelBackground()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     panel.add(checkBox)
     panel.add(createProtoSetting())
@@ -242,7 +241,7 @@ class GUIOptionOpenVPN(owner: GUIMain) : GUIOptionComponentBase<OpenVPNForwardPo
 
   private fun createProtoSetting(): JComponent {
     val panel = JPanel()
-    panel.background = Color.WHITE
+    panel.background = ThemeColors.panelBackground()
     panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
 
     vpnProtocol.prototypeDisplayValue = "xxxxxxx"

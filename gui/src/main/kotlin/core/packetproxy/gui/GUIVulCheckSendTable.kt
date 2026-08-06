@@ -64,28 +64,32 @@ class GUIVulCheckSendTable(
       else ""
 
   fun add(name: String, packet: OneShotPacket, enabled: Boolean) {
-    model.addRow(
-      arrayOf<Any?>(
-        enabled,
-        name,
-        packet.getSummarizedRequest(packetSummarizer),
-        packet.getData().size,
-        packet.getEncoder(),
-        packet.getAlpn(),
+    onEDT {
+      model.addRow(
+        arrayOf<Any?>(
+          enabled,
+          name,
+          packet.getSummarizedRequest(packetSummarizer),
+          packet.getData().size,
+          packet.getEncoder(),
+          packet.getAlpn(),
+        )
       )
-    )
+    }
   }
 
   fun setRow(name: String, packet: OneShotPacket) {
-    for (i in 0 until table.rowCount) if (table.getValueAt(i, 1) == name) {
-      table.setValueAt(packet.getSummarizedRequest(packetSummarizer), i, 2)
-      table.setValueAt(packet.getData().size, i, 3)
-      table.setValueAt(packet.getEncoder(), i, 4)
-      table.setValueAt(packet.getAlpn(), i, 5)
+    onEDT {
+      for (i in 0 until table.rowCount) if (table.getValueAt(i, 1) == name) {
+        table.setValueAt(packet.getSummarizedRequest(packetSummarizer), i, 2)
+        table.setValueAt(packet.getData().size, i, 3)
+        table.setValueAt(packet.getEncoder(), i, 4)
+        table.setValueAt(packet.getAlpn(), i, 5)
+      }
     }
   }
 
   fun clear() {
-    model.rowCount = 0
+    onEDT { model.rowCount = 0 }
   }
 }

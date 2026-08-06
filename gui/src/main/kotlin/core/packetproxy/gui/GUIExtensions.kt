@@ -23,6 +23,7 @@ import javax.swing.JComponent
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
+import packetproxy.common.i18nString
 import packetproxy.encode.Encoder
 import packetproxy.model.Extension
 import packetproxy.util.errWithStackTrace
@@ -32,9 +33,14 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
   private val tabs = JTabbedPane()
   private val extensionMenus = mutableMapOf<String, JMenuItem>()
   private var jarsLoaded = false
+  private val emptyLabel =
+    emptyStateLabel(
+      i18nString("Put extension jar files in ~/.packetproxy/extensions and restart PacketProxy.")
+    )
 
   init {
     mainPanel.layout = BoxLayout(mainPanel, BoxLayout.Y_AXIS)
+    mainPanel.add(emptyLabel)
     mainPanel.add(tabs)
   }
 
@@ -58,6 +64,7 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
       guiHistory.addMenu(menuItem)
       name?.let { extensionMenus[it] = menuItem }
     }
+    updateEmptyState()
   }
 
   @Throws(Exception::class)
@@ -71,6 +78,7 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
       extensionMenus.remove(name)?.let { guiHistory.removeMenu(it) }
       tabs.indexOfTab(name).takeIf { it >= 0 }?.let { tabs.removeTabAt(it) }
     }
+    updateEmptyState()
   }
 
   @Throws(Exception::class)
@@ -79,7 +87,12 @@ class GUIExtensions(private val main: GUIMain, private val guiHistory: GUIHistor
       loadJars()
       jarsLoaded = true
     }
+    updateEmptyState()
     return mainPanel
+  }
+
+  private fun updateEmptyState() {
+    emptyLabel.setEmptyStateVisible(tabs.tabCount == 0, mainPanel)
   }
 
   @Throws(Exception::class)

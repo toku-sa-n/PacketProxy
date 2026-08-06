@@ -11,8 +11,8 @@ class GUIDiffBinary(owner: GUIMain) : GUIDiffBase(owner) {
     var original = ""
     var target = ""
     try {
-      original = sortUniq(Binary(ds.getOriginal()!!).toHexString().toString())
-      target = sortUniq(Binary(ds.getTarget()!!).toHexString().toString())
+      original = sortUniq(Binary(ds.getOriginal() ?: ByteArray(0)).toHexString().toString())
+      target = sortUniq(Binary(ds.getTarget() ?: ByteArray(0)).toHexString().toString())
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
@@ -20,9 +20,8 @@ class GUIDiffBinary(owner: GUIMain) : GUIDiffBase(owner) {
   }
 
   override fun update() {
-    var ds =
-      if (jc.isSelected) sortUniq(owner.modelServices.diffBinary.getSet()!!)
-      else owner.modelServices.diffBinary.getSet()!!
+    var current = owner.modelServices.diffBinary.getSet() ?: return
+    var ds = if (jc.isSelected) sortUniq(current) else current
     var original = ds.getOriginal()
     var target = ds.getTarget()
     if (original != null)

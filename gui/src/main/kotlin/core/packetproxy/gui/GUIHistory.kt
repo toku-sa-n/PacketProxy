@@ -21,7 +21,6 @@ import java.awt.Dimension
 import java.awt.Toolkit
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
-import java.awt.event.FocusAdapter
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -36,9 +35,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.AbstractButton
 import javax.swing.BoxLayout
-import javax.swing.ImageIcon
 import javax.swing.JButton
 import javax.swing.JComponent
+import javax.swing.JLabel
 import javax.swing.JMenuItem
 import javax.swing.JOptionPane
 import javax.swing.JPanel
@@ -50,8 +49,10 @@ import javax.swing.JToggleButton
 import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 import javax.swing.SwingWorker
+import javax.swing.Timer
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 import javax.swing.event.ListSelectionEvent
-import javax.swing.event.TableModelEvent
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
@@ -104,6 +105,9 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
 
   lateinit var sorter: TableRowSorter<OptionTableModel>
   private lateinit var guiFilter: HintTextField
+  private lateinit var filterErrorLabel: JLabel
+  private lateinit var emptyLabel: JLabel
+  private val statusRefreshScheduled = AtomicBoolean(false)
   private var preferredPosition = 0
   private val historyUpdateService = Executors.newSingleThreadExecutor()
   private val updatePacketIds = HashSet<Int>()
@@ -114,6 +118,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   private val idRow = Hashtable<Int, Int>()
   private var dialogOnce = false
   private val autoScroll = GUIHistoryAutoScroll()
+  private val filterDebounce =
+    Timer(FILTER_DEBOUNCE_MS) { applyFilterSafely() }.apply { isRepeats = false }
   private lateinit var menu: JPopupMenu
   private val pairingService = PacketPairingService()
 
@@ -128,16 +134,30 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   }
 
   fun dispose() {
+    filterDebounce.stop()
     packets.removePropertyChangeListener(this)
     main.modelServices.filters.removePropertyChangeListener(this)
+  }
+
+  /** 終了時に分割位置と列幅を保存する。画面が構築される前に呼ばれた場合は何もしない。 */
+  fun saveLayout() {
+    if (!::table.isInitialized || !::splitPanel.isInitialized) {
+      return
+    }
+    WindowLayoutStore.saveColumnWidths(WindowLayoutStore.HISTORY_TABLE, table)
+    WindowLayoutStore.saveDividerLocation(WindowLayoutStore.HISTORY_SPLIT, splitPanel)
   }
 
   fun getTableModel(): DefaultTableModel = tableModel
 
   fun filter() {
-    if (!sortByText(guiFilter.text)) {
+    val filterError = applyFilterText(guiFilter.text)
+    if (filterError != null) {
+      showFilterError(filterError)
       return
     }
+    clearFilterError()
+    scheduleStatusRefresh()
     for (i in 0 until table.rowCount) {
       val id = table.getValueAt(i, COL_ID) as Int
       if (id == preferredPosition) {
@@ -154,11 +174,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       object : OptionTableModel(columnNames, 0) {
         override fun isCellEditable(row: Int, column: Int): Boolean = false
       }
-    tableModel.addTableModelListener { event: TableModelEvent ->
-      if (event.type == TableModelEvent.INSERT) {
-        // Nothing to do
-      }
-    }
+    tableModel.addTableModelListener { scheduleStatusRefresh() }
     table =
       object : JTable(tableModel) {
         override fun prepareRenderer(
@@ -175,28 +191,31 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
             val resend = getValueAt(row, COL_RESEND) as Boolean
             when {
               selected && firstSelected -> {
-                component.foreground = Color.WHITE
-                component.background = Color(0x5B, 0x7C, 0xFF)
+                component.foreground = ThemeColors.tableSelectionForeground()
+                component.background = ThemeColors.tableSelectionBackground()
               }
               selected -> {
-                component.foreground = Color.WHITE
-                component.background = Color(0x9A, 0xB0, 0xFF)
+                component.foreground = ThemeColors.tableSelectionForeground()
+                component.background = ThemeColors.tableSecondarySelectionBackground()
               }
               colorManager.contains(packetId) -> {
-                component.foreground = Color.BLACK
-                component.background = colorManager.getColor(packetId)
+                val custom = colorManager.getColor(packetId)
+                component.foreground = ThemeColors.foregroundOn(custom)
+                component.background = custom
               }
               resend -> {
-                component.foreground = Color.BLACK
-                component.background = Color(0xB8, 0xD9, 0xF0)
+                component.background = ThemeColors.historyResendBackground()
+                component.foreground = ThemeColors.foregroundOn(component.background)
               }
               modified -> {
-                component.foreground = Color.BLACK
-                component.background = Color(0xF0, 0xC8, 0xD0)
+                component.background = ThemeColors.historyModifiedBackground()
+                component.foreground = ThemeColors.foregroundOn(component.background)
               }
               else -> {
-                component.foreground = Color.BLACK
-                component.background = if (row % 2 == 0) Color.WHITE else Color(0xF0, 0xF0, 0xF0)
+                component.foreground = ThemeColors.textForeground()
+                component.background =
+                  if (row % 2 == 0) ThemeColors.tableBackground()
+                  else ThemeColors.tableAlternateRow()
               }
             }
           } catch (exception: Exception) {
@@ -210,6 +229,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     for (i in columnNames.indices) {
       table.getColumn(columnNames[i]).preferredWidth = columnWidth[i]
     }
+    WindowLayoutStore.restoreColumnWidths(WindowLayoutStore.HISTORY_TABLE, table)
+    WindowLayoutStore.trackColumnWidths(WindowLayoutStore.HISTORY_TABLE, table)
     applyNumericColumnAlignment()
     apply(table, columnNames.size)
     (table.getDefaultRenderer(Boolean::class.javaObjectType) as JComponent).isOpaque = true
@@ -265,12 +286,39 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     splitPanel.dividerLocation = 300
     splitPanel.resizeWeight = 0.35
     splitPanel.alignmentX = Component.CENTER_ALIGNMENT
+    WindowLayoutStore.restoreDividerLocation(WindowLayoutStore.HISTORY_SPLIT, splitPanel)
+    WindowLayoutStore.trackDividerLocation(WindowLayoutStore.HISTORY_SPLIT, splitPanel)
 
+    emptyLabel = emptyStateLabel(i18nString("No packets yet. Configure Listen Ports and browse."))
     mainPanel = JPanel()
     mainPanel.layout = BoxLayout(mainPanel, BoxLayout.Y_AXIS)
     mainPanel.add(createFilterPanel())
+    mainPanel.add(emptyLabel)
     mainPanel.add(splitPanel)
+    scheduleStatusRefresh()
     return mainPanel
+  }
+
+  /** 状態バーの件数と空状態ラベルの更新を、EDT上の1回の処理にまとめる。 */
+  private fun scheduleStatusRefresh() {
+    if (!statusRefreshScheduled.compareAndSet(false, true)) {
+      return
+    }
+    SwingUtilities.invokeLater {
+      statusRefreshScheduled.set(false)
+      refreshStatus()
+    }
+  }
+
+  private fun refreshStatus() {
+    if (!::table.isInitialized) {
+      return
+    }
+    main.statusBar.updateHistoryCount(table.rowCount, tableModel.rowCount)
+    if (!::emptyLabel.isInitialized) {
+      return
+    }
+    emptyLabel.setEmptyStateVisible(tableModel.rowCount == 0, mainPanel)
   }
 
   fun searchFromRequest(searchWord: String): List<Int> {
@@ -500,26 +548,32 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       object : KeyAdapter() {
         override fun keyPressed(event: KeyEvent) {
           try {
-            if (event.keyCode == KeyEvent.VK_ENTER) {
-              filter()
+            if (event.keyCode != KeyEvent.VK_ENTER) {
+              return
             }
+            filterDebounce.stop()
+            filter()
           } catch (_: Exception) {
             // Nothing to do
           }
         }
       }
     )
-    guiFilter.addFocusListener(
-      object : FocusAdapter() {
-        override fun focusLost(event: java.awt.event.FocusEvent) {
-          filter()
-        }
+    // 1文字ごとにフィルタをかけると入力が引っかかるので、入力が落ち着いてから適用する
+    guiFilter.document.addDocumentListener(
+      object : DocumentListener {
+        override fun insertUpdate(event: DocumentEvent) = filterDebounce.restart()
+
+        override fun removeUpdate(event: DocumentEvent) = filterDebounce.restart()
+
+        override fun changedUpdate(event: DocumentEvent) = filterDebounce.restart()
       }
     )
 
     val buttonWidth = 35
-    val filterConfigAdd = JButton(ImageIcon(javaClass.getResource("/gui/plus.png")))
+    val filterConfigAdd = JButton(GuiIcons.plus())
     configureFilterButton(filterConfigAdd, buttonWidth)
+    filterConfigAdd.toolTipText = i18nString("Add a filter")
     filterConfigAdd.addActionListener {
       try {
         val dialog = GUIFilterConfigAddDialog(owner, guiFilter.text)
@@ -529,8 +583,9 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       }
     }
 
-    val filterDropDown = JToggleButton(ImageIcon(javaClass.getResource("/gui/arrow.png")))
+    val filterDropDown = JToggleButton(GuiIcons.arrow())
     configureFilterButton(filterDropDown, buttonWidth)
+    filterDropDown.toolTipText = i18nString("Show saved filters")
     filterDropDown.addMouseListener(
       object : MouseAdapter() {
         var dialog: GUIFilterDropDownList? = null
@@ -570,8 +625,9 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       }
     )
 
-    val filterConfig = JButton(ImageIcon(javaClass.getResource("/gui/config.png")))
+    val filterConfig = JButton(GuiIcons.config())
     configureFilterButton(filterConfig, buttonWidth)
+    filterConfig.toolTipText = i18nString("Manage saved filters")
     filterConfig.addActionListener {
       try {
         GUIFilterConfigDialog(owner).showDialog()
@@ -580,12 +636,27 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       }
     }
 
+    val filterRow = JPanel()
+    filterRow.layout = BoxLayout(filterRow, BoxLayout.X_AXIS)
+    filterRow.alignmentX = Component.LEFT_ALIGNMENT
+    filterRow.add(guiFilter)
+    filterRow.add(filterDropDown)
+    filterRow.add(filterConfigAdd)
+    filterRow.add(filterConfig)
+
+    filterErrorLabel = JLabel()
+    filterErrorLabel.alignmentX = Component.LEFT_ALIGNMENT
+    filterErrorLabel.foreground = FILTER_ERROR_COLOR
+    // 上下方向に伸びてHistoryテーブルの領域を奪わないよう高さを固定する
+    filterErrorLabel.maximumSize =
+      Dimension(Short.MAX_VALUE.toInt(), filterErrorLabel.preferredSize.height)
+    filterErrorLabel.isVisible = false
+
     val filterPanel = JPanel()
-    filterPanel.layout = BoxLayout(filterPanel, BoxLayout.X_AXIS)
-    filterPanel.add(guiFilter)
-    filterPanel.add(filterDropDown)
-    filterPanel.add(filterConfigAdd)
-    filterPanel.add(filterConfig)
+    filterPanel.layout = BoxLayout(filterPanel, BoxLayout.Y_AXIS)
+    filterPanel.alignmentX = Component.LEFT_ALIGNMENT
+    filterPanel.add(filterRow)
+    filterPanel.add(filterErrorLabel)
     return filterPanel
   }
 
@@ -607,40 +678,14 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       object : KeyAdapter() {
         override fun keyPressed(event: KeyEvent) {
           try {
-            val maskKey = Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
-            when (event.keyCode) {
-              KeyEvent.VK_J -> {
-                var position = table.selectedRow + 1
-                position = if (position >= table.rowCount) table.rowCount - 1 else position
-                table.changeSelection(position, 0, false, false)
-              }
-              KeyEvent.VK_K -> {
-                var position = table.selectedRow - 1
-                position = if (position < 0) 0 else position
-                table.changeSelection(position, 0, false, false)
-              }
-              KeyEvent.VK_Y -> {
-                if (event.modifiersEx and maskKey == maskKey) {
-                  copy.doClick()
-                  return
-                }
-              }
-              KeyEvent.VK_S -> {
-                if (event.modifiersEx and maskKey == maskKey) {
-                  send.doClick()
-                }
-              }
-              KeyEvent.VK_R -> {
-                if (event.modifiersEx and maskKey == maskKey) {
-                  sendToResender.doClick()
-                }
-              }
-              KeyEvent.VK_M -> {
-                if (event.modifiersEx and maskKey == maskKey) {
-                  copyAll.doClick()
-                }
-              }
+            // Cmd/Ctrl+R などはタブ切り替えのショートカットと重なるため、
+            // テーブルにフォーカスがある間はイベントを消費してテーブル側の操作だけを実行する
+            if (invokeContextMenuShortcut(event, send, sendToResender, copy, copyAll)) {
+              event.consume()
+              preferredPosition = selectedPacketId
+              return
             }
+            moveSelectionByKey(event)
             preferredPosition = selectedPacketId
           } catch (_: Exception) {
             // Nothing to do
@@ -650,14 +695,48 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     )
   }
 
+  /** コンテキストメニューのショートカットを実行できた場合にtrueを返す */
+  private fun invokeContextMenuShortcut(
+    event: KeyEvent,
+    send: JMenuItem,
+    sendToResender: JMenuItem,
+    copy: JMenuItem,
+    copyAll: JMenuItem,
+  ): Boolean {
+    var maskKey = Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
+    if (event.modifiersEx and maskKey != maskKey) {
+      return false
+    }
+    var item =
+      when (event.keyCode) {
+        KeyEvent.VK_Y -> copy
+        KeyEvent.VK_S -> send
+        KeyEvent.VK_R -> sendToResender
+        KeyEvent.VK_M -> copyAll
+        else -> return false
+      }
+    item.doClick()
+    return true
+  }
+
+  private fun moveSelectionByKey(event: KeyEvent) {
+    var position =
+      when (event.keyCode) {
+        KeyEvent.VK_J -> (table.selectedRow + 1).coerceAtMost(table.rowCount - 1)
+        KeyEvent.VK_K -> (table.selectedRow - 1).coerceAtLeast(0)
+        else -> return
+      }
+    table.changeSelection(position, 0, false, false)
+  }
+
   private fun addTableMouseListeners() {
     table.addMouseListener(
       object : MouseAdapter() {
+        // 自動スクロールはトグルボタンだけで切り替える。ここで解除すると意図せずOFFになる
         override fun mouseReleased(event: MouseEvent) {
           if (Utils.isWindows() && event.isPopupTrigger) {
             menu.show(event.component, event.x, event.y)
           }
-          autoScroll.doDisable()
         }
 
         override fun mousePressed(event: MouseEvent) {
@@ -1206,22 +1285,50 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     }
   }
 
-  private fun sortByText(text: String): Boolean {
-    if (text.isEmpty()) {
-      sorter.rowFilter = null
-      return true
-    }
+  /** デバウンスタイマーからの適用。EDT上に例外が漏れないようにする。 */
+  private fun applyFilterSafely() {
     try {
-      sorter.rowFilter = FilterTextParser.parse(text, tableModel, packets)
-      return true
-    } catch (_: ParseException) {
-      // Nothing to do
-    } catch (_: NumberFormatException) {
-      // Nothing to do
+      filter()
     } catch (exception: Exception) {
       errWithStackTrace(exception)
     }
-    return false
+  }
+
+  /** フィルタを適用する。適用できなかった場合は画面に表示するエラーメッセージを返す。 */
+  private fun applyFilterText(text: String): String? {
+    if (text.isEmpty()) {
+      sorter.rowFilter = null
+      return null
+    }
+    try {
+      sorter.rowFilter = FilterTextParser.parse(text, tableModel, packets)
+      return null
+    } catch (exception: ParseException) {
+      return i18nString("Filter syntax error: %s", exception.message ?: "")
+    } catch (exception: NumberFormatException) {
+      return i18nString("Filter value must be a number: %s", exception.message ?: "")
+    } catch (exception: Exception) {
+      errWithStackTrace(exception)
+      return i18nString("Filter can't be applied with error: %s", exception.message ?: "")
+    }
+  }
+
+  private fun showFilterError(message: String) {
+    guiFilter.putClientProperty(OUTLINE_CLIENT_PROPERTY, "error")
+    guiFilter.toolTipText = message
+    guiFilter.repaint()
+    filterErrorLabel.text = message
+    filterErrorLabel.isVisible = true
+    filterErrorLabel.revalidate()
+  }
+
+  private fun clearFilterError() {
+    guiFilter.putClientProperty(OUTLINE_CLIENT_PROPERTY, null)
+    guiFilter.toolTipText = null
+    guiFilter.repaint()
+    filterErrorLabel.text = ""
+    filterErrorLabel.isVisible = false
+    filterErrorLabel.revalidate()
   }
 
   companion object {
@@ -1237,5 +1344,9 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       intArrayOf(COL_ID, COL_SERVER_RESPONSE, COL_LENGTH, COL_CLIENT_PORT, COL_SERVER_PORT)
     private const val SKELETON_PAGE_SIZE = 500L
     private const val FILL_PAGE_SIZE = 100L
+    private const val FILTER_DEBOUNCE_MS = 300
+    // FlatLafが赤い枠線を描画するためのプロパティ
+    private const val OUTLINE_CLIENT_PROPERTY = "JComponent.outline"
+    private val FILTER_ERROR_COLOR = Color(0xC0, 0x00, 0x00)
   }
 }

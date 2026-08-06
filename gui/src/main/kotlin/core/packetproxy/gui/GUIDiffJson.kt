@@ -28,20 +28,21 @@ class GUIDiffJson(owner: GUIMain) : GUIDiffBase(owner) {
 
   override fun sortUniq(ds: DiffSet) =
     DiffSet(
-      sortUniq(String(ds.getOriginal()!!)).toByteArray(),
-      sortUniq(String(ds.getTarget()!!)).toByteArray(),
+      sortUniq(String(ds.getOriginal() ?: ByteArray(0))).toByteArray(),
+      sortUniq(String(ds.getTarget() ?: ByteArray(0))).toByteArray(),
     )
 
   override fun update() {
-    var ds =
-      if (jc.isSelected) sortUniq(owner.modelServices.diffJson.getSet()!!)
-      else owner.modelServices.diffJson.getSet()!!
+    var current = owner.modelServices.diffJson.getSet() ?: return
+    var ds = if (jc.isSelected) sortUniq(current) else current
+    var originalData = ds.getOriginal() ?: return
+    var targetData = ds.getTarget() ?: return
     textOrig.setData(
-      owner.coreServices.packetProxyUtility.prettyFormatJSONInRawData(ds.getOriginal()!!),
+      owner.coreServices.packetProxyUtility.prettyFormatJSONInRawData(originalData),
       false,
     )
     textTarg.setData(
-      owner.coreServices.packetProxyUtility.prettyFormatJSONInRawData(ds.getTarget()!!),
+      owner.coreServices.packetProxyUtility.prettyFormatJSONInRawData(targetData),
       false,
     )
     docOrig = textOrig.getStyledDocument()

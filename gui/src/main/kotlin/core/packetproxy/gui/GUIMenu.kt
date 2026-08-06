@@ -17,10 +17,12 @@ package packetproxy.gui
 
 import java.awt.event.KeyEvent
 import java.io.File
+import javax.swing.JDialog
 import javax.swing.JMenu
 import javax.swing.JMenuBar
 import javax.swing.JMenuItem
 import javax.swing.JOptionPane
+import javax.swing.KeyStroke
 import packetproxy.common.*
 import packetproxy.common.ConfigIO
 import packetproxy.common.Utils
@@ -28,17 +30,10 @@ import packetproxy.util.errWithStackTrace
 
 class GUIMenu(private val owner: GUIMain) : JMenuBar() {
 
-  private enum class Panes {
-    HISTORY,
-    INTERCEPT,
-    RESENDER,
-    BULKSENDER,
-    OPTIONS,
-    LOG,
-  }
-
   companion object {
     private val defaultDir = System.getProperty("user.home")
+    private const val HEX_CALC_MIN_WIDTH = 700
+    private const val HEX_CALC_MIN_HEIGHT = 140
   }
 
   init {
@@ -71,7 +66,7 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
       )
       filechooser.showSaveDialog()
     }
-    val save_txt = JMenuItem(i18nString("Save packets to text file"), KeyEvent.VK_S)
+    val save_txt = JMenuItem(i18nString("Save packets to text file"), KeyEvent.VK_T)
     file_menu.add(save_txt)
     save_txt.addActionListener {
       val filechooser = WriteFileChooserWrapper(owner, "txt")
@@ -117,66 +112,16 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
       }
     }
 
-    var cmd_key = "⌘ ^ "
-    if (!owner.coreServices.packetProxyUtility.isMac()) {
-      cmd_key = "Ctrl + "
-    }
     val view_menu = JMenu(i18nString("View"))
     this.add(view_menu)
-    val view_history = JMenuItem(i18nString("View History") + "  " + cmd_key + "H")
-    view_menu.add(view_history)
-    view_history.addActionListener {
-      try {
-        owner.tabbedPane.setSelectedIndex(Panes.HISTORY.ordinal)
-      } catch (e1: Exception) {
-        errWithStackTrace(e1)
-      }
-    }
-    val view_intercept = JMenuItem(i18nString("View Interceptor") + "  " + cmd_key + "I")
-    view_menu.add(view_intercept)
-    view_intercept.addActionListener {
-      try {
-        owner.tabbedPane.setSelectedIndex(Panes.INTERCEPT.ordinal)
-      } catch (e1: Exception) {
-        errWithStackTrace(e1)
-      }
-    }
-    val view_resender = JMenuItem(i18nString("View Resender") + "  " + cmd_key + "R")
-    view_menu.add(view_resender)
-    view_resender.addActionListener {
-      try {
-        owner.tabbedPane.setSelectedIndex(Panes.RESENDER.ordinal)
-      } catch (e1: Exception) {
-        errWithStackTrace(e1)
-      }
-    }
-    val view_bulk_sender = JMenuItem(i18nString("View BulkSender") + "  " + cmd_key + "B")
-    view_menu.add(view_bulk_sender)
-    view_bulk_sender.addActionListener {
-      try {
-        owner.tabbedPane.setSelectedIndex(Panes.BULKSENDER.ordinal)
-      } catch (e1: Exception) {
-        errWithStackTrace(e1)
-      }
-    }
-    val view_options = JMenuItem(i18nString("View Options") + "  " + cmd_key + "O")
-    view_menu.add(view_options)
-    view_options.addActionListener {
-      try {
-        owner.tabbedPane.setSelectedIndex(Panes.OPTIONS.ordinal)
-      } catch (e1: Exception) {
-        errWithStackTrace(e1)
-      }
-    }
-    val view_log = JMenuItem(i18nString("View Log") + "  " + cmd_key + "L")
-    view_menu.add(view_log)
-    view_log.addActionListener {
-      try {
-        owner.tabbedPane.setSelectedIndex(Panes.LOG.ordinal)
-      } catch (e1: Exception) {
-        errWithStackTrace(e1)
-      }
-    }
+    addViewMenuItem(view_menu, "View History", KeyEvent.VK_H, GUIMain.Panes.HISTORY)
+    addViewMenuItem(view_menu, "View Interceptor", KeyEvent.VK_I, GUIMain.Panes.INTERCEPT)
+    addViewMenuItem(view_menu, "View Resender", KeyEvent.VK_R, GUIMain.Panes.RESENDER)
+    addViewMenuItem(view_menu, "View VulCheck Helper", KeyEvent.VK_V, GUIMain.Panes.VULCHECKHELPER)
+    addViewMenuItem(view_menu, "View BulkSender", KeyEvent.VK_B, GUIMain.Panes.BULKSENDER)
+    addViewMenuItem(view_menu, "View Extensions", KeyEvent.VK_E, GUIMain.Panes.EXTENSIONS)
+    addViewMenuItem(view_menu, "View Options", KeyEvent.VK_O, GUIMain.Panes.OPTIONS)
+    addViewMenuItem(view_menu, "View Log", KeyEvent.VK_L, GUIMain.Panes.LOG)
 
     val config_menu = JMenu(i18nString("Options"))
     this.add(config_menu)
@@ -248,5 +193,80 @@ class GUIMenu(private val owner: GUIMain) : JMenuBar() {
         errWithStackTrace(e1)
       }
     }
+
+    val tools_menu = JMenu(i18nString("Tools"))
+    this.add(tools_menu)
+    val decoder = JMenuItem(i18nString("Decoder"))
+    tools_menu.add(decoder)
+    decoder.addActionListener { showDecoderDialog() }
+    val hex_calc = JMenuItem(i18nString("Hex Calculator"))
+    tools_menu.add(hex_calc)
+    hex_calc.addActionListener { showHexCalcDialog() }
+
+    val help_menu = JMenu(i18nString("Help"))
+    this.add(help_menu)
+    val about = JMenuItem(i18nString("About PacketProxy"))
+    help_menu.add(about)
+    about.addActionListener { showAboutDialog() }
+  }
+
+  /** パケットのデータを貼り付けて、各種のデコード結果を確認するダイアログを開く */
+  private fun showDecoderDialog() {
+    try {
+      GUIDecoderDialog(owner).showDialog()
+    } catch (e1: Exception) {
+      errWithStackTrace(e1)
+    }
+  }
+
+  /** Optionsタブにもある16進数計算機を、単独のウィンドウとしても開けるようにする */
+  private fun showHexCalcDialog() {
+    try {
+      val dialog = JDialog(owner, i18nString("Hex Calculator"), false)
+      dialog.contentPane.add(GUIHexCalc().create())
+      packWithMinSize(dialog, HEX_CALC_MIN_WIDTH, HEX_CALC_MIN_HEIGHT)
+      dialog.centerOver(owner)
+      dialog.isVisible = true
+    } catch (e1: Exception) {
+      errWithStackTrace(e1)
+    }
+  }
+
+  private fun showAboutDialog() {
+    val version = AppVersion().get()
+    val message =
+      listOf(
+          "PacketProxy $version",
+          i18nString("A local proxy tool to intercept and inspect TCP/UDP protocols."),
+          "https://github.com/DeNA/PacketProxy",
+        )
+        .joinToString("\n")
+    JOptionPane.showMessageDialog(
+      owner,
+      message,
+      i18nString("About PacketProxy"),
+      JOptionPane.INFORMATION_MESSAGE,
+    )
+  }
+
+  private fun addViewMenuItem(menu: JMenu, label: String, keyCode: Int, pane: GUIMain.Panes) {
+    val item = JMenuItem(i18nString(label))
+    item.accelerator = KeyStroke.getKeyStroke(keyCode, viewShortcutModifiers())
+    menu.add(item)
+    item.addActionListener {
+      try {
+        owner.tabbedPane.setSelectedIndex(pane.ordinal)
+      } catch (e1: Exception) {
+        errWithStackTrace(e1)
+      }
+    }
+  }
+
+  /** GUIMainがタブ切り替えに登録しているキーの修飾キーと同じ組み合わせを返す */
+  private fun viewShortcutModifiers(): Int {
+    if (owner.coreServices.packetProxyUtility.isMac()) {
+      return KeyEvent.CTRL_DOWN_MASK or KeyEvent.META_DOWN_MASK
+    }
+    return KeyEvent.CTRL_DOWN_MASK
   }
 }

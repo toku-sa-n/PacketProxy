@@ -43,20 +43,22 @@ class GUIVulCheckRecvTable(
       else 0
 
   fun add(id: Int, name: String, packet: OneShotPacket, rtt: Long) {
-    model.addRow(
-      arrayOf<Any?>(
-        id,
-        name,
-        packet.getSummarizedResponse(packetSummarizer),
-        packet.getData().size,
-        rtt,
-        packet.getEncoder(),
-        packet.getAlpn(),
+    onEDT {
+      model.addRow(
+        arrayOf<Any?>(
+          id,
+          name,
+          packet.getSummarizedResponse(packetSummarizer),
+          packet.getData().size,
+          rtt,
+          packet.getEncoder(),
+          packet.getAlpn(),
+        )
       )
-    )
+    }
   }
 
   fun clear() {
-    model.rowCount = 0
+    onEDT { model.rowCount = 0 }
   }
 }

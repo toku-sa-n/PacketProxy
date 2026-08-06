@@ -15,7 +15,6 @@
  */
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
@@ -109,6 +108,7 @@ class GUIProjectChooserDialog(private val owner: GUIMain) {
       dialog.contentPane = JScrollPane(content)
       dialog.pack()
       dialog.setLocationRelativeTo(owner)
+      Splash.closeCurrent()
       dialog.isVisible = true
       if (decided[0]) return result[0]
       if (shouldExit[0]) System.exit(0)
@@ -174,7 +174,7 @@ class GUIProjectChooserDialog(private val owner: GUIMain) {
       wrap(
         JScrollPane(projectList).apply {
           preferredSize = Dimension(700, 280)
-          border = BorderFactory.createLineBorder(Color.LIGHT_GRAY)
+          border = BorderFactory.createLineBorder(ThemeColors.borderColor())
           viewport.isOpaque = true
           projectList.isOpaque = true
         }
@@ -316,28 +316,41 @@ class GUIProjectChooserDialog(private val owner: GUIMain) {
           gridwidth = 1
           weightx = 0.0
         }
-        add(JLabel("${i18nString("Path")}: ").apply { foreground = Color.GRAY }, constraints)
-        constraints.apply {
-          gridx = 1
-          weightx = 1.0
-        }
-        add(JLabel(info.getPath()).apply { foreground = Color.GRAY }, constraints)
-        constraints.apply {
-          gridx = 0
-          gridy = 2
-          weightx = 0.0
-        }
         add(
-          JLabel("${i18nString("Last modified")}: ").apply { foreground = Color.GRAY },
+          JLabel("${i18nString("Path")}: ").apply {
+            foreground = ThemeColors.secondaryForeground()
+          },
           constraints,
         )
         constraints.apply {
           gridx = 1
           weightx = 1.0
         }
-        add(JLabel(info.getLastModified()).apply { foreground = Color.GRAY }, constraints)
+        add(
+          JLabel(info.getPath()).apply { foreground = ThemeColors.secondaryForeground() },
+          constraints,
+        )
+        constraints.apply {
+          gridx = 0
+          gridy = 2
+          weightx = 0.0
+        }
+        add(
+          JLabel("${i18nString("Last modified")}: ").apply {
+            foreground = ThemeColors.secondaryForeground()
+          },
+          constraints,
+        )
+        constraints.apply {
+          gridx = 1
+          weightx = 1.0
+        }
+        add(
+          JLabel(info.getLastModified()).apply { foreground = ThemeColors.secondaryForeground() },
+          constraints,
+        )
         isOpaque = index == hoveredIndex
-        if (isOpaque) background = Color(230, 240, 255)
+        if (isOpaque) background = ThemeColors.hoverBackground()
       }
     }
   }

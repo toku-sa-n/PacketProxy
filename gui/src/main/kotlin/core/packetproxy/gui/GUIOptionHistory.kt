@@ -1,6 +1,5 @@
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import javax.swing.Box
@@ -62,7 +61,7 @@ class GUIOptionHistory(configs: Configs) {
 
   fun createPanel(): JPanel {
     val panel = JPanel()
-    panel.background = Color.WHITE
+    panel.background = ThemeColors.panelBackground()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     panel.add(enableCheckbox)
     panel.add(Box.createVerticalStrut(8))
@@ -76,7 +75,7 @@ class GUIOptionHistory(configs: Configs) {
 
   private fun row(label: String, spinner: JSpinner): JPanel {
     val row = JPanel()
-    row.background = Color.WHITE
+    row.background = ThemeColors.panelBackground()
     row.layout = BoxLayout(row, BoxLayout.X_AXIS)
     row.alignmentX = Component.LEFT_ALIGNMENT
     row.add(JLabel(label))

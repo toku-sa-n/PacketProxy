@@ -15,10 +15,10 @@
  */
 package packetproxy.gui
 
-import com.formdev.flatlaf.FlatIntelliJLaf
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Insets
+import java.awt.Rectangle
 import java.awt.Taskbar
 import java.awt.Toolkit
 import java.awt.Window
@@ -70,6 +70,8 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
   private lateinit var guiExtensions: GUIExtensions
   private lateinit var guiVulCheckHelper: GUIVulCheckHelper
   private lateinit var interceptModel: InterceptModel
+  val statusBar = GUIStatusBar()
+  val themeManager = ThemeManager(modelServices.configs)
   private val appVersion = AppVersion()
   private val lazyTabBuilders = HashMap<Int, () -> JComponent>()
   private val initializedTabs = HashSet<Int>()
@@ -87,14 +89,14 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
 
   private fun getPaneString(num: Panes): String {
     return when (num) {
-      Panes.HISTORY -> "History"
-      Panes.INTERCEPT -> "Interceptor"
-      Panes.RESENDER -> "Resender"
-      Panes.VULCHECKHELPER -> "VulCheck Helper"
-      Panes.BULKSENDER -> "Bulk Sender"
-      Panes.EXTENSIONS -> "Extensions"
-      Panes.OPTIONS -> "Options"
-      Panes.LOG -> "Log"
+      Panes.HISTORY -> i18nString("History")
+      Panes.INTERCEPT -> i18nString("Interceptor")
+      Panes.RESENDER -> i18nString("Resender")
+      Panes.VULCHECKHELPER -> i18nString("VulCheck Helper")
+      Panes.BULKSENDER -> i18nString("Bulk Sender")
+      Panes.EXTENSIONS -> i18nString("Extensions")
+      Panes.OPTIONS -> i18nString("Options")
+      Panes.LOG -> i18nString("Log")
     }
   }
 
@@ -104,14 +106,17 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
       setIcon()
       guiHistory = initProjectAndHistory()
       setLookandFeel()
+      statusBar.refreshTheme()
 
       // Register for database events
       modelServices.database.addPropertyChangeListener(this)
+      modelServices.listenPorts.addPropertyChangeListener(this)
 
       // Set initial title with project name
       updateTitle()
 
-      setBounds(10, 10, 1100, 850)
+      WindowLayoutStore.restoreFrameBounds(WindowLayoutStore.MAIN_WINDOW, this, DEFAULT_BOUNDS)
+      WindowLayoutStore.trackFrameBounds(WindowLayoutStore.MAIN_WINDOW, this)
       enableFullScreenForMac(this)
 
       menuBar = GUIMenu(this)
@@ -125,14 +130,6 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
       guiVulCheckHelper = GUIVulCheckHelper(this)
 
       tabbedPane = JTabbedPane()
-
-      // タブの高さを数値で強制指定
-      UIManager.put("TabbedPane.tabHeight", 22)
-      // フォーカスが当たった時の枠線の太さを0にする
-      UIManager.put("TabbedPane.focusWidth", 0)
-      UIManager.put("TabbedPane.innerBorderInsets", Insets(0, 0, 0, 0))
-      UIManager.put("TabbedPane.tabInsets", Insets(0, 10, 0, 10))
-
       SwingUtilities.updateComponentTreeUI(tabbedPane)
       tabbedPane.addTab(getPaneString(Panes.HISTORY), guiHistory.createPanel())
       initializedTabs.add(Panes.HISTORY.ordinal)
@@ -147,14 +144,22 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
       tabbedPane.addChangeListener { initializeTab(tabbedPane.selectedIndex) }
 
       contentPane.add(tabbedPane, BorderLayout.CENTER)
+      contentPane.add(statusBar, BorderLayout.SOUTH)
 
       interceptModel = modelServices.interceptModel
       interceptModel.addPropertyChangeListener(this)
+      statusBar.updateInterceptState(interceptModel.isInterceptEnabled())
+      updateListenPortStatus()
 
       //// 終了時の処理
+      defaultCloseOperation = DO_NOTHING_ON_CLOSE
       addWindowListener(
         object : WindowAdapter() {
           override fun windowClosing(event: WindowEvent) {
+            if (!confirmExit()) {
+              return
+            }
+            saveLayout()
             disposeListeners()
             System.exit(0)
           }
@@ -167,9 +172,30 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     }
   }
 
+  /** 誤操作で終了しないよう確認する */
+  private fun confirmExit(): Boolean =
+    JOptionPane.showConfirmDialog(
+      this,
+      i18nString("Are you sure you want to quit PacketProxy?"),
+      i18nString("Quit PacketProxy"),
+      JOptionPane.YES_NO_OPTION,
+      JOptionPane.QUESTION_MESSAGE,
+    ) == JOptionPane.YES_OPTION
+
+  private fun saveLayout() {
+    try {
+      WindowLayoutStore.saveFrameBounds(WindowLayoutStore.MAIN_WINDOW, this)
+      guiHistory.saveLayout()
+      WindowLayoutStore.flush()
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    }
+  }
+
   private fun disposeListeners() {
     try {
       modelServices.database.removePropertyChangeListener(this)
+      modelServices.listenPorts.removePropertyChangeListener(this)
       interceptModel.removePropertyChangeListener(this)
       guiHistory.dispose()
       guiResender.dispose()
@@ -178,6 +204,35 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
+  }
+
+  /** 遅延生成されたタブの中身を必要になった時点で構築する */
+  fun prepareTab(pane: Panes) {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      SwingUtilities.invokeLater { prepareTab(pane) }
+      return
+    }
+    initializeTab(pane.ordinal)
+  }
+
+  /** タブの中身を構築した上でそのタブを表示する */
+  fun showTab(pane: Panes) {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      SwingUtilities.invokeLater { showTab(pane) }
+      return
+    }
+    initializeTab(pane.ordinal)
+    tabbedPane.selectedIndex = pane.ordinal
+  }
+
+  /** Optionsタブを開き、指定したカテゴリを選択する */
+  fun showOptionCategory(title: String) {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      SwingUtilities.invokeLater { showOptionCategory(title) }
+      return
+    }
+    showTab(Panes.OPTIONS)
+    guiOption.selectCategory(title)
   }
 
   fun getGuiResender(): GUIResender = guiResender
@@ -201,24 +256,36 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     return GUIHistory(this, restore)
   }
 
+  /** テーマを切り替えて、開いている全ウィンドウに反映する */
+  fun applyTheme(mode: ThemeMode) {
+    themeManager.setMode(mode)
+    refreshAppearance()
+  }
+
+  /** UIフォントの変更を、再起動せずに開いている全ウィンドウに反映する */
+  fun refreshUiFont() {
+    refreshAppearance()
+  }
+
+  private fun refreshAppearance() {
+    installLookAndFeel()
+    applyLookAndFeelPolish()
+    UIManager.getLookAndFeelDefaults().put("defaultFont", modelServices.fontManager.getUIFont())
+    for (window in Window.getWindows()) {
+      SwingUtilities.updateComponentTreeUI(window)
+    }
+    statusBar.refreshTheme()
+    revalidate()
+    repaint()
+  }
+
   private fun setLookandFeel() {
     if (coreServices.packetProxyUtility.isUnix()) {
       System.setProperty("awt.useSystemAAFontSettings", "on")
       System.setProperty("swing.aatext", "true")
     }
 
-    // FlatLaf Modern Light Theme (IntelliJ)
-    try {
-      FlatIntelliJLaf.setup()
-    } catch (e: Exception) {
-      // Fallback to Nimbus if FlatLaf fails
-      for (clInfo in UIManager.getInstalledLookAndFeels()) {
-        if ("Nimbus" == clInfo.name) {
-          UIManager.setLookAndFeel(clInfo.className)
-          break
-        }
-      }
-    }
+    installLookAndFeel()
 
     // フォント設定をデフォルトに復元(シンタックスハイライト機能による影響を防ぐため)
     modelServices.fontManager.restoreUIFont()
@@ -228,11 +295,39 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     // OptionPaneのロケール
     JOptionPane.setDefaultLocale(i18nLocale)
 
-    // スクロールバーの幅を太くする
-    UIManager.put("ScrollBar.width", 15)
+    applyLookAndFeelPolish()
 
     addShortcutForWindows()
     addShortcutForMac()
+    addTabNumberShortcuts()
+  }
+
+  private fun installLookAndFeel() {
+    try {
+      themeManager.applyLookAndFeel()
+    } catch (e: Exception) {
+      // Fallback to Nimbus if FlatLaf fails
+      for (clInfo in UIManager.getInstalledLookAndFeels()) {
+        if ("Nimbus" == clInfo.name) {
+          UIManager.setLookAndFeel(clInfo.className)
+          break
+        }
+      }
+    }
+  }
+
+  private fun applyLookAndFeelPolish() {
+    // タブの高さを数値で強制指定
+    UIManager.put("TabbedPane.tabHeight", 28)
+    // フォーカスが当たった時の枠線の太さを0にする
+    UIManager.put("TabbedPane.focusWidth", 0)
+    UIManager.put("TabbedPane.innerBorderInsets", Insets(0, 0, 0, 0))
+    UIManager.put("TabbedPane.tabInsets", Insets(0, 10, 0, 10))
+    UIManager.put("Component.arc", 8)
+    UIManager.put("Button.arc", 8)
+    UIManager.put("TextComponent.arc", 6)
+    // スクロールバーの幅を太くする
+    UIManager.put("ScrollBar.width", 15)
   }
 
   /** Windowsにアイコンを表示する */
@@ -265,7 +360,9 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     registerTabShortcut(KeyEvent.VK_H, hotkey, im, am, Panes.HISTORY.ordinal)
     registerTabShortcut(KeyEvent.VK_I, hotkey, im, am, Panes.INTERCEPT.ordinal)
     registerTabShortcut(KeyEvent.VK_R, hotkey, im, am, Panes.RESENDER.ordinal)
+    registerTabShortcut(KeyEvent.VK_V, hotkey, im, am, Panes.VULCHECKHELPER.ordinal)
     registerTabShortcut(KeyEvent.VK_B, hotkey, im, am, Panes.BULKSENDER.ordinal)
+    registerTabShortcut(KeyEvent.VK_E, hotkey, im, am, Panes.EXTENSIONS.ordinal)
     registerTabShortcut(KeyEvent.VK_O, hotkey, im, am, Panes.OPTIONS.ordinal)
     registerTabShortcut(KeyEvent.VK_L, hotkey, im, am, Panes.LOG.ordinal)
 
@@ -314,9 +411,22 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     registerTabShortcut(KeyEvent.VK_H, hotkey, im, am, Panes.HISTORY.ordinal)
     registerTabShortcut(KeyEvent.VK_I, hotkey, im, am, Panes.INTERCEPT.ordinal)
     registerTabShortcut(KeyEvent.VK_R, hotkey, im, am, Panes.RESENDER.ordinal)
+    registerTabShortcut(KeyEvent.VK_V, hotkey, im, am, Panes.VULCHECKHELPER.ordinal)
     registerTabShortcut(KeyEvent.VK_B, hotkey, im, am, Panes.BULKSENDER.ordinal)
+    registerTabShortcut(KeyEvent.VK_E, hotkey, im, am, Panes.EXTENSIONS.ordinal)
     registerTabShortcut(KeyEvent.VK_O, hotkey, im, am, Panes.OPTIONS.ordinal)
     registerTabShortcut(KeyEvent.VK_L, hotkey, im, am, Panes.LOG.ordinal)
+  }
+
+  /** Cmd/Ctrl+1..8 でもタブを切り替えられるようにする */
+  private fun addTabNumberShortcuts() {
+    val p = contentPane as JPanel
+    val im = p.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+    val am = p.actionMap
+    val hotkey = Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
+    for (pane in Panes.entries) {
+      registerTabShortcut(KeyEvent.VK_1 + pane.ordinal, hotkey, im, am, pane.ordinal)
+    }
   }
 
   private fun registerTabShortcut(k: Int, m: Int, im: InputMap, am: ActionMap, index: Int) {
@@ -359,6 +469,17 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
     tabbedPane.repaint()
   }
 
+  /** 有効になっている待ち受けポートを状態バーに反映する。 */
+  private fun updateListenPortStatus() {
+    try {
+      statusBar.updateListenPorts(
+        modelServices.listenPorts.queryAll().filter { it.isEnabled() }.map { it.getPort() }
+      )
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+    }
+  }
+
   fun updateTitle() {
     val titleText =
       String.format("PacketProxy %s - %s", appVersion.get(), get(modelServices.database))
@@ -368,12 +489,17 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
   override fun propertyChange(evt: PropertyChangeEvent) {
     if (PropertyChangeEventType.INTERCEPT_DATA.matches(evt)) {
       SwingUtilities.invokeLater {
+        statusBar.updateInterceptWaiting(evt.newValue != null)
         if (evt.newValue == null) {
           setInterceptDownLight()
         } else {
           setInterceptHighLight()
         }
       }
+    } else if (PropertyChangeEventType.INTERCEPT_MODE.matches(evt)) {
+      statusBar.updateInterceptState(evt.newValue == true)
+    } else if (PropertyChangeEventType.LISTEN_PORTS.matches(evt)) {
+      SwingUtilities.invokeLater { updateListenPortStatus() }
     } else if (PropertyChangeEventType.DATABASE_MESSAGE.matches(evt)) {
       if (evt.newValue is DatabaseMessage) {
         val msg = evt.newValue as DatabaseMessage
@@ -386,6 +512,7 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
 
   companion object {
     private val serialVersionUID = 1L
+    private val DEFAULT_BOUNDS = Rectangle(10, 10, 1100, 850)
   }
 
   private fun registerLazyTabs() {

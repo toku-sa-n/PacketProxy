@@ -1,6 +1,5 @@
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import javax.swing.BoxLayout
@@ -43,7 +42,7 @@ class GUIOptionHttp(configs: Configs) {
 
   fun createPanel(): JPanel {
     val panel = JPanel()
-    panel.background = Color.WHITE
+    panel.background = ThemeColors.panelBackground()
     panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
     panel.add(combo)
     panel.add(JLabel(i18nString("has a high priority")))

@@ -5,4 +5,5 @@ dependencies {
 
   api 'com.formdev:flatlaf:3.4.1'
   api 'com.formdev:flatlaf-intellij-themes:3.4.1'
+  api 'com.formdev:flatlaf-extras:3.4.1'
 }

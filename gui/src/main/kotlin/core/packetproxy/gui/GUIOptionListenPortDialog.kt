@@ -1,12 +1,9 @@
 package packetproxy.gui
 
-import java.awt.Dimension
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComboBox
-import javax.swing.JComponent
 import javax.swing.JDialog
-import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JTextField
@@ -25,20 +22,18 @@ class GUIOptionListenPortDialog(private val owner: GUIMain) : JDialog(owner) {
 
   init {
     title = i18nString("Listenning Port Setting")
-    val rect = owner.bounds
-    setBounds(rect.x + rect.width / 2 - 300, rect.y + rect.height / 2 - 200, 600, 400)
     val panel = JPanel()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-    panel.add(labeled("Listen Port:", port))
-    panel.add(labeled("Type:", types))
-    panel.add(labeled(i18nString("Forward to:"), servers))
-    panel.add(labeled(i18nString("CA certificate to sign:"), cas))
+    panel.add(labeledRow(i18nString(PORT_LABEL), port))
+    panel.add(labeledRow(i18nString("Type:"), types))
+    panel.add(labeledRow(i18nString("Forward to:"), servers))
+    panel.add(labeledRow(i18nString("CA certificate to sign:"), cas))
     val buttons = JPanel()
     buttons.layout = BoxLayout(buttons, BoxLayout.X_AXIS)
-    val cancel = JButton(i18nString("Cancel"))
-    val save = JButton(i18nString("Save"))
-    buttons.add(cancel)
-    buttons.add(save)
+    val cancelButton = JButton(i18nString("Cancel"))
+    val saveButton = JButton(i18nString("Save"))
+    buttons.add(cancelButton)
+    buttons.add(saveButton)
     panel.add(buttons)
     contentPane.add(panel)
     for (type in
@@ -55,7 +50,9 @@ class GUIOptionListenPortDialog(private val owner: GUIMain) : JDialog(owner) {
       )) types.addItem(type)
     types.maximumRowCount = types.itemCount
     types.addItemListener {
-      if (it.stateChange == java.awt.event.ItemEvent.SELECTED) updateNextHopList(it.item as String)
+      if (it.stateChange != java.awt.event.ItemEvent.SELECTED) return@addItemListener
+      updateNextHopList(it.item as String)
+      updateTypeDescription(it.item as String)
     }
     servers.addItemListener {
       if (
@@ -68,30 +65,19 @@ class GUIOptionListenPortDialog(private val owner: GUIMain) : JDialog(owner) {
     owner.modelServices.caFactory.queryAll().forEach { cas.addItem(it.getUTF8Name()) }
     cas.selectedItem = "PacketProxy per-user CA"
     updateNextHopList("HTTP_PROXY")
-    cancel.addActionListener {
-      result = null
-      dispose()
-    }
-    save.addActionListener {
-      try {
-        val type = ListenPort.TYPE.valueOf(types.selectedItem as String)
-        val ca =
-          owner.modelServices.caFactory
-            .findByUTF8Name(cas.selectedItem as String)
-            .map { it.getName() ?: "Error" }
-            .orElse("Error")
-        result =
-          ListenPort(
-            port.text.toInt(),
-            type,
-            owner.modelServices.servers.queryByString((servers.selectedItem as? String) ?: ""),
-            ca,
-          )
+    updateTypeDescription("HTTP_PROXY")
+    installDefaultActions(
+      this,
+      saveButton,
+      cancelButton,
+      onSave = { save() },
+      onCancel = {
+        result = null
         dispose()
-      } catch (e: Exception) {
-        errWithStackTrace(e)
-      }
-    }
+      },
+    )
+    packWithMinSize(this, MIN_WIDTH, MIN_HEIGHT)
+    centerOver(owner)
   }
 
   @Throws(Exception::class)
@@ -110,6 +96,63 @@ class GUIOptionListenPortDialog(private val owner: GUIMain) : JDialog(owner) {
     isVisible = true
     return result
   }
+
+  private fun save() {
+    val portNumber = PortValidator.parse(port.text)
+    if (portNumber == null) {
+      JOptionPane.showMessageDialog(
+        this,
+        PortValidator.errorMessage(i18nString(PORT_LABEL)),
+        i18nString("Error"),
+        JOptionPane.ERROR_MESSAGE,
+      )
+      return
+    }
+    try {
+      val type = ListenPort.TYPE.valueOf(types.selectedItem as String)
+      val ca =
+        owner.modelServices.caFactory
+          .findByUTF8Name(cas.selectedItem as String)
+          .map { it.getName() ?: "Error" }
+          .orElse("Error")
+      result =
+        ListenPort(
+          portNumber,
+          type,
+          owner.modelServices.servers.queryByString((servers.selectedItem as? String) ?: ""),
+          ca,
+        )
+      dispose()
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+      JOptionPane.showMessageDialog(this, e.message, i18nString("Error"), JOptionPane.ERROR_MESSAGE)
+    }
+  }
+
+  /** 選択されたListenポートの種類の説明をツールチップで表示する */
+  private fun updateTypeDescription(type: String) {
+    types.toolTipText = listenPortTypeDescription(type)
+  }
+
+  private fun listenPortTypeDescription(type: String): String =
+    when (type) {
+      "HTTP_PROXY" ->
+        i18nString("Works as an HTTP/HTTPS proxy. Set this port as the proxy of the client.")
+      "FORWARDER" -> i18nString("Forwards TCP packets to the server selected below.")
+      "SSL_FORWARDER" ->
+        i18nString("Forwards TCP packets to the server selected below over SSL/TLS.")
+      "SSL_TRANSPARENT_PROXY" ->
+        i18nString("Receives SSL/TLS packets transparently and forwards them by the SNI header.")
+      "HTTP_TRANSPARENT_PROXY" ->
+        i18nString("Receives HTTP packets transparently and forwards them by the Host header.")
+      "UDP_FORWARDER" -> i18nString("Forwards UDP packets to the server selected below.")
+      "QUIC_FORWARDER" -> i18nString("Forwards QUIC packets to the server selected below.")
+      "QUIC_TRANSPARENT_PROXY" ->
+        i18nString("Receives QUIC packets transparently and forwards them by the SNI header.")
+      "XMPP_SSL_FORWARDER" ->
+        i18nString("Forwards XMPP packets to the server selected below, starting with STARTTLS.")
+      else -> ""
+    }
 
   private fun updateNextHopList(type: String) {
     try {
@@ -157,14 +200,9 @@ class GUIOptionListenPortDialog(private val owner: GUIMain) : JDialog(owner) {
     }
   }
 
-  private fun labeled(text: String, component: JComponent): JComponent {
-    val panel = JPanel()
-    panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
-    val label = JLabel(text)
-    label.preferredSize = Dimension(150, label.maximumSize.height)
-    panel.add(label)
-    component.maximumSize = Dimension(Short.MAX_VALUE.toInt(), label.maximumSize.height * 2)
-    panel.add(component)
-    return panel
+  companion object {
+    private const val PORT_LABEL = "Listen Port:"
+    private const val MIN_WIDTH = 600
+    private const val MIN_HEIGHT = 400
   }
 }

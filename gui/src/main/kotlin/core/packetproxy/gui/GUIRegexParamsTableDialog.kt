@@ -66,10 +66,11 @@ class GUIRegexParamsTableDialog(
     buttons.add(
       JButton(i18nString("Remove")).apply {
         addActionListener {
-          if (table.selectedRow >= 0) {
-            regexParams.removeAt(table.selectedRow)
-            updateTable()
+          if (table.selectedRow < 0) {
+            return@addActionListener
           }
+          regexParams.removeAt(table.convertRowIndexToModel(table.selectedRow))
+          updateTable()
         }
       }
     )

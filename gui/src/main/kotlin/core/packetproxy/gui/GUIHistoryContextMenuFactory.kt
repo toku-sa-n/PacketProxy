@@ -32,6 +32,7 @@ import org.apache.commons.io.FileUtils
 import packetproxy.common.*
 import packetproxy.http.*
 import packetproxy.http.Http
+import packetproxy.model.Packet
 import packetproxy.model.Packets
 import packetproxy.util.errWithStackTrace
 
@@ -85,14 +86,18 @@ class GUIHistoryContextMenuFactory {
         KeyStroke.getKeyStroke(KeyEvent.VK_R, maskKey),
       ) {
         try {
-          val packet = guiPacket.getPacket()
-          packet.setResend()
-          packets.update(packet)
-          if (packet.getModifiedData().isEmpty()) {
-            owner.getGuiResender().addResends(packet.getOneShotFromDecodedData())
-          } else {
-            owner.getGuiResender().addResends(packet.getOneShotFromModifiedData())
+          // 複数行を選択しているときは、選択した全リクエストをResenderに送る
+          val selectedRows = table.selectedRows
+          if (selectedRows.size > 1) {
+            for (row in selectedRows) {
+              val id = table.getValueAt(row, 0) as Int
+              val selected = packets.query(id) ?: continue
+              addToResender(owner, packets, selected)
+              context.updateRequestOne(id)
+            }
+            return@createMenuItem
           }
+          addToResender(owner, packets, guiPacket.getPacket())
           context.updateRequestOne(context.selectedPacketId)
         } catch (ex: Exception) {
           errWithStackTrace(ex)
@@ -196,12 +201,26 @@ class GUIHistoryContextMenuFactory {
         "yellow",
         "add color (yellow)",
       )
-    val clearColor = createClearColorMenuItem(table, colorManager)
+    val clearColor = createClearColorMenuItem(table, packets, colorManager)
 
     val deleteSelectedItems =
       createMenuItem("delete selected items", -1, null) {
         try {
           val selectedRows = table.selectedRows
+          if (selectedRows.isEmpty()) {
+            return@createMenuItem
+          }
+          var confirmed =
+            confirmDeletion(
+              owner,
+              i18nString(
+                "Are you sure you want to delete the %d selected items?",
+                selectedRows.size,
+              ),
+            )
+          if (!confirmed) {
+            return@createMenuItem
+          }
           for (i in selectedRows.indices) {
             val requestPacketId = table.getValueAt(selectedRows[i], 0) as Int
             colorManager.clear(requestPacketId)
@@ -224,6 +243,11 @@ class GUIHistoryContextMenuFactory {
     val deleteAll =
       createMenuItem("delete all items", -1, null) {
         try {
+          var confirmed =
+            confirmDeletion(owner, i18nString("Are you sure you want to delete all items?"))
+          if (!confirmed) {
+            return@createMenuItem
+          }
           for (i in 0 until table.rowCount) {
             val id = table.getValueAt(i, 0) as Int
             colorManager.clear(id)
@@ -248,17 +272,17 @@ class GUIHistoryContextMenuFactory {
             commandList.add("curl")
             val url =
               http.getURL(guiPacket.getPacket().getServerPort(), guiPacket.getPacket().getUseSSL())
-            commandList.add(String.format("'%s'", url))
+            commandList.add(quoteForShell(url))
             commandList.add("-X")
-            commandList.add(http.method)
+            commandList.add(quoteForShell(http.method))
             for (hf in headerFields) {
               commandList.add("-H")
-              commandList.add(String.format("'%s: %s'", hf.getName(), hf.getValue()))
+              commandList.add(quoteForShell("${hf.getName()}: ${hf.getValue()}"))
             }
             val body = String(http.body)
             if (body.trim().isNotEmpty()) {
               commandList.add("--data")
-              commandList.add(String.format("'%s'", body))
+              commandList.add(quoteForShell(body))
             }
             commandList.add("--compressed")
             val command = StringSelection(commandList.joinToString(" "))
@@ -288,6 +312,28 @@ class GUIHistoryContextMenuFactory {
 
     return Handles(menu, send, sendToResender, copy, copyAll)
   }
+
+  private fun addToResender(owner: GUIMain, packets: Packets, packet: Packet) {
+    packet.setResend()
+    packets.update(packet)
+    if (packet.getModifiedData().isEmpty()) {
+      owner.getGuiResender().addResends(packet.getOneShotFromDecodedData())
+      return
+    }
+    owner.getGuiResender().addResends(packet.getOneShotFromModifiedData())
+  }
+
+  private fun confirmDeletion(owner: JFrame, message: String): Boolean =
+    JOptionPane.showConfirmDialog(
+      owner,
+      message,
+      i18nString("Delete packets"),
+      JOptionPane.YES_NO_OPTION,
+      JOptionPane.WARNING_MESSAGE,
+    ) == JOptionPane.YES_OPTION
+
+  /** シングルクォート自体を含む値でもシェルで壊れないように 'foo'\''bar' 形式でクォートする。 */
+  private fun quoteForShell(value: String): String = "'${value.replace("'", "'\\''")}'"
 
   private fun createMenuItem(
     name: String,
@@ -371,6 +417,7 @@ class GUIHistoryContextMenuFactory {
 
   private fun createClearColorMenuItem(
     table: JTable,
+    packets: Packets,
     colorManager: TableCustomColorManager,
   ): JMenuItem {
     return createMenuItem("clear color", -1, null) {
@@ -379,6 +426,9 @@ class GUIHistoryContextMenuFactory {
         for (i in selectedRows.indices) {
           val id = table.getValueAt(selectedRows[i], 0) as Int
           colorManager.clear(id)
+          val packet = packets.query(id) ?: continue
+          packet.setColor("")
+          packets.update(packet)
         }
       } catch (ex: Exception) {
         errWithStackTrace(ex)

@@ -42,7 +42,7 @@ class InterceptController(
   private sealed class InterceptDecision {
     data class Forward(val data: ByteArray) : InterceptDecision()
 
-    data class ForwardMultiple(val data: ByteArray) : InterceptDecision()
+    data class ForwardMultiple(val data: ByteArray, val count: Int) : InterceptDecision()
 
     data object Drop : InterceptDecision()
   }
@@ -63,8 +63,9 @@ class InterceptController(
     pendingDeferred?.complete(InterceptDecision.Forward(data))
   }
 
-  fun forwardMultiple(data: ByteArray) {
-    pendingDeferred?.complete(InterceptDecision.ForwardMultiple(data))
+  /** パケットを通過させた上で、同じパケットを合計 count 回になるまで再送する。 */
+  fun forwardMultiple(data: ByteArray, count: Int = DEFAULT_FORWARD_MULTIPLE_COUNT) {
+    pendingDeferred?.complete(InterceptDecision.ForwardMultiple(data, count))
   }
 
   fun drop() {
@@ -107,8 +108,14 @@ class InterceptController(
           is InterceptDecision.Drop -> None
           is InterceptDecision.Forward -> Some(decision.data)
           is InterceptDecision.ForwardMultiple -> {
-            resendController.resend(targetPacket.getOneShotPacket(decision.data), 19, true)
-            targetPacket.setResend()
+            if (decision.count > 1) {
+              resendController.resend(
+                targetPacket.getOneShotPacket(decision.data),
+                decision.count - 1,
+                true,
+              )
+              targetPacket.setResend()
+            }
             Some(decision.data)
           }
         }
@@ -135,5 +142,9 @@ class InterceptController(
     }
 
     return true
+  }
+
+  companion object {
+    const val DEFAULT_FORWARD_MULTIPLE_COUNT = 20
   }
 }

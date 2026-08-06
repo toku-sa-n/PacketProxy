@@ -19,6 +19,7 @@ import com.j256.ormlite.dao.Dao
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
+import java.security.UnrecoverableKeyException
 import packetproxy.common.ClientKeyManager
 import packetproxy.model.Database.DatabaseMessage
 import packetproxy.model.PropertyChangeEventType.CLIENT_CERTIFICATES
@@ -81,6 +82,15 @@ class ClientCertificates(
       errWithStackTrace(e)
     }
   }
+
+  @Throws(Exception::class)
+  fun hasCorrectSecretKey(certificate: ClientCertificate): Boolean =
+    try {
+      clientKeyManager.setKeyManagers(certificate.getServer(database), certificate.load())
+      true
+    } catch (_: UnrecoverableKeyException) {
+      false
+    }
 
   fun refresh() {
     firePropertyChange()

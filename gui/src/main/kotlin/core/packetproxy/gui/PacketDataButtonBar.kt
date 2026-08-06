@@ -15,7 +15,6 @@
  */
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Dimension
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -230,7 +229,7 @@ class PacketDataButtonBar(
         add(diffOrigButton)
         add(diffButton)
         add(stopDiffButton)
-        border = LineBorder(Color.BLACK, 1, true)
+        border = LineBorder(ThemeColors.borderColor(), 1, true)
         layout = BoxLayout(this, BoxLayout.LINE_AXIS)
       }
 

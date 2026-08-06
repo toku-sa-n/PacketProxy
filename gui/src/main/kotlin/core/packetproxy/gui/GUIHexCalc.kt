@@ -15,7 +15,6 @@
  */
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.event.KeyAdapter
@@ -43,7 +42,7 @@ class GUIHexCalc {
   private lateinit var strPanel: JComponent
   private val mainPanel =
     JPanel().apply {
-      background = Color.WHITE
+      background = ThemeColors.panelBackground()
       layout = BoxLayout(this, BoxLayout.Y_AXIS)
       alignmentX = Component.LEFT_ALIGNMENT
     }
@@ -91,7 +90,7 @@ class GUIHexCalc {
       }
     intPanel =
       JPanel().apply {
-        background = Color.WHITE
+        background = ThemeColors.panelBackground()
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         add(label)
         endianBox.maximumSize = Dimension(100, label.maximumSize.height * 2)
@@ -134,7 +133,7 @@ class GUIHexCalc {
       }
     strPanel =
       JPanel().apply {
-        background = Color.WHITE
+        background = ThemeColors.panelBackground()
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         add(label)
         strBefore.maximumSize = Dimension(400, label.maximumSize.height * 2)
@@ -151,31 +150,63 @@ class GUIHexCalc {
 
   private fun intToHexTranslation() {
     if (intBefore.text.isEmpty()) {
+      clearInputError(intBefore)
       intHex.text = ""
       return
     }
-    intHex.text =
-      StringUtils.intToHex(
-        intBefore.text.toInt(),
-        endianBox.selectedItem == i18nString("Little Endian"),
-      )
+    var value = intBefore.text.trim().toIntOrNull()
+    if (value == null) {
+      showInputError(intBefore, i18nString("Not a valid integer"))
+      return
+    }
+    clearInputError(intBefore)
+    intHex.text = StringUtils.intToHex(value, isLittleEndian())
   }
 
   private fun hexToIntTranslation() {
     if (intHex.text.isEmpty()) {
+      clearInputError(intHex)
       intBefore.text = ""
       return
     }
     try {
-      val binary = Binary(Binary.HexString(intHex.text))
-      intBefore.text =
-        binary.toInt(endianBox.selectedItem == i18nString("Little Endian")).toString()
-    } catch (_: IllegalArgumentException) {}
+      intBefore.text = Binary(Binary.HexString(intHex.text)).toInt(isLittleEndian()).toString()
+      clearInputError(intHex)
+    } catch (_: IllegalArgumentException) {
+      showInputError(intHex, i18nString("Not a valid hex string"))
+    }
   }
 
   private fun hexToStrTranslation() {
+    if (strHex.text.isEmpty()) {
+      clearInputError(strHex)
+      strBefore.text = ""
+      return
+    }
     try {
       strBefore.text = Binary(Binary.HexString(strHex.text)).toAsciiString().toString()
-    } catch (_: IllegalArgumentException) {}
+      clearInputError(strHex)
+    } catch (_: IllegalArgumentException) {
+      showInputError(strHex, i18nString("Not a valid hex string"))
+    }
+  }
+
+  private fun isLittleEndian(): Boolean = endianBox.selectedItem == i18nString("Little Endian")
+
+  private fun showInputError(field: JTextField, message: String) {
+    field.putClientProperty(OUTLINE_CLIENT_PROPERTY, "error")
+    field.toolTipText = message
+    field.repaint()
+  }
+
+  private fun clearInputError(field: JTextField) {
+    field.putClientProperty(OUTLINE_CLIENT_PROPERTY, null)
+    field.toolTipText = null
+    field.repaint()
+  }
+
+  companion object {
+    // FlatLafが赤い枠線を描画するためのプロパティ
+    private const val OUTLINE_CLIENT_PROPERTY = "JComponent.outline"
   }
 }

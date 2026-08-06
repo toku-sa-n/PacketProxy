@@ -8,6 +8,7 @@ import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JFrame
 import javax.swing.JLabel
+import javax.swing.JOptionPane
 import javax.swing.JPanel
 import packetproxy.common.*
 import packetproxy.model.OpenVPNForwardPort
@@ -38,17 +39,7 @@ class GUIOptionOpenVPNDialog(private val owner: JFrame) : JDialog(owner) {
       forwardPort = null
       dispose()
     }
-    buttonSet.addActionListener {
-      try {
-        val type = OpenVPNForwardPort.TYPE.valueOf(combo.selectedItem as String)
-        val fromPort = fromPortField.text.toInt()
-        val toPort = toPortField.text.toInt()
-        forwardPort = OpenVPNForwardPort(type, fromPort, toPort)
-        dispose()
-      } catch (e: Exception) {
-        errWithStackTrace(e)
-      }
-    }
+    buttonSet.addActionListener { save() }
   }
 
   fun showDialog(): OpenVPNForwardPort? {
@@ -64,6 +55,34 @@ class GUIOptionOpenVPNDialog(private val owner: JFrame) : JDialog(owner) {
     isModal = true
     isVisible = true
     return forwardPort
+  }
+
+  private fun save() {
+    val fromPort = parsePortOrWarn(fromPortField.text, FROM_PORT_LABEL) ?: return
+    val toPort = parsePortOrWarn(toPortField.text, TO_PORT_LABEL) ?: return
+    try {
+      val type = OpenVPNForwardPort.TYPE.valueOf(combo.selectedItem as String)
+      forwardPort = OpenVPNForwardPort(type, fromPort, toPort)
+      dispose()
+    } catch (e: Exception) {
+      errWithStackTrace(e)
+      JOptionPane.showMessageDialog(this, e.message, i18nString("Error"), JOptionPane.ERROR_MESSAGE)
+    }
+  }
+
+  /** 不正なポート番号が入力された場合はダイアログで通知してnullを返す */
+  private fun parsePortOrWarn(text: String, label: String): Int? {
+    val port = PortValidator.parse(text)
+    if (port == null) {
+      JOptionPane.showMessageDialog(
+        this,
+        PortValidator.errorMessage(i18nString(label)),
+        i18nString("Error"),
+        JOptionPane.ERROR_MESSAGE,
+      )
+      return null
+    }
+    return port
   }
 
   private fun labelAndObject(labelName: String, obj: JComponent): JComponent {
@@ -92,12 +111,17 @@ class GUIOptionOpenVPNDialog(private val owner: JFrame) : JDialog(owner) {
     combo.addItem("UDP")
     combo.maximumRowCount = combo.itemCount
     combo.maximumSize = Dimension(Short.MAX_VALUE.toInt(), combo.minimumSize.height)
-    return labelAndObject("protocol", combo)
+    return labelAndObject(i18nString("protocol"), combo)
   }
 
   private fun createFromPortSetting(): JComponent =
-    labelAndObject(i18nString("src port"), fromPortField)
+    labelAndObject(i18nString(FROM_PORT_LABEL), fromPortField)
 
   private fun createToPortSetting(): JComponent =
-    labelAndObject(i18nString("dst port"), toPortField)
+    labelAndObject(i18nString(TO_PORT_LABEL), toPortField)
+
+  companion object {
+    private const val FROM_PORT_LABEL = "src port"
+    private const val TO_PORT_LABEL = "dst port"
+  }
 }

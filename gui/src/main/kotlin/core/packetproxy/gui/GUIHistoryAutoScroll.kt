@@ -2,14 +2,15 @@ package packetproxy.gui
 
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.ImageIcon
 import javax.swing.JLabel
+import packetproxy.common.i18nString
 import packetproxy.util.log
 
 class GUIHistoryAutoScroll : JLabel(disabledIcon) {
   private var autoScrollEnabled = false
 
   init {
+    toolTipText = i18nString("Toggle auto scroll to the newest packet")
     addMouseListener(
       object : MouseAdapter() {
         override fun mouseReleased(event: MouseEvent) {
@@ -51,9 +52,7 @@ class GUIHistoryAutoScroll : JLabel(disabledIcon) {
   }
 
   companion object {
-    private val disabledIcon =
-      ImageIcon(GUIHistoryAutoScroll::class.java.getResource("/gui/auto_scroll_disabled.png"))
-    private val enabledIcon =
-      ImageIcon(GUIHistoryAutoScroll::class.java.getResource("/gui/auto_scroll_enabled.png"))
+    private val disabledIcon = GuiIcons.autoScrollDisabled()
+    private val enabledIcon = GuiIcons.autoScrollEnabled()
   }
 }

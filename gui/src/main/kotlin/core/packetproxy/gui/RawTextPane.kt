@@ -15,7 +15,6 @@
  */
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Toolkit
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
@@ -85,7 +84,7 @@ class RawTextPane(
 
   override fun setEditable(editable: Boolean) {
     super.setEditable(editable)
-    if (!editable) background = Color.WHITE
+    if (!editable) background = ThemeColors.textBackground()
   }
 
   @Throws(Exception::class)

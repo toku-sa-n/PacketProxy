@@ -1,13 +1,15 @@
 package packetproxy.gui
 
-import java.awt.Color
+import java.awt.BorderLayout
 import java.util.Date
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.swing.*
 import packetproxy.common.Range
 import packetproxy.common.i18nString
 import packetproxy.controller.ResendController.ResendWorker
 import packetproxy.model.OneShotPacket
+import packetproxy.util.err
 import packetproxy.util.errWithStackTrace
 import packetproxy.vulchecker.VulCheckPattern
 import packetproxy.vulchecker.VulChecker
@@ -27,6 +29,13 @@ class GUIVulCheckTab(
   private lateinit var recvData: TabSet
   private var selectedGeneratorName = ""
   private var recvPacketId = 0
+  private lateinit var sendButton: JButton
+  private lateinit var sendAllButton: JButton
+  private val progressLabel = JLabel().apply { foreground = ThemeColors.secondaryForeground() }
+
+  /** タブのタイトルに使うチェッカー名 */
+  val checkerName: String
+    get() = name
 
   fun createPanel(): JComponent {
     var split =
@@ -45,10 +54,10 @@ class GUIVulCheckTab(
     }
     return JPanel().apply {
       layout = BoxLayout(this, BoxLayout.Y_AXIS)
-      background = Color.WHITE
+      background = ThemeColors.panelBackground()
       add(
         JLabel(name).apply {
-          foreground = Color(0, 200, 0)
+          foreground = ThemeColors.emphasisForeground()
           font = main.modelServices.fontManager.getUICaptionFont()
         }
       )
@@ -92,9 +101,8 @@ class GUIVulCheckTab(
           true
         },
       )
-    var sendButton = JButton(i18nString("send")).apply { addActionListener { sendSelected() } }
-    var sendAllButton =
-      JButton(i18nString("send all")).apply { addActionListener { sendAllEnabled() } }
+    sendButton = JButton(i18nString("send")).apply { addActionListener { sendSelected() } }
+    sendAllButton = JButton(i18nString("send all")).apply { addActionListener { sendAllEnabled() } }
     var bottom =
       JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -104,6 +112,7 @@ class GUIVulCheckTab(
             layout = BoxLayout(this, BoxLayout.LINE_AXIS)
             add(sendButton)
             add(sendAllButton)
+            add(progressLabel)
           }
         )
       }
@@ -133,21 +142,7 @@ class GUIVulCheckTab(
         resendController.run {
           object : ResendWorker(packet, 1) {
             override fun process(oneshots: MutableList<OneShotPacket>) {
-              var recvTime = Date()
-              try {
-                for (oneshot in oneshots) {
-                  recvPackets[recvPacketId] = oneshot
-                  recvTable.add(
-                    recvPacketId,
-                    pattern.getName(),
-                    oneshot,
-                    recvTime.time - sentTime.time,
-                  )
-                  recvPacketId++
-                }
-              } catch (e: Exception) {
-                errWithStackTrace(e)
-              }
+              addReceived(pattern.getName(), oneshots, sentTime)
             }
           }
         }
@@ -157,57 +152,70 @@ class GUIVulCheckTab(
     }
   }
 
+  /** 送信中はボタンを無効にして、進捗をラベルに表示する */
+  private fun setSending(sending: Boolean, total: Int = 0) {
+    onEDT {
+      sendButton.isEnabled = !sending
+      sendAllButton.isEnabled = !sending
+      progressLabel.text =
+        if (sending) i18nString("Sending %d packets...", total) else i18nString("Send completed")
+    }
+  }
+
   private fun sendAllEnabled() {
-    try {
-      var future = CompletableFuture.completedFuture("send all packets")
-      var resendController = main.coreServices.resendController
-      for (pattern in manager.getAllEnabledVulCheckPattern()) {
-        future =
-          future.thenApplyAsync { arg ->
-            try {
-              var sentTime = Date()
-              var packet = pattern.getPacket()
-              packet.setData(manager.extractMacro(pattern.getName(), packet.getData()))
-              resendController.resend(
-                resendController.run {
-                  object : ResendWorker(packet, 1) {
-                    override fun process(oneshots: MutableList<OneShotPacket>) {
-                      var recvTime = Date()
-                      try {
-                        for (res in oneshots) {
-                          recvPackets[recvPacketId] = res
-                          recvTable.add(
-                            recvPacketId,
-                            pattern.getName(),
-                            res,
-                            recvTime.time - sentTime.time,
-                          )
-                          recvPacketId++
-                        }
-                      } catch (e: Exception) {
-                        errWithStackTrace(e)
-                      }
-                    }
+    var patterns = manager.getAllEnabledVulCheckPattern()
+    if (patterns.isEmpty()) {
+      return
+    }
+    var resendController = main.coreServices.resendController
+    setSending(true, patterns.size)
+    Thread {
+        for ((index, pattern) in patterns.withIndex()) {
+          try {
+            onEDT {
+              progressLabel.text = i18nString("Sending %d / %d packets...", index, patterns.size)
+            }
+            var sentTime = Date()
+            var packet = pattern.getPacket()
+            packet.setData(manager.extractMacro(pattern.getName(), packet.getData()))
+            var latch = CountDownLatch(1)
+            resendController.resend(
+              resendController.run {
+                object : ResendWorker(packet, 1) {
+                  override fun process(oneshots: MutableList<OneShotPacket>) {
+                    addReceived(pattern.getName(), oneshots, sentTime)
+                  }
+
+                  override fun done() {
+                    latch.countDown()
                   }
                 }
-              )
-            } catch (e: Exception) {
-              errWithStackTrace(e)
+              }
+            )
+            if (!latch.await(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+              err(i18nString("[Error] timed out while waiting for the resend response."))
             }
-            arg
+          } catch (e: Exception) {
+            errWithStackTrace(e)
           }
-        future =
-          future.thenApplyAsync { arg ->
-            try {
-              Thread.sleep(100)
-            } catch (e: Exception) {
-              errWithStackTrace(e)
-            }
-            arg
-          }
+        }
+        setSending(false)
       }
-    } catch (e: Exception) {
-      errWithStackTrace(e)
+      .start()
+  }
+
+  private fun addReceived(name: String, oneshots: List<OneShotPacket>, sentTime: Date) {
+    var recvTime = Date()
+    onEDT {
+      try {
+        for (oneshot in oneshots) {
+          recvPackets[recvPacketId] = oneshot
+          recvTable.add(recvPacketId, name, oneshot, recvTime.time - sentTime.time)
+          recvPacketId++
+        }
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      }
     }
   }
 
@@ -217,10 +225,35 @@ class GUIVulCheckTab(
       GUIVulCheckRecvTable(main.coreServices.encoderManager.packetSummarizer) { id ->
         recvPackets[id]?.let { recvData.setData(it.getData()) }
       }
+    var clearButton =
+      JButton(i18nString("clear")).apply {
+        addActionListener {
+          recvTable.clear()
+          recvPackets.clear()
+          recvPacketId = 0
+          recvData.setData(ByteArray(0))
+        }
+      }
+    var top =
+      JPanel().apply {
+        layout = BorderLayout()
+        add(recvTable.createPanel(), BorderLayout.CENTER)
+        add(
+          JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.LINE_AXIS)
+            add(clearButton)
+          },
+          BorderLayout.SOUTH,
+        )
+      }
     return JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
-      add(recvTable.createPanel())
+      add(top)
       add(recvData.tabPanel)
       dividerLocation = 200
     }
+  }
+
+  companion object {
+    private const val SEND_TIMEOUT_SECONDS = 30L
   }
 }

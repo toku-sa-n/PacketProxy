@@ -37,7 +37,7 @@ class GUIOptionResolutions(owner: GUIMain) : GUIOptionComponentBase<Resolution>(
         tableAction,
         {
           try {
-            resolutions.create(GUIOptionResolutionDialog(owner).showDialog())
+            GUIOptionResolutionDialog(owner).showDialog()?.let { resolutions.create(it) }
           } catch (exception: Exception) {
             errWithStackTrace(exception)
           }

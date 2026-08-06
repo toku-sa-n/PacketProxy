@@ -1,6 +1,5 @@
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.beans.PropertyChangeEvent
@@ -22,12 +21,16 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
   private val mainPanel = JPanel()
   private var resendsTabs: ResendsCloseButtonTabbedPane = ResendsCloseButtonTabbedPane()
   private val resendsIndexes = mutableListOf<Int>()
+  private val emptyLabel =
+    emptyStateLabel(i18nString("Right-click a packet in History and select send to Resender."))
 
   init {
     mainPanel.layout = BoxLayout(mainPanel, BoxLayout.Y_AXIS)
+    mainPanel.add(emptyLabel)
     mainPanel.add(resendsTabs)
     main.modelServices.resenderPackets.addPropertyChangeListener(this)
     loadResenderPackets()
+    updateEmptyState()
   }
 
   fun dispose() {
@@ -42,21 +45,39 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
       var resendsIndex = if (resendsIndexes.isEmpty()) 1 else resendsIndexes.last() + 1
       resendsIndexes.add(resendsIndex)
       var component = resends.getComponent()
-      resendsTabs.addTab(resendsIndex.toString(), component)
+      resendsTabs.addTab(resendsTabTitle(resendsIndex, sendPacket), component)
       resendsTabs.selectedComponent = component
       resends.addResend(sendPacket, null)
+      updateEmptyState()
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
   }
 
+  /**
+   * RESENDER_PACKETSはプロジェクトの切り替え（DBの再接続・再作成）でしか通知されず、保持しているパケットが総入れ替えになるため、
+   * タブを作り直す。編集中のフォーカスを壊す通常操作では通知されない。
+   */
   override fun propertyChange(event: PropertyChangeEvent) {
     if (!PropertyChangeEventType.RESENDER_PACKETS.matches(event)) return
-    mainPanel.remove(resendsTabs)
-    resendsTabs = ResendsCloseButtonTabbedPane()
-    mainPanel.add(resendsTabs)
-    resendsIndexes.clear()
-    loadResenderPackets()
+    onEDT {
+      try {
+        mainPanel.remove(resendsTabs)
+        resendsTabs = ResendsCloseButtonTabbedPane()
+        mainPanel.add(resendsTabs)
+        resendsIndexes.clear()
+        loadResenderPackets()
+        updateEmptyState()
+        mainPanel.revalidate()
+        mainPanel.repaint()
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      }
+    }
+  }
+
+  private fun updateEmptyState() {
+    emptyLabel.setEmptyStateVisible(resendsTabs.tabCount == 0, mainPanel)
   }
 
   private fun loadResenderPackets() {
@@ -72,7 +93,8 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
 
         if (resendsIndex != beforeResendsIndex) {
           resends = Resends()
-          resendsTabs.addTab(resendsIndex.toString(), resends.getComponent())
+          var title = resendsTabTitle(resendsIndex, resenderPacket.getOneShotPacket())
+          resendsTabs.addTab(title, resends.getComponent())
           resendsIndexes.add(resendsIndex)
           beforeResendsIndex = resendsIndex
         }
@@ -108,12 +130,41 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
     }
   }
 
+  /** タブ名を "1: GET /login" のようにする。HTTPリクエストとして解釈できない場合は番号だけにする。 */
+  private fun resendsTabTitle(resendsIndex: Int, packet: OneShotPacket?): String {
+    var summary = requestSummary(packet) ?: return resendsIndex.toString()
+    return "$resendsIndex: $summary"
+  }
+
+  private fun requestSummary(packet: OneShotPacket?): String? {
+    var data = packet?.getData() ?: return null
+    if (data.isEmpty()) return null
+    var firstLine =
+      String(data, Charsets.ISO_8859_1).lineSequence().firstOrNull()?.trim() ?: return null
+    var tokens = firstLine.split(" ")
+    if (tokens.size < 2) return null
+    var method = tokens[0]
+    if (!HTTP_METHODS.contains(method)) return null
+    return "$method ${shortPath(tokens[1])}"
+  }
+
+  /** パスは末尾の要素だけを表示する。タブ幅を取り過ぎないよう長い場合は省略する。 */
+  private fun shortPath(path: String): String {
+    var trimmed = path.substringBefore('?').substringBefore('#').trimEnd('/')
+    var lastElement = trimmed.substringAfterLast('/')
+    if (lastElement.isEmpty()) return "/"
+    var name = "/$lastElement"
+    if (name.length <= MAX_TAB_PATH_LENGTH) return name
+    return name.take(MAX_TAB_PATH_LENGTH) + "..."
+  }
+
   private inner class ResendsCloseButtonTabbedPane : CloseButtonTabbedPane() {
     override fun removeTabAt(index: Int) {
       super.removeTabAt(index)
       try {
         var resendsIndex = resendsIndexes.removeAt(index)
         main.modelServices.resenderPackets.deleteResends(resendsIndex)
+        updateEmptyState()
       } catch (e: Exception) {
         errWithStackTrace(e)
       }
@@ -174,7 +225,7 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
     private val recvPanel = GUIPacketData(main)
     private val splitPanel =
       JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
-        background = Color.WHITE
+        background = ThemeColors.panelBackground()
         add(sendPanel.createPanel())
         add(recvPanel.createPanel())
         alignmentX = Component.CENTER_ALIGNMENT
@@ -182,60 +233,19 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
       }
     private val resendButton =
       JButton(i18nString("send")).apply {
-        addActionListener {
-          try {
-            var sendPacket = sendPanel.getOneShotPacket() ?: return@addActionListener
-            var resendController = main.coreServices.resendController
-            resendController.resend(
-              resendController.run {
-                object : ResendWorker(sendPacket, 1) {
-                  override fun process(packets: MutableList<OneShotPacket>) {
-                    try {
-                      var recvPacket = packets[0]
-                      recvPanel.setOneShotPacket(recvPacket)
-                      resends.addResend(sendPacket, recvPacket)
-                      rollback()
-                    } catch (e: Exception) {
-                      errWithStackTrace(e)
-                    }
-                  }
-                }
-              }
-            )
-          } catch (e: Exception) {
-            errWithStackTrace(e)
-          }
-        }
+        toolTipText = i18nString("Send this packet once")
+        addActionListener { sendOnce() }
       }
     private val resendMultipleButton =
-      JButton(i18nString("send x 20")).apply {
-        addActionListener {
-          try {
-            var sendPacket = sendPanel.getOneShotPacket() ?: return@addActionListener
-            main.coreServices.resendController.resend(sendPacket, 20)
-            clearLog()
-            showLog(i18nString("Check the result in the History window!"))
-            rollback()
-          } catch (e: Exception) {
-            errWithStackTrace(e)
-          }
-        }
+      JButton(i18nString("send x N...")).apply {
+        toolTipText = i18nString("Send this packet the specified number of times")
+        addActionListener { sendMultiple() }
       }
     private val attackButton =
-      JButton(i18nString("send x 20 (single-packet attack)")).apply {
-        addActionListener {
-          try {
-            var sendPacket = sendPanel.getOneShotPacket() ?: return@addActionListener
-            SinglePacketAttackController(
-                sendPacket,
-                main.coreServices.duplexFactory,
-                main.coreServices.encoderManager,
-              )
-              .attack(20)
-          } catch (e: Exception) {
-            errWithStackTrace(e)
-          }
-        }
+      JButton(i18nString("send x N... (single-packet attack)")).apply {
+        toolTipText =
+          i18nString("Send the specified number of requests packed into a single TCP packet")
+        addActionListener { sendSinglePacketAttack() }
       }
     private val mainPanel =
       JPanel().apply {
@@ -247,10 +257,13 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
             add(resendButton)
             add(resendMultipleButton)
             add(attackButton)
-            maximumSize = Dimension(Short.MAX_VALUE.toInt(), 10)
+            // ボタンが潰れないように、実際に必要な高さを上限にする
+            maximumSize = Dimension(Short.MAX_VALUE.toInt(), preferredSize.height)
           }
         )
       }
+    private var sendableTabSelected = true
+    private var sending = false
 
     init {
       sendPanel.getTabs().addPropertyChangeListener(this)
@@ -272,6 +285,97 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
       recvPanel.setOneShotPacket(recvSaved?.clone() as OneShotPacket?)
     }
 
+    private fun sendOnce() {
+      if (sending) return
+      try {
+        var sendPacket = sendPanel.getOneShotPacket() ?: return
+        var resendController = main.coreServices.resendController
+        setSending(true)
+        resendController.resend(
+          resendController.run {
+            object : ResendWorker(sendPacket, 1) {
+              override fun process(packets: MutableList<OneShotPacket>) {
+                try {
+                  var recvPacket = packets[0]
+                  recvPanel.setOneShotPacket(recvPacket)
+                  resends.addResend(sendPacket, recvPacket)
+                  rollback()
+                } catch (e: Exception) {
+                  errWithStackTrace(e)
+                }
+              }
+
+              override fun done() {
+                setSending(false)
+              }
+            }
+          }
+        )
+      } catch (e: Exception) {
+        setSending(false)
+        errWithStackTrace(e)
+      }
+    }
+
+    private fun sendMultiple() {
+      if (sending) return
+      try {
+        var sendPacket = sendPanel.getOneShotPacket() ?: return
+        var count = askSendCount(main, DEFAULT_SEND_COUNT) ?: return
+        var resendController = main.coreServices.resendController
+        setSending(true)
+        resendController.resend(
+          resendController.run {
+            object : ResendWorker(sendPacket, count) {
+              override fun done() {
+                setSending(false)
+              }
+            }
+          }
+        )
+        clearLog()
+        showLog(i18nString("Check the result in the History window!"))
+        rollback()
+      } catch (e: Exception) {
+        setSending(false)
+        errWithStackTrace(e)
+      }
+    }
+
+    private fun sendSinglePacketAttack() {
+      if (sending) return
+      try {
+        var sendPacket = sendPanel.getOneShotPacket() ?: return
+        var count = askSendCount(main, DEFAULT_SEND_COUNT) ?: return
+        setSending(true)
+        try {
+          SinglePacketAttackController(
+              sendPacket,
+              main.coreServices.duplexFactory,
+              main.coreServices.encoderManager,
+            )
+            .attack(count)
+        } finally {
+          setSending(false)
+        }
+      } catch (e: Exception) {
+        errWithStackTrace(e)
+      }
+    }
+
+    /** 送信中は二重送信を防ぐためにボタンを無効化する。 */
+    private fun setSending(value: Boolean) {
+      sending = value
+      updateSendButtons()
+    }
+
+    private fun updateSendButtons() {
+      var sendable = sendableTabSelected && !sending
+      resendButton.isEnabled = sendable
+      resendMultipleButton.isEnabled = sendable
+      attackButton.isEnabled = sendable
+    }
+
     private fun showLog(log: String) {
       recvPanel.appendData("$log\n".toByteArray())
     }
@@ -285,10 +389,16 @@ class GUIResender(private val main: GUIMain) : PropertyChangeListener {
         return
       }
       var selectedIndex = event.newValue as Int
-      var enabled = selectedIndex != 2
-      resendButton.isEnabled = enabled
-      resendMultipleButton.isEnabled = enabled
-      attackButton.isEnabled = enabled
+      sendableTabSelected = selectedIndex != JSON_TAB_INDEX
+      updateSendButtons()
     }
+  }
+
+  companion object {
+    private const val DEFAULT_SEND_COUNT = 20
+    private const val MAX_TAB_PATH_LENGTH = 20
+    private const val JSON_TAB_INDEX = 2
+    private val HTTP_METHODS =
+      setOf("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT")
   }
 }

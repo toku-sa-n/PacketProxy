@@ -1,13 +1,11 @@
 package packetproxy.gui
 
-import java.awt.Dimension
 import java.awt.EventQueue
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
-import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JLabel
 import javax.swing.JOptionPane
@@ -32,17 +30,15 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
 
   init {
     title = i18nString("Server setting")
-    val rect = owner.bounds
-    setBounds(rect.x + rect.width / 2 - 350, rect.y + rect.height / 2 - 290, 700, 580)
     owner.coreServices.encoderManager.getEncoderNameList().forEach { encoders.addItem(it) }
     encoders.maximumRowCount = encoders.itemCount
     encoders.selectedItem = "HTTP"
     val panel = JPanel()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-    panel.add(labeled(i18nString("Server name:"), ip))
-    panel.add(labeled(i18nString("Server port:"), port))
-    panel.add(labeled(i18nString("Use SSL/TLS:"), ssl))
-    panel.add(labeled(i18nString("Encode module:"), encoders))
+    panel.add(labeledRow(i18nString("Server name:"), ip))
+    panel.add(labeledRow(i18nString(PORT_LABEL), port))
+    panel.add(labeledRow(i18nString("Use SSL/TLS:"), ssl))
+    panel.add(labeledRow(i18nString("Encode module:"), encoders))
     descriptorPanel = JPanel()
     descriptorPanel.layout = BoxLayout(descriptorPanel, BoxLayout.X_AXIS)
     descriptorPanel.add(JLabel(i18nString("gRPC descriptor (.desc):")))
@@ -50,23 +46,23 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
     descriptorPanel.add(Box.createHorizontalGlue())
     panel.add(descriptorPanel)
     panel.add(
-      labeled(
+      labeledRow(
         i18nString("DNS Spoofing:"),
         JLabel(
           i18nString("Private DNS server needs to resolve the server name to local machine IP.")
         ),
       )
     )
-    panel.add(labeled(" ", dns))
-    panel.add(labeled(" ", dns6))
-    panel.add(labeled(i18nString("Upstream HTTP Proxy:"), upstream))
-    panel.add(labeled(i18nString("Comments:"), comment))
+    panel.add(labeledRow(" ", dns))
+    panel.add(labeledRow(" ", dns6))
+    panel.add(labeledRow(i18nString("Upstream HTTP Proxy:"), upstream))
+    panel.add(labeledRow(i18nString("Comments:"), comment))
     val footer = JPanel()
     footer.layout = BoxLayout(footer, BoxLayout.X_AXIS)
-    val cancel = JButton(i18nString("Cancel"))
-    val save = JButton(i18nString("Save"))
-    footer.add(cancel)
-    footer.add(save)
+    val cancelButton = JButton(i18nString("Cancel"))
+    val saveButton = JButton(i18nString("Save"))
+    footer.add(cancelButton)
+    footer.add(saveButton)
     panel.add(footer)
     contentPane.add(panel)
     upstream.addActionListener { updateUpstreamState() }
@@ -86,12 +82,19 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
         )
       }
     }
-    cancel.addActionListener {
-      result = null
-      dispose()
-    }
-    save.addActionListener { save() }
+    installDefaultActions(
+      this,
+      saveButton,
+      cancelButton,
+      onSave = { save() },
+      onCancel = {
+        result = null
+        dispose()
+      },
+    )
     updateDescriptorVisibility()
+    packWithMinSize(this, MIN_WIDTH, MIN_HEIGHT)
+    centerOver(owner)
   }
 
   fun showDialog(preset: Server): Server? {
@@ -110,7 +113,7 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
     isVisible = true
     result?.let {
       preset.setIp(ip.text)
-      preset.setPort(port.text.toInt())
+      preset.setPort(it.getPort())
       preset.setEncoder(encoders.selectedItem as String)
       preset.setUseSSL(ssl.isSelected)
       preset.setResolved(dns.isSelected)
@@ -143,10 +146,20 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
       )
       return
     }
+    val portNumber = PortValidator.parse(port.text)
+    if (portNumber == null) {
+      JOptionPane.showMessageDialog(
+        this,
+        PortValidator.errorMessage(i18nString(PORT_LABEL)),
+        i18nString("Error"),
+        JOptionPane.ERROR_MESSAGE,
+      )
+      return
+    }
     result =
       Server(
         ip.text,
-        port.text.toInt(),
+        portNumber,
         ssl.isSelected,
         encoders.selectedItem as String,
         dns.isSelected,
@@ -178,14 +191,9 @@ class GUIOptionServerDialog(private val owner: GUIMain) : JDialog(owner) {
       !upstream.isSelected && encoders.selectedItem in setOf("gRPC", "gRPC Streaming")
   }
 
-  private fun labeled(text: String, component: JComponent): JComponent {
-    val panel = JPanel()
-    panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
-    val label = JLabel(text)
-    label.preferredSize = Dimension(150, label.maximumSize.height)
-    panel.add(label)
-    component.maximumSize = Dimension(Short.MAX_VALUE.toInt(), label.maximumSize.height * 2)
-    panel.add(component)
-    return panel
+  companion object {
+    private const val PORT_LABEL = "Server port:"
+    private const val MIN_WIDTH = 700
+    private const val MIN_HEIGHT = 580
   }
 }

@@ -1,6 +1,5 @@
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.GridLayout
 import java.awt.event.ActionListener
 import javax.swing.*
@@ -28,7 +27,10 @@ abstract class GUIDiffBase(protected val owner: GUIMain) {
   protected var chgAttr: MutableAttributeSet
   protected var defaultAttr: MutableAttributeSet
   protected var jc: JCheckBox
+  protected var jcSyncScroll: JCheckBox
   protected var jcPanel: JPanel
+  // 同期スクロールで相手側を動かしたことによる再帰的な通知を無視するためのフラグ
+  private var syncingScroll = false
 
   init {
     var panelOrig = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
@@ -80,24 +82,63 @@ abstract class GUIDiffBase(protected val owner: GUIMain) {
           }
         )
       }
+    jcSyncScroll = JCheckBox(i18nString("Sync scroll"), true)
     jcPanel =
       JPanel().apply {
         layout = BoxLayout(this, BoxLayout.LINE_AXIS)
         add(jc)
+        add(JLabel("    "))
+        add(jcSyncScroll)
       }
+    syncScrollBars(scrollOrig, scrollTarg)
+    syncScrollBars(scrollTarg, scrollOrig)
     panel =
       JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(mainPanel)
         add(jcPanel)
       }
-    delAttr = SimpleAttributeSet().also { StyleConstants.setBackground(it, Color.RED) }
-    chgAttr = SimpleAttributeSet().also { StyleConstants.setBackground(it, Color.YELLOW) }
-    insAttr = SimpleAttributeSet().also { StyleConstants.setBackground(it, Color.GREEN) }
-    defaultAttr = SimpleAttributeSet().also { StyleConstants.setBackground(it, Color.WHITE) }
+    delAttr =
+      SimpleAttributeSet().also {
+        StyleConstants.setBackground(it, ThemeColors.diffRemoveBackground())
+      }
+    chgAttr =
+      SimpleAttributeSet().also {
+        StyleConstants.setBackground(it, ThemeColors.diffChangeBackground())
+      }
+    insAttr =
+      SimpleAttributeSet().also {
+        StyleConstants.setBackground(it, ThemeColors.diffAddBackground())
+      }
+    defaultAttr =
+      SimpleAttributeSet().also {
+        StyleConstants.setBackground(it, ThemeColors.diffDefaultBackground())
+      }
   }
 
   fun createPanel(): JComponent = panel
+
+  /** source側のスクロール位置をtarget側へ伝搬させる。行数が違っても比率で合わせる */
+  private fun syncScrollBars(source: JScrollPane, target: JScrollPane) {
+    source.verticalScrollBar.addAdjustmentListener { event ->
+      if (!jcSyncScroll.isSelected || syncingScroll) {
+        return@addAdjustmentListener
+      }
+      var sourceBar = source.verticalScrollBar
+      var targetBar = target.verticalScrollBar
+      var sourceRange = sourceBar.maximum - sourceBar.visibleAmount
+      var targetRange = targetBar.maximum - targetBar.visibleAmount
+      if (sourceRange <= 0 || targetRange <= 0) {
+        return@addAdjustmentListener
+      }
+      syncingScroll = true
+      try {
+        targetBar.value = (event.value.toLong() * targetRange / sourceRange).toInt()
+      } finally {
+        syncingScroll = false
+      }
+    }
+  }
 
   protected fun sortUniq(str: String): String =
     str.split("\n").filter { it.isNotEmpty() }.toSortedSet().joinToString("\n")

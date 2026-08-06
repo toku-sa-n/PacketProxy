@@ -82,7 +82,7 @@ class GUIHistoryBinary(private val owner: GUIMain) :
           val positionEnd = hexText.selectionEnd
           if (positionStart == positionEnd) return
           coloringSearchBinary()
-          highlightFromHex(positionStart, positionEnd, Color.CYAN)
+          highlightFromHex(positionStart, positionEnd, ThemeColors.binarySelectionHighlight())
         }
       }
     )
@@ -134,7 +134,7 @@ class GUIHistoryBinary(private val owner: GUIMain) :
           val positionEnd = asciiText.selectionEnd
           if (positionStart == positionEnd) return
           coloringSearchBinary()
-          highlightFromAscii(positionStart, positionEnd, Color.CYAN)
+          highlightFromAscii(positionStart, positionEnd, ThemeColors.binarySelectionHighlight())
         }
       }
     )
@@ -238,7 +238,7 @@ class GUIHistoryBinary(private val owner: GUIMain) :
     while (StringUtils.binaryFind(data!!, searchBytes, start).also { start = it } >= 0) {
       cnt++
       val end = start + searchBytes.size
-      highlightFromAscii(start + start / 16, end + end / 16, Color.YELLOW)
+      highlightFromAscii(start + start / 16, end + end / 16, ThemeColors.searchHighlight())
       start += searchBytes.size
     }
     return cnt
@@ -246,7 +246,7 @@ class GUIHistoryBinary(private val owner: GUIMain) :
 
   private fun resetHighlight() {
     val attributes: MutableAttributeSet = SimpleAttributeSet()
-    StyleConstants.setBackground(attributes, Color.WHITE)
+    StyleConstants.setBackground(attributes, ThemeColors.textBackground())
     hexText.styledDocument.setCharacterAttributes(0, hexText.text.length, attributes, false)
     asciiText.styledDocument.setCharacterAttributes(0, asciiText.text.length, attributes, false)
   }

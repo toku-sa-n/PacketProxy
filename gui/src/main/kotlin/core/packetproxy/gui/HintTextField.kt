@@ -15,7 +15,6 @@
  */
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -65,10 +64,10 @@ class HintTextField(hint: String) : JTextField() {
     var insets = border.getBorderInsets(this)
     var height = graphics2d.fontMetrics.ascent
     if (Utils.isWindows()) {
-      graphics2d.color = Color.LIGHT_GRAY
+      graphics2d.color = ThemeColors.secondaryForeground()
     } else {
       graphics2d.font = getFont().deriveFont(Font.ITALIC)
-      graphics2d.color = Color.GRAY
+      graphics2d.color = ThemeColors.secondaryForeground()
       graphics2d.setRenderingHint(
         RenderingHints.KEY_TEXT_ANTIALIASING,
         RenderingHints.VALUE_TEXT_ANTIALIAS_ON,

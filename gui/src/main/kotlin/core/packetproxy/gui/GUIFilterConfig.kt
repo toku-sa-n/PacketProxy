@@ -39,7 +39,7 @@ class GUIFilterConfig(private var owner: JFrame) {
     return JPanel().apply {
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       add(buttons)
-      add(JScrollPane(table).apply { background = Color.WHITE })
+      add(JScrollPane(table).apply { background = ThemeColors.panelBackground() })
     }
   }
 

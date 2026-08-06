@@ -1,8 +1,12 @@
 package packetproxy.gui
 
 import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.swing.JOptionPane
+import packetproxy.common.i18nString
 import packetproxy.common.i18nStringArray
 import packetproxy.model.InterceptOption
+import packetproxy.model.InterceptOption.Direction
 import packetproxy.util.errWithStackTrace
 
 class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOption>(owner) {
@@ -11,6 +15,35 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
 
   init {
     interceptOptions.addPropertyChangeListener(this)
+    val tableAction =
+      object : MouseAdapter() {
+        override fun mouseClicked(e: MouseEvent) {
+          try {
+            val columnIndex = table.columnAtPoint(e.point)
+            val rowIndex = table.rowAtPoint(e.point)
+            if (columnIndex == 0) {
+              val enableCheckbox = table.getValueAt(rowIndex, 0) as Boolean
+              val intercept = getTableContent(rowIndex)
+              if (enableCheckbox) {
+                if (
+                  intercept.isDirection(Direction.ALL_THE_OTHER_REQUESTS) ||
+                    intercept.isDirection(Direction.ALL_THE_OTHER_RESPONSES)
+                ) {
+                  JOptionPane.showMessageDialog(owner, i18nString("This entry can't be disabled."))
+                } else {
+                  intercept.setDisabled()
+                }
+              } else {
+                intercept.setEnabled()
+              }
+              interceptOptions.update(intercept)
+            }
+            table.setRowSelectionInterval(rowIndex, rowIndex)
+          } catch (e1: Exception) {
+            errWithStackTrace(e1)
+          }
+        }
+      }
     jcomponent =
       createComponent(
         i18nStringArray(
@@ -22,7 +55,7 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
           "Target Server",
         ),
         intArrayOf(50, 160, 300, 50, 80, 90),
-        object : MouseAdapter() {},
+        tableAction,
         {
           try {
             GUIOptionInterceptDialog(owner).showDialog()?.let(interceptOptions::create)
@@ -33,7 +66,16 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
         {
           try {
             val old = getSelectedTableContent() ?: return@createComponent
-            GUIOptionInterceptDialog(owner).showDialog(old)?.let {
+            val updated =
+              if (
+                old.isDirection(Direction.ALL_THE_OTHER_REQUESTS) ||
+                  old.isDirection(Direction.ALL_THE_OTHER_RESPONSES)
+              ) {
+                GUIOptionInterceptEditOthersDialog(owner).showDialog(old)
+              } else {
+                GUIOptionInterceptDialog(owner).showDialog(old)
+              }
+            updated?.let {
               it.setId(old.getId())
               interceptOptions.update(it)
             }
@@ -43,7 +85,15 @@ class GUIOptionIntercepts(owner: GUIMain) : GUIOptionComponentBase<InterceptOpti
         },
         {
           try {
-            getSelectedTableContent()?.let { interceptOptions.delete(it) }
+            val intercept = getSelectedTableContent() ?: return@createComponent
+            if (
+              intercept.isDirection(Direction.ALL_THE_OTHER_REQUESTS) ||
+                intercept.isDirection(Direction.ALL_THE_OTHER_RESPONSES)
+            ) {
+              JOptionPane.showMessageDialog(owner, i18nString("This entry can't be removed."))
+              return@createComponent
+            }
+            interceptOptions.delete(intercept)
           } catch (e: Exception) {
             errWithStackTrace(e)
           }

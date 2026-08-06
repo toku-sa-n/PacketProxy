@@ -28,16 +28,17 @@ class GUIDiffRaw(owner: GUIMain) : GUIDiffBase(owner) {
 
   override fun sortUniq(ds: DiffSet) =
     DiffSet(
-      sortUniq(String(ds.getOriginal()!!)).toByteArray(),
-      sortUniq(String(ds.getTarget()!!)).toByteArray(),
+      sortUniq(String(ds.getOriginal() ?: ByteArray(0))).toByteArray(),
+      sortUniq(String(ds.getTarget() ?: ByteArray(0))).toByteArray(),
     )
 
   override fun update() {
-    var ds =
-      if (jc.isSelected) sortUniq(owner.modelServices.diff.getSet()!!)
-      else owner.modelServices.diff.getSet()!!
-    textOrig.setData(ds.getOriginal()!!, false)
-    textTarg.setData(ds.getTarget()!!, false)
+    var current = owner.modelServices.diff.getSet() ?: return
+    var ds = if (jc.isSelected) sortUniq(current) else current
+    var originalData = ds.getOriginal() ?: return
+    var targetData = ds.getTarget() ?: return
+    textOrig.setData(originalData, false)
+    textTarg.setData(targetData, false)
     docOrig = textOrig.getStyledDocument()
     docTarg = textTarg.getStyledDocument()
     docOrig.setCharacterAttributes(0, docOrig.length, defaultAttr, false)

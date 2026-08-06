@@ -26,6 +26,7 @@ class Splash {
 
   init {
     createSplash()
+    current = this
   }
 
   fun show() {
@@ -36,6 +37,9 @@ class Splash {
     runAsync {
       splashScreen?.isVisible = false
       splashScreen = null
+    }
+    if (current === this) {
+      current = null
     }
   }
 
@@ -54,5 +58,14 @@ class Splash {
     splashScreen?.contentPane?.add(splashLabel)
     splashScreen?.pack()
     splashScreen?.setLocationRelativeTo(null)
+  }
+
+  companion object {
+    private var current: Splash? = null
+
+    /** 起動中のダイアログがスプラッシュの裏に隠れないよう、表示前に閉じる */
+    fun closeCurrent() {
+      current?.close()
+    }
   }
 }

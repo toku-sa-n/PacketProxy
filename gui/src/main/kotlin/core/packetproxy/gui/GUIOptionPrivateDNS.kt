@@ -44,8 +44,6 @@ class GUIOptionPrivateDNS(
 ) : PropertyChangeListener, packetproxy.DnsSpoofingConfig {
   companion object {
     private const val MAX_PORT_DIGITS = 5
-    private val ERROR_COLOR = Color(0xB0, 0x00, 0x20)
-    private val ERROR_BACKGROUND_COLOR = Color(0xFF, 0xCD, 0xD2)
   }
 
   private val checkBox = createCheckBox()
@@ -122,21 +120,21 @@ class GUIOptionPrivateDNS(
     rewriteGroup.add(manual)
 
     val manualPanel = JPanel()
-    manualPanel.background = Color.WHITE
+    manualPanel.background = ThemeColors.panelBackground()
     manualPanel.layout = BoxLayout(manualPanel, BoxLayout.X_AXIS)
     manualPanel.add(manual)
     manualPanel.add(ipv4)
     manualPanel.add(ipv6)
 
     val rewriteRuleBorder = TitledBorder(i18nString("Rewrite Rule"))
-    rewriteRuleBorder.border = LineBorder(Color.BLACK, 1)
+    rewriteRuleBorder.border = LineBorder(ThemeColors.borderColor(), 1)
     rewriteRuleBorder.titleFont = fontManager.getUIFont()
     rewriteRuleBorder.titleJustification = TitledBorder.LEFT
     rewriteRuleBorder.titlePosition = TitledBorder.TOP
 
     val rewriteRule = JPanel()
     rewriteRule.layout = BoxLayout(rewriteRule, BoxLayout.Y_AXIS)
-    rewriteRule.background = Color.WHITE
+    rewriteRule.background = ThemeColors.panelBackground()
     rewriteRule.border = rewriteRuleBorder
     rewriteRule.add(spoofIpv4CheckBox)
     rewriteRule.add(spoofIpv6CheckBox)
@@ -146,7 +144,7 @@ class GUIOptionPrivateDNS(
       Dimension(rewriteRule.preferredSize.width, rewriteRule.minimumSize.height)
 
     return JPanel().apply {
-      background = Color.WHITE
+      background = ThemeColors.panelBackground()
       layout = BoxLayout(this, BoxLayout.Y_AXIS)
       add(checkBox)
       add(createInterfaceSetting())
@@ -230,7 +228,7 @@ class GUIOptionPrivateDNS(
     interfaces.maximumSize = Dimension(interfaces.minimumSize.width, interfaces.minimumSize.height)
 
     return JPanel().apply {
-      background = Color.WHITE
+      background = ThemeColors.panelBackground()
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       add(interfaces)
       add(JLabel(i18nString("will be used for Binding Interface")))
@@ -241,7 +239,7 @@ class GUIOptionPrivateDNS(
   private fun createPortSetting(): JComponent {
     val portLabel = JLabel(i18nString("Port"))
     return JPanel().apply {
-      background = Color.WHITE
+      background = ThemeColors.panelBackground()
       layout = BoxLayout(this, BoxLayout.Y_AXIS)
       add(createPortSettingRow(portLabel))
       add(createPortSettingMessageRow(portLabel))
@@ -254,7 +252,7 @@ class GUIOptionPrivateDNS(
     port = createDnsPortField()
     setPort = createDnsPortSetButton()
     return JPanel().apply {
-      background = Color.WHITE
+      background = ThemeColors.panelBackground()
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       add(portLabel)
       add(Box.createHorizontalStrut(4))
@@ -267,9 +265,9 @@ class GUIOptionPrivateDNS(
 
   private fun createPortSettingMessageRow(portLabel: JLabel): JPanel {
     portErrorLabel = JLabel(" ")
-    portErrorLabel.foreground = ERROR_COLOR
+    portErrorLabel.foreground = ThemeColors.errorForeground()
     return JPanel().apply {
-      background = Color.WHITE
+      background = ThemeColors.panelBackground()
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       add(Box.createRigidArea(Dimension(portLabel.preferredSize.width, 0)))
       add(Box.createHorizontalStrut(4))
@@ -371,7 +369,7 @@ class GUIOptionPrivateDNS(
     if (::portErrorLabel.isInitialized) portErrorLabel.text = message
     if (::port.isInitialized) {
       port.isOpaque = true
-      port.background = ERROR_BACKGROUND_COLOR
+      port.background = ThemeColors.errorBackground()
     }
   }
 

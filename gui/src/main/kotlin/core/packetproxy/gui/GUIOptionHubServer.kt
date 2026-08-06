@@ -1,6 +1,5 @@
 package packetproxy.gui
 
-import java.awt.Color
 import java.awt.Dimension
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
@@ -27,7 +26,7 @@ class GUIOptionHubServer(private val frame: GUIMain) : PropertyChangeListener {
   private val secureRandom = SecureRandom()
 
   init {
-    panel.background = Color.WHITE
+    panel.background = ThemeColors.panelBackground()
     panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
     panel.add(createCheckBox())
     panel.add(createTokenPanel())
@@ -67,7 +66,7 @@ class GUIOptionHubServer(private val frame: GUIMain) : PropertyChangeListener {
 
   private fun createTokenPanel(): JComponent {
     val row = JPanel()
-    row.background = Color.WHITE
+    row.background = ThemeColors.panelBackground()
     row.layout = BoxLayout(row, BoxLayout.X_AXIS)
     row.add(JLabel(i18nString("AccessToken:")))
     token = JTextField()
