@@ -135,6 +135,21 @@ class PacketSummaryBackfillTest {
     assertEquals("GET https://example.com/api", meta.getSummarizedRequestColumn())
   }
 
+  @Test
+  fun updatePersistedSummaries_acceptsSpecialCharactersInSummary() {
+    var packet = sampleClientPacket()
+    var payload = "GET /api HTTP/1.1\r\nHost: example.com\r\n\r\n".toByteArray()
+    packet.setDecodedData(payload)
+    packets.updateSync(packet)
+    var id = packet.getId()
+    var summary = "GET https://example.com/o'brien?q=%2bfoo&x=1"
+
+    packets.updatePersistedSummaries(id, summary, "", payload.size, notify = false)
+
+    var meta = requireNotNull(packets.queryByIdMetadata(id))
+    assertEquals(summary, meta.getSummarizedRequestColumn())
+  }
+
   private fun sampleClientPacket(): Packet {
     var client = InetSocketAddress("127.0.0.1", 12345)
     var server = InetSocketAddress("127.0.0.1", 443)

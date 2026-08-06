@@ -16,6 +16,7 @@
 package packetproxy.model
 
 import com.j256.ormlite.dao.Dao
+import com.j256.ormlite.stmt.SelectArg
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
@@ -113,7 +114,7 @@ class Packets(
       dao
         .updateBuilder()
         .apply {
-          updateColumnValue("content_type", contentType)
+          updateColumnValue("content_type", SelectArg(contentType))
           where().eq("id", id)
         }
         .update()
@@ -130,7 +131,7 @@ class Packets(
       dao
         .updateBuilder()
         .apply {
-          updateColumnValue("color", color)
+          updateColumnValue("color", SelectArg(color))
           where().eq("id", id)
         }
         .update()
@@ -173,8 +174,8 @@ class Packets(
       dao
         .updateBuilder()
         .apply {
-          updateColumnValue("summarized_request", summarizedRequest)
-          updateColumnValue("summarized_response", summarizedResponse)
+          updateColumnValue("summarized_request", SelectArg(summarizedRequest))
+          updateColumnValue("summarized_response", SelectArg(summarizedResponse))
           updateColumnValue("display_length", displayLength)
           where().eq("id", id)
         }
