@@ -183,50 +183,52 @@ class PacketSummaryBackfillTest {
   }
 
   @Test
-  fun clearPersistedSummariesOnce_clearsSummariesThenSkipsSecondRun() {
+  fun repairPersistedSummariesIfNeeded_clearsMassDuplicateClientSummaries() {
     var payload = "GET /api HTTP/1.1\r\nHost: example.com\r\n\r\n".toByteArray()
-    var packet = sampleClientPacket()
-    packet.setDecodedData(payload)
-    packets.updateSync(packet)
-    var id = packet.getId()
-    packets.updatePersistedSummaries(
-      id,
-      "GET https://example.com/corrupt",
-      "200 OK",
-      payload.size,
-      notify = false,
-    )
-    assertEquals(
-      "GET https://example.com/corrupt",
-      requireNotNull(packets.queryByIdMetadata(id)).getSummarizedRequestColumn(),
-    )
+    var corrupt = "POST https://api.example.com/live/%22--%3e"
+    var ids = ArrayList<Int>()
+    for (i in 1..100) {
+      var packet = sampleClientPacket()
+      packet.setDecodedData(payload)
+      packets.updateSync(packet)
+      var id = packet.getId()
+      ids.add(id)
+      packets.updatePersistedSummaries(id, corrupt, "", payload.size, notify = false)
+    }
 
-    var dao = database.createTable(Packet::class.java)
-    dao.executeRaw("DELETE FROM packetproxy_migrations WHERE name = ?", "summary_selectarg_v1")
-    packets = Packets(database, false)
+    packets.repairPersistedSummariesIfNeeded()
 
-    var cleared = requireNotNull(packets.queryByIdMetadata(id))
-    assertTrue(cleared.getSummarizedRequestColumn().isNullOrEmpty())
-    assertTrue(cleared.getSummarizedResponseColumn().isNullOrEmpty())
-    assertTrue(
-      dao
-        .queryRaw("SELECT 1 FROM packetproxy_migrations WHERE name = ?", "summary_selectarg_v1")
-        .results
-        .isNotEmpty()
-    )
+    for (id in ids) {
+      var meta = requireNotNull(packets.queryByIdMetadata(id))
+      assertTrue(meta.getSummarizedRequestColumn().isNullOrEmpty())
+    }
+  }
 
-    packets.updatePersistedSummaries(
-      id,
-      "GET https://example.com/repaired",
-      "",
-      payload.size,
-      notify = false,
-    )
-    packets = Packets(database, false)
-    assertEquals(
-      "GET https://example.com/repaired",
-      requireNotNull(packets.queryByIdMetadata(id)).getSummarizedRequestColumn(),
-    )
+  @Test
+  fun repairPersistedSummariesIfNeeded_leavesHealthyDiverseSummaries() {
+    var payload = "GET /api HTTP/1.1\r\nHost: example.com\r\n\r\n".toByteArray()
+    var ids = ArrayList<Int>()
+    for (i in 1..20) {
+      var packet = sampleClientPacket()
+      packet.setDecodedData(payload)
+      packets.updateSync(packet)
+      var id = packet.getId()
+      ids.add(id)
+      packets.updatePersistedSummaries(
+        id,
+        "GET https://example.com/path-$i",
+        "",
+        payload.size,
+        notify = false,
+      )
+    }
+
+    packets.repairPersistedSummariesIfNeeded()
+
+    for ((index, id) in ids.withIndex()) {
+      var meta = requireNotNull(packets.queryByIdMetadata(id))
+      assertEquals("GET https://example.com/path-${index + 1}", meta.getSummarizedRequestColumn())
+    }
   }
 
   private fun sampleClientPacket(): Packet {

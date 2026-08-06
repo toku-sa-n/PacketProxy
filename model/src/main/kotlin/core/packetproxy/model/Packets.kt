@@ -45,7 +45,7 @@ class Packets(
     SchemaMigrator.ensureColumns(dao)
     ensurePairIndex()
     ensureFts()
-    clearPersistedSummariesOnceForSelectArgRepair()
+    repairPersistedSummariesIfNeeded()
     if (restore) {
       SchemaMigrator.ensureCompatible(database, dao, "packets") {
         database.dropTable(Packet::class.java)
@@ -344,24 +344,27 @@ class Packets(
         DatabaseMessage.DISCONNECT_NOW -> {}
         DatabaseMessage.RECONNECT -> {
           dao = database.createTable(Packet::class.java)
-          SchemaMigrator.ensureColumns(dao)
-          val result =
-            dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='packets'").firstResult[0]
-          if (!result.contains("`color` VARCHAR"))
-            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN color VARCHAR")
-          if (!result.contains("`job_id` VARCHAR"))
-            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN job_id VARCHAR")
-          if (!result.contains("`temporary_id` VARCHAR"))
-            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN temporary_id VARCHAR")
-          if (!result.contains("`summarized_request`"))
-            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_request VARCHAR")
-          if (!result.contains("`summarized_response`"))
-            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_response VARCHAR")
-          if (!result.contains("`display_length`"))
-            dao.executeRaw("ALTER TABLE `packets` ADD COLUMN display_length INTEGER DEFAULT 0")
-          ensurePairIndex()
-          ensureFts()
-          clearPersistedSummariesOnceForSelectArgRepair()
+          try {
+            SchemaMigrator.ensureColumns(dao)
+            val result =
+              dao.queryRaw("SELECT sql FROM sqlite_master WHERE name='packets'").firstResult[0]
+            if (!result.contains("`color` VARCHAR"))
+              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN color VARCHAR")
+            if (!result.contains("`job_id` VARCHAR"))
+              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN job_id VARCHAR")
+            if (!result.contains("`temporary_id` VARCHAR"))
+              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN temporary_id VARCHAR")
+            if (!result.contains("`summarized_request`"))
+              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_request VARCHAR")
+            if (!result.contains("`summarized_response`"))
+              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN summarized_response VARCHAR")
+            if (!result.contains("`display_length`"))
+              dao.executeRaw("ALTER TABLE `packets` ADD COLUMN display_length INTEGER DEFAULT 0")
+            ensurePairIndex()
+            ensureFts()
+          } finally {
+            repairPersistedSummariesIfNeeded()
+          }
           firePropertyChange(message)
         }
         DatabaseMessage.RECREATE -> {
@@ -387,33 +390,60 @@ class Packets(
   }
 
   /**
-   * One-shot repair for summaries corrupted by SQL-literal embedding before SelectArg. Clears
-   * persisted summaries once so History can re-backfill safely.
+   * Clears persisted summaries only when CLIENT request summaries look mass-corrupted (one value
+   * dominates). Healthy project DBs are left untouched so History can re-backfill the broken ones.
    */
-  private fun clearPersistedSummariesOnceForSelectArgRepair() {
+  fun repairPersistedSummariesIfNeeded() {
     try {
       synchronized(dao) {
-        dao.executeRaw("CREATE TABLE IF NOT EXISTS packetproxy_migrations (name TEXT PRIMARY KEY)")
-        val existing =
-          dao
-            .queryRaw(
-              "SELECT 1 FROM packetproxy_migrations WHERE name = ?",
-              SUMMARY_SELECTARG_REPAIR_MARKER,
-            )
-            .results
-        if (existing.isNotEmpty()) {
+        if (!hasMassDuplicateClientRequestSummaries()) {
           return
         }
         dao.executeRaw("UPDATE packets SET summarized_request = NULL, summarized_response = NULL")
-        dao.executeRaw(
-          "INSERT INTO packetproxy_migrations(name) VALUES (?)",
-          SUMMARY_SELECTARG_REPAIR_MARKER,
-        )
-        log("cleared persisted packet summaries for SelectArg repair migration")
+        log("cleared mass-duplicate persisted packet summaries for repair")
       }
     } catch (e: Exception) {
       errWithStackTrace(e)
     }
+  }
+
+  private fun hasMassDuplicateClientRequestSummaries(): Boolean {
+    val top =
+      dao
+        .queryRaw(
+          """
+          SELECT summarized_request, COUNT(*) AS c
+          FROM packets
+          WHERE direction = 'CLIENT'
+            AND summarized_request IS NOT NULL
+            AND summarized_request != ''
+          GROUP BY summarized_request
+          ORDER BY c DESC
+          LIMIT 1
+          """
+            .trimIndent()
+        )
+        .results
+        .firstOrNull() ?: return false
+    val topCount = top[1].toLong()
+    if (topCount < MASS_DUPLICATE_SUMMARY_MIN_COUNT) {
+      return false
+    }
+    val totalNonEmpty =
+      dao
+        .queryRaw(
+          """
+          SELECT COUNT(*)
+          FROM packets
+          WHERE direction = 'CLIENT'
+            AND summarized_request IS NOT NULL
+            AND summarized_request != ''
+          """
+            .trimIndent()
+        )
+        .firstResult[0]
+        .toLong()
+    return topCount * 2 >= totalNonEmpty
   }
 
   private fun ensureFts() {
@@ -633,7 +663,7 @@ class Packets(
     const val KEY_AUTO_PRUNE_ENABLED = "history.auto_prune.enabled"
     const val KEY_AUTO_PRUNE_MAX_PACKETS = "history.auto_prune.max_packets"
     const val KEY_AUTO_PRUNE_MAX_DB_MB = "history.auto_prune.max_db_mb"
-    private const val SUMMARY_SELECTARG_REPAIR_MARKER = "summary_selectarg_v1"
+    private const val MASS_DUPLICATE_SUMMARY_MIN_COUNT = 100L
     private const val FTS_BODY_MAX_BYTES = 64 * 1024
     private const val FTS_BODY_MAX_CHARS = 64_000
     private const val PRUNE_BATCH_SIZE = 500

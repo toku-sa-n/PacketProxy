@@ -325,6 +325,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   fun updateAllAsync() {
     Thread {
         try {
+          packets.repairPersistedSummariesIfNeeded()
           rebuildAsyncSkeleton()
           fillAsyncRowsFromMetadata()
         } catch (exception: Exception) {

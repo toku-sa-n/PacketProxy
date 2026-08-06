@@ -214,6 +214,7 @@ class Database {
     }
     System.setProperty(LocalLog.LOCAL_LOG_LEVEL_PROPERTY, "error")
     source = JdbcConnectionSource(databaseURL)
+    DaoManager.clearCache()
     source.readWriteConnection.executePragma("pragma auto_vacuum = full")
     applyConnectionPragmas()
   }
