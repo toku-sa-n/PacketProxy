@@ -156,9 +156,6 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
       addWindowListener(
         object : WindowAdapter() {
           override fun windowClosing(event: WindowEvent) {
-            if (!confirmExit()) {
-              return
-            }
             saveLayout()
             disposeListeners()
             System.exit(0)
@@ -171,16 +168,6 @@ class GUIMain(val modelServices: ModelServices, val coreServices: CoreServices) 
       errWithStackTrace(e)
     }
   }
-
-  /** 誤操作で終了しないよう確認する */
-  private fun confirmExit(): Boolean =
-    JOptionPane.showConfirmDialog(
-      this,
-      i18nString("Are you sure you want to quit PacketProxy?"),
-      i18nString("Quit PacketProxy"),
-      JOptionPane.YES_NO_OPTION,
-      JOptionPane.QUESTION_MESSAGE,
-    ) == JOptionPane.YES_OPTION
 
   private fun saveLayout() {
     try {
