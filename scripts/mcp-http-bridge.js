@@ -226,12 +226,20 @@ class MCPHttpBridge {
             debugLog(`[DEBUG] Forwarding to PacketProxy: ${postData}`);
             debugLog(`[DEBUG] Target URL: ${PACKETPROXY_HTTP_URL}`);
             
+            // /mcp は Authorization: Bearer が必須。ツール呼び出しは body の
+            // access_token も別途検証する（両方必要）。
+            const headers = {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            };
+            if (accessToken) {
+                headers['Authorization'] = `Bearer ${accessToken}`;
+                debugLog('[DEBUG] Added Authorization: Bearer header');
+            }
+
             const options = {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(postData)
-                },
+                headers,
                 timeout: 60000  // 60 second timeout
             };
 
