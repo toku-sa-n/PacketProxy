@@ -74,7 +74,9 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
   private val columnNames =
     i18nStringArray(
       "#",
-      "Request",
+      "Method",
+      "Host",
+      "Path",
       "Status",
       "Length",
       "Client IP",
@@ -90,7 +92,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       "Group",
     )
   private val columnWidth =
-    intArrayOf(50, 420, 70, 70, 100, 55, 100, 55, 110, 45, 45, 90, 80, 45, 45)
+    intArrayOf(50, 70, 180, 260, 70, 70, 100, 55, 100, 55, 110, 45, 45, 90, 80, 45, 45)
   private lateinit var splitPanel: JSplitPane
   private lateinit var mainPanel: JPanel
   private lateinit var tableModel: OptionTableModel
@@ -187,8 +189,8 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
             val selected = isRowSelected(row)
             val firstSelected = selected && this.selectedRow == row
             val packetId = getValueAt(row, COL_ID) as Int
-            val modified = getValueAt(row, COL_MODIFIED) as Boolean
-            val resend = getValueAt(row, COL_RESEND) as Boolean
+            val modified = getValueAt(row, COL_MODIFIED) as? Boolean ?: false
+            val resend = getValueAt(row, COL_RESEND) as? Boolean ?: false
             when {
               selected && firstSelected -> {
                 component.foreground = ThemeColors.tableSelectionForeground()
@@ -325,7 +327,10 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     val ids = ArrayList<Int>()
     val pattern = ".*${java.util.regex.Pattern.quote(searchWord)}.*".toRegex()
     for (i in 0 until table.rowCount) {
-      val request = tableModel.getValueAt(i, 1) as String
+      val method = tableModel.getValueAt(i, COL_METHOD) as? String ?: ""
+      val host = tableModel.getValueAt(i, COL_HOST) as? String ?: ""
+      val path = tableModel.getValueAt(i, COL_PATH) as? String ?: ""
+      val request = "$method $host$path"
       if (request.matches(pattern)) {
         ids.add(i)
       }
@@ -967,7 +972,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
       if (existingContentType.isNullOrEmpty()) responsePacket.getContentType()
       else existingContentType
     tableModel.setValueAt(contentType, rowIndex, COL_CONTENT_TYPE)
-    val currentModified = tableModel.getValueAt(rowIndex, COL_MODIFIED) as Boolean
+    val currentModified = tableModel.getValueAt(rowIndex, COL_MODIFIED) as? Boolean ?: false
     tableModel.setValueAt(currentModified || responsePacket.getModified(), rowIndex, COL_MODIFIED)
     pairingService.markGroupHasResponse(groupId)
     pairingService.registerPairing(responsePacketId, requestPacketId)
@@ -1013,25 +1018,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     isResponse: Boolean,
     groupId: Long,
   ) {
-    tableModel.addRow(
-      arrayOf<Any?>(
-        packetId,
-        "Loading...",
-        "Loading...",
-        0,
-        "Loading...",
-        "",
-        "Loading...",
-        "",
-        "00:00:00 1900/01/01 Z",
-        false,
-        false,
-        "",
-        "",
-        "",
-        -1L,
-      )
-    )
+    tableModel.addRow(makeLoadingPlaceholderRow(packetId))
     val rowIndex = tableModel.rowCount - 1
     idRow[packetId] = rowIndex
     if (!isResponse && groupId != 0L) {
@@ -1172,27 +1159,30 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     if (responsePacketId == -1) {
       return
     }
-    tableModel.addRow(
-      arrayOf<Any?>(
-        responsePacketId,
-        "Loading...",
-        "Loading...",
-        0,
-        "Loading...",
-        "",
-        "Loading...",
-        "",
-        "00:00:00 1900/01/01 Z",
-        false,
-        false,
-        "",
-        "",
-        "",
-        -1L,
-      )
-    )
+    tableModel.addRow(makeLoadingPlaceholderRow(responsePacketId))
     idRow[responsePacketId] = tableModel.rowCount - 1
   }
+
+  private fun makeLoadingPlaceholderRow(packetId: Int): Array<Any?> =
+    arrayOf(
+      packetId,
+      "Loading...",
+      "Loading...",
+      "Loading...",
+      "Loading...",
+      0,
+      "Loading...",
+      "",
+      "Loading...",
+      "",
+      "00:00:00 1900/01/01 Z",
+      false,
+      false,
+      "",
+      "",
+      "",
+      -1L,
+    )
 
   private fun updateOne(packet: Packet?) {
     if (packet == null) {
@@ -1222,7 +1212,7 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
           if (requestPacket != null) resolveContentType(requestPacket, packet)
           else packet.getContentType()
         tableModel.setValueAt(contentType, rowIndex, COL_CONTENT_TYPE)
-        val currentModified = tableModel.getValueAt(rowIndex, COL_MODIFIED) as Boolean
+        val currentModified = tableModel.getValueAt(rowIndex, COL_MODIFIED) as? Boolean ?: false
         tableModel.setValueAt(currentModified || packet.getModified(), rowIndex, COL_MODIFIED)
       }
       return
@@ -1258,9 +1248,12 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
     val serverIp = packet.getServerIP() ?: ""
     val serverPort = if (packet.getServerPort() == 0) "" else packet.getServerPort().toString()
     val dateFormat = SimpleDateFormat("MM/dd HH:mm:ss")
+    val requestParts = splitRequestSummary(packet.getSummarizedRequest(packetSummarizer))
     return arrayOf(
       packet.getId(),
-      packet.getSummarizedRequest(packetSummarizer),
+      requestParts.method,
+      requestParts.host,
+      requestParts.path,
       packet.getSummarizedResponse(packetSummarizer),
       displayLengthOf(packet),
       clientIp,
@@ -1333,13 +1326,16 @@ class GUIHistory(private val main: GUIMain, restore: Boolean) : PropertyChangeLi
 
   companion object {
     private val COL_ID = 0
-    private val COL_SERVER_RESPONSE = 2
-    private val COL_LENGTH = 3
-    private val COL_CLIENT_PORT = 5
-    private val COL_SERVER_PORT = 7
-    private val COL_RESEND = 9
-    private val COL_MODIFIED = 10
-    private val COL_CONTENT_TYPE = 11
+    private val COL_METHOD = 1
+    private val COL_HOST = 2
+    private val COL_PATH = 3
+    private val COL_SERVER_RESPONSE = 4
+    private val COL_LENGTH = 5
+    private val COL_CLIENT_PORT = 7
+    private val COL_SERVER_PORT = 9
+    private val COL_RESEND = 11
+    private val COL_MODIFIED = 12
+    private val COL_CONTENT_TYPE = 13
     private val NUMERIC_RIGHT_ALIGNED_COLUMNS =
       intArrayOf(COL_ID, COL_SERVER_RESPONSE, COL_LENGTH, COL_CLIENT_PORT, COL_SERVER_PORT)
     private const val SKELETON_PAGE_SIZE = 500L

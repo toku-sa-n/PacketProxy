@@ -101,10 +101,17 @@ private constructor(
       lhs += c
       index++
     }
-    if (!columnMapper.containsKey(lhs)) {
+    if (lhs != "request" && !columnMapper.containsKey(lhs)) {
       throw ParseException("column name in invalid: $lhs", index)
     }
-    val column = columnMapper[lhs]!!
+    val columns =
+      if (lhs == "request") {
+        // Backward-compatible alias: match Method, Host, or Path.
+        intArrayOf(columnMapper["method"]!!, columnMapper["host"]!!, columnMapper["path"]!!)
+      } else {
+        intArrayOf(columnMapper[lhs]!!)
+      }
+    val column = columns[0]
 
     var operator = "" + getNextChar()
     index++
@@ -133,12 +140,12 @@ private constructor(
 
     val filter: RowFilter<Any, Any> =
       if (operator == "!~" || operator == "!=") {
-        RowFilter.notFilter(generateRequestRowFilter(rhs, column, table))
+        RowFilter.notFilter(generateRequestRowFilter(rhs, columns, table))
       } else if (operator == "=~" || operator == "==") {
-        when (column) {
-          columnMapper["full_text_i"] -> generateFullTextRowFilter_i(rhs, packets)
-          columnMapper["full_text"] -> generateFullTextRowFilter(rhs, packets)
-          else -> generateRequestRowFilter(rhs, column, table)
+        when (lhs) {
+          "full_text_i" -> generateFullTextRowFilter_i(rhs, packets)
+          "full_text" -> generateFullTextRowFilter(rhs, packets)
+          else -> generateRequestRowFilter(rhs, columns, table)
         }
       } else if (operator == "<=") {
         RowFilter.numberFilter(ComparisonType.BEFORE, Integer.parseInt(rhs), column)
@@ -248,22 +255,24 @@ private constructor(
     private val columnMapper =
       HashedMap<String, Int>().apply {
         put("id", 0)
-        put("request", 1)
-        put("response", 2)
-        put("length", 3)
-        put("client_ip", 4)
-        put("client_port", 5)
-        put("server_ip", 6)
-        put("server_port", 7)
-        put("time", 8)
-        put("resend", 9)
-        put("modified", 10)
-        put("type", 11)
-        put("encode", 12)
-        put("alpn", 13)
-        put("group", 14)
-        put("full_text", 15)
-        put("full_text_i", 16)
+        put("method", 1)
+        put("host", 2)
+        put("path", 3)
+        put("response", 4)
+        put("length", 5)
+        put("client_ip", 6)
+        put("client_port", 7)
+        put("server_ip", 8)
+        put("server_port", 9)
+        put("time", 10)
+        put("resend", 11)
+        put("modified", 12)
+        put("type", 13)
+        put("encode", 14)
+        put("alpn", 15)
+        put("group", 16)
+        put("full_text", 17)
+        put("full_text_i", 18)
       }
 
     @JvmStatic
@@ -274,9 +283,9 @@ private constructor(
     @Throws(Exception::class)
     private fun generateRequestRowFilter(
       searchWord: String,
-      column: Int,
+      columns: IntArray,
       table: DefaultTableModel,
-    ): RowFilter<Any, Any> = RequestRowFilter(searchWord, intArrayOf(column), table)
+    ): RowFilter<Any, Any> = RequestRowFilter(searchWord, columns, table)
 
     // case sensitive full text search
     @Throws(Exception::class)
