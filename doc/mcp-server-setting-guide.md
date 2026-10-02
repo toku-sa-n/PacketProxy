@@ -42,7 +42,7 @@ HTTP endpoint available at http://localhost:8765/mcp
 PacketProxy GUIでアクセストークンを有効化し、トークンを取得します：
 
 1. **Options** → **Setting** を選択
-2. **Import/Export configs** セクションで **Enable** にチェックを入れる
+2. **Access token** セクションで **Enable** にチェックを入れる
 3. 表示されたアクセストークンをコピーしておく
 
 ### 3. Claude Desktop設定ファイルの編集

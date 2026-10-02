@@ -155,7 +155,7 @@ class GUIOption(private val owner: GUIMain) {
       OptionCategory(i18nString("Appearance")) { createAppearanceSections() },
       OptionCategory(i18nString("Extensions")) { listOf(createExtensionsSection()) },
       OptionCategory(i18nString("Tools")) { listOf(createToolsSection()) },
-      OptionCategory(i18nString("Import/Export")) { listOf(createHubServerSection()) },
+      OptionCategory(i18nString("Access token")) { listOf(createHubServerSection()) },
     )
 
   private fun createListenPortsSection(): OptionSection {
@@ -334,7 +334,7 @@ class GUIOption(private val owner: GUIMain) {
     val hubServer = GUIOptionHubServer(owner)
     track(hubServer::dispose)
     return OptionSection(
-      i18nString("Import/Export configs (Experimental)"),
+      i18nString("Access token (Experimental)"),
       i18nString(
         "Import/Export configs by GET/POST http://localhost:32349/config with 'Authorization: [AccessToken]' header"
       ),

@@ -33,7 +33,7 @@ PacketProxy MCP サーバーは、Model Context Protocol (MCP) を使用してPa
 ### アクセストークンの取得方法
 
 1. PacketProxyの**Settings**タブを開く
-2. **Import/Export configs (Experimental)**セクションを見つける
+2. **Access token (Experimental)**セクションを見つける
 3. **Enabled**チェックボックスを有効にする
 4. 自動生成された**AccessToken**をコピーする
 5. MCPツール呼び出し時に`access_token`パラメータとして使用する

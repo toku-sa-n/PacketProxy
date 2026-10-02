@@ -26,14 +26,14 @@ abstract class AuthenticatedMCPTool(protected val configs: packetproxy.model.Con
     var configuredToken = ConfigString(configs, "SharingConfigsAccessToken").getString()
     if (configuredToken.isEmpty()) {
       throw Exception(
-        "Access token not configured in PacketProxy. Please enable 'Import/Export configs' in PacketProxy Settings and copy the generated access token."
+        "Access token not configured in PacketProxy. Please enable 'Access token' in PacketProxy Settings and copy the generated access token."
       )
     }
 
     if (configuredToken != providedToken) {
       log("Access token validation failed")
       throw Exception(
-        "Invalid access token. Please check your access token from PacketProxy Settings > Import/Export configs section."
+        "Invalid access token. Please check your access token from PacketProxy Settings > Access token section."
       )
     }
 
@@ -56,7 +56,7 @@ abstract class AuthenticatedMCPTool(protected val configs: packetproxy.model.Con
     accessTokenProp.addProperty("type", "string")
     accessTokenProp.addProperty(
       "description",
-      "PacketProxy access token from Settings > Import/Export configs. Must match the configured token; empty values are rejected.",
+      "PacketProxy access token from Settings > Access token. Must match the configured token; empty values are rejected.",
     )
     schema.add("access_token", accessTokenProp)
     return schema
