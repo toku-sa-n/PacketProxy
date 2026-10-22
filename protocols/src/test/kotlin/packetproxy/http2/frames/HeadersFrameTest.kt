@@ -17,8 +17,10 @@ package packetproxy.http2.frames
 
 import java.nio.ByteBuffer
 import org.apache.commons.codec.binary.Hex
+import org.eclipse.jetty.http.MetaData
 import org.eclipse.jetty.http2.hpack.HpackDecoder
 import org.eclipse.jetty.http2.hpack.HpackEncoder
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import packetproxy.http.Http
 import packetproxy.util.Logging
@@ -128,5 +130,35 @@ class HeadersFrameTest {
     val decoder = HpackDecoder(65535, 65535)
     val headerFrame = HeadersFrame(frameData, decoder)
     Logging.log(String(headerFrame.getExtra()))
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun encodeFromHttpSetsContentLengthForPatchWithBody() {
+    val body = """{"name":"patched"}"""
+    val http =
+      Http.create(
+        ("PATCH /resource HTTP/1.1\r\n" +
+            "Host: example.com\r\n" +
+            "Content-Type: application/json\r\n" +
+            "X-PacketProxy-HTTP2-Scheme: https\r\n" +
+            "X-PacketProxy-HTTP2-Host: example.com\r\n" +
+            "X-PacketProxy-HTTP2-Stream-Id: 1\r\n" +
+            "\r\n" +
+            body)
+          .toByteArray()
+      )
+    val headersFrame = HeadersFrame(http)
+    val encoded = headersFrame.toByteArrayWithoutExtra(encoder)
+
+    val length =
+      ((encoded[0].toInt() and 0xff) shl 16) or
+        ((encoded[1].toInt() and 0xff) shl 8) or
+        (encoded[2].toInt() and 0xff)
+    val payload = encoded.copyOfRange(9, 9 + length)
+    val meta = decoder.decode(ByteBuffer.wrap(payload)) as MetaData.Request
+
+    assertEquals(body.toByteArray().size.toLong(), meta.contentLength)
+    assertEquals(body.toByteArray().size.toString(), meta.fields.get("content-length"))
   }
 }
