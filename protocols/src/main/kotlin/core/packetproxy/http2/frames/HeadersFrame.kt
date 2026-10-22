@@ -135,7 +135,10 @@ open class HeadersFrame : Frame {
           var contentLength = 0L
           if (method == "GET" || method == "HEAD") {
             contentLength = if (http.body.isEmpty()) Long.MIN_VALUE else http.body.size.toLong()
-          } else if (method == "POST" || method == "PUT") {
+          } else {
+            // POST/PUT だけでなく PATCH/DELETE など本文を持つ全メソッドで content-length を付与する。
+            // これを POST/PUT に限定すると、PATCH 等では content-length が 0 のまま HTTP/2 リクエストが
+            // 構築され、本文長の宣言と実際の DATA フレーム長が食い違い、AWS ALB 等が 400 を返す。
             contentLength = http.body.size.toLong()
             mutableFields.add("content-length", contentLength.toString())
             fields = mutableFields
